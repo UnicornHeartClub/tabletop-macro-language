@@ -16,16 +16,18 @@ macro language, whether inside of Power VTT or in other software.
 
 ## Using TTML
 
-Power VTT Macro Language is already integrated into [Power Virtual TableTop](https://www.poweredvtt.com).
+TableTop Macro Language is already integrated into [Power Virtual TableTop](https://www.poweredvtt.com).
 
 If you are looking to integrate TTML into your existing platform or game, TTML can be used as a
-standalone binary that accepts string input and returns serialized output. See [Installing](#installing)
+standalone binary that accepts string input and returns serialized output. See [Installing](#installing).
 
 # Documentation
 
 1. [API](#api)
 2. [Language Basics](#language-basics)
-3. [Variables](#variables)
+3. [Commands](#commands)
+4. [Passing Results](#passing-results)
+5. [Reserved Variables](#reserved-variables)
 
 ## API
 
@@ -33,71 +35,172 @@ See [the official documentation](#) for the complete API.
 
 ## Language Basics
 
-TableTop Macro Language takes a lot of inspiration from simple scripting languages such as Lua but
-is highly targeted for tabletop role-playing games.
+TableTop Macro Language takes is a simple macro language parser targeted for tabletop role-playing
+games. For more examples, see [Examples](https://github.com/UnicornHeartClub/tabletop-macro-language/tree/master/examples).
 
-The below example heals a token +1 each time a successful heal check is rolled.
+The below example heals a token +1 each time a successful heal check is rolled otherwise it
+subtracts 1 from the token's health.
 
-```lua
-@token = '<some-token-id>'
-@check = 'heal'
-
-if (@check === 'heal')
-  if (roll_d20(1) > 15)
-    health_up(@token, 1)
+```bash
+#heal
+!say "I cast a bad healing spell on myself" -> !roll 1d20 >= 15 ? !hp $me 1 : !hp $me -1
 ```
 
 Let's break down that example:
 
-```lua
-@token = '<some-token-id>'
-@check = 'heal'
+```bash
+#heal
 ```
 
-Each line of a TTML program is executed inline. Lines that begin with an `@` symbol are considered
-[Variables](#variables) and can be referenced later in the program.
+All macros start with a `#` and some unique identifying name. Any code following can be
+referenced and executed from the chat console or other macros.
 
-```lua
-if (@check === 'heal')
-```
-We check if the variable `@check` is equal to `heal` (designated by `===`). The variables here are all
-very custom to this program and have no significant meaning in TTML. Here `@check` and `heal` are
-both constants we defined but in a real-world program `heal` might be dynamicly generated.
-
-```lua
-if (roll_d20(1) > 15)
+```bash
+!say "I cast a bad healing spell on myself"
 ```
 
-If we passed the heal check, roll a single d20 and if it's greater than 15, continue on. Here,
-`roll_d20` is a function defined in the TTML [API](#api).
+There are many commands you can run in TTML, one of them is the `!say` command which outputs a
+message to everyone.
 
+```bash
+->
 ```
-health_up(@token, 1)
+
+An arrow denotes a next step in the process. Multiple commands can be chained together for more
+complex equations and functionality.
+
+```bash
+!roll 1d20 >= 15
 ```
 
-Finally, increase the health of our token by 1.
+The `!roll` command is very similar to that of [Avrae](http://avrae.io/commands#dice). Here we are
+rolling a single d20 die and checking if the output is greater than or equal to 15.
 
-## Variables
+```bash
+?
+```
 
-Variables let you define custom pieces of information in your programs before sending them to the
-TTML parser. An example of a variable might be a Token ID or spell name.
+The `?` at the begining here denotes that we have a true/false statement to make. Similar to an
+arrow (`->`), `?` denote a new statement to make but give you two options based on the outcome.
+
+If the roll we just made is greater than or equal to 15, we will execute the next statement that is
+between the `?` and before the `:`. Otherwise, if the roll is less than 15, we will execute only the
+section beyond the `:`.
+
+```bash
+!hp $me 1
+```
+When we are successful, we are going to modify HP using the `!hp` command. We tell the command to use
+our token using the reserved keyword `$me` and finally give the command a number (1) to add to our
+health.
+
+```bash
+: !hp $me -1
+```
+
+In the case that the roll was below 15, we would run the same command but subtract one from our
+health instead.
+
+## Commands
+
+TTML provides comamnds to execute, modify, and automate tabletop role-playing scenarios.
+
+| Name | Arguments | Returns | Description |
+| ---- | --------- | ------- | ----------- |
+| `!roll` `!r` | See [Rolling Dice](#) | Number | Roll dice |
+| `!say` | `<message>` | void | Send a message to everyone |
+| `!whisper` | `<player> <message>` | void | Send a message to a particular player |
+
+## Passing Results
+
+Sometimes you want to pass the result of a command to the input of another command. You can easily
+accomplish this in TTML with the `->` operator.
+
+By default, each command outputs an array of data. A previous command's output can be referenced
+from the current command via `${n}` where `n` is a number >= 1 that references the index of the
+result array.
+
+Sounds complicated, but it's very easy. Take the below example to roll initiative:
+
+```bash
+#initiative
+!roll 1d20+$me.dexterity -> $me.initiative = $1
+```
+
+Here, we roll a d20 die and add our dexterity modifier to it. We then pass that result to the next
+command and set our token's initiative equal to our roll result using `$1`.
+
+
+## Reserved Variables
+
+TTML defines a few reserved variables for you to use in your macros.
+
+| Name | Description |
+| ---- | ----------- |
+| `$me` | A reference to your token, if available |
+| `$players` | A list of all players, can be iterated over |
+| `$selected` | A reference to the selected token, if available |
+| `$tokens` | A list of all tokens, can be iterated over |
 
 # Installing
 
-Looking to use TTML in your project? Building the project is easy!
-To get started, you will need [Rust](https://www.rust-lang.org/en-US/).
+Looking to use TTML in your project? Building the project is easy!  To get started, you will need
+[Rust](https://www.rust-lang.org/en-US/). Once installed, run the following to run the TTML binary.
 
 ```bash
-# Build the binary
-cargo build
-
-# Use the binary
-./target/release/build/ttml <input>
+cargo run -- --help
 ```
+
+## Output
+
+The output of the program is useful for interpretting how your game or software will handle actions.
+Output is serialized as standard JSON.
+
+In the the first example, we ran a macro to heal a player whenever a heal check was successful. The
+output of that same program might look like the below:
+
+```json
+{
+  "executed": "2017-10-20T10:03:21Z",
+  "execution_time": 20,
+  "messages": [{
+    "from": "<some-token-id>",
+    "message": "I cast a bad healing spell on myself",
+    "timestamp": "2017-10-20T10:03:21Z",
+    "to": []
+  }],
+  "rolls": [{
+    "_id": "06ebb5b0-b5b8-11e7-abc4-cec278b6b50a",
+    "die": "d20",
+    "modifiers": [],
+    "raw_value": 12,
+    "sides": 20,
+    "timestamp": "2017-10-20T10:03:21Z",
+    "token": "<some-token-id>",
+    "total": 12
+  }],
+  "tokens": {
+    "<some-token-id>": {
+      "health": -1,
+      "rolls": [ "06ebb5b0-b5b8-11e7-abc4-cec278b6b50a" ]
+    }
+  },
+  "version": "0.1.0"
+}
+```
+
+In the above output, our token's health is -1 which would seem wrong. The macro interpretter will
+only output _differences_ in what it sees and runs. This means if you have a token in your game with
+60 health and run this macro, your token does not necessarily have -1 health now.
+
+Instead, you might take this output and run a difference on your token to calculate the new health,
+which would be 59.
+
+How your platform handles output is up to you.
 
 # Contributing
 
-Want to help us improve the parser and language? We 💛 pull requests! Make sure you [disucss with us](https://github.com/UnicornHeartClub/tabletop-macro-language/issues/new) fir
+Want to help us improve the parser and language? We 💛 pull requests! Make sure you [disucss with us](https://github.com/UnicornHeartClub/tabletop-macro-language/issues/new) first
 first but generally any new functionality should adhere to the tests.
 
 ```bash

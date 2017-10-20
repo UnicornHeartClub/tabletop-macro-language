@@ -1,0 +1,2 @@
+#initiative
+!roll 1d20+$me.dexterity -> $me.initiative = $1

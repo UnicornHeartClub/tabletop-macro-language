@@ -1,0 +1,1 @@
+!say "I cast a bad healing spell on myself" -> !roll 1d20gt15 ? !hp $me 1 : !hp $me -1

@@ -19,18 +19,32 @@ macro language, whether inside of Power VTT or in other software.
 TableTop Macro Language is already integrated into [Power Virtual TableTop](https://www.poweredvtt.com).
 
 If you are looking to integrate TTML into your existing platform or game, TTML can be used as an
-npm package. See [Installing](#installing).
+npm package. See [Installation](#installation).
 
 # Documentation
 
 1. [API](API.md) - A full reference on the TableTop Macro Language (TTML)
 2. [Documentation](DOCUMENTATION.md) - How the program works behind-the-scenes
-3. [Development](#development)
-4. [Contributing](#contributing)
+3. [Installation](#installation)
+5. [Contributing](#contributing)
 
-# Development
+# Installation
 
-You will need [emscripten](https://github.com/kripken/emscripten) and [Rust](https://www.rust-lang.org/) in
+To use TableTop Macro Language in your project, simply add it with `npm` or `yarn`.
+
+```bash
+yarn add https://github.com/UnicornHeartClub/tabletop-macro-language
+```
+
+# Contributing
+
+Want to help us improve the parser and language? We 💛 pull requests! Make sure you [disucss with us](https://github.com/UnicornHeartClub/tabletop-macro-language/issues/new) first
+first but generally any new functionality should adhere to the tests.
+
+## Development
+
+Looking to get setup on your local machine? You will need
+[emscripten](https://github.com/kripken/emscripten) and [Rust](https://www.rust-lang.org/) in
 addition to [Node.js](https://nodejs.org).
 
 ```bash
@@ -47,12 +61,3 @@ yarn compile
 yarn serve
 ```
 
-# Contributing
-
-Want to help us improve the parser and language? We 💛 pull requests! Make sure you [disucss with us](https://github.com/UnicornHeartClub/tabletop-macro-language/issues/new) first
-first but generally any new functionality should adhere to the tests.
-
-```bash
-# Run tests
-cargo test
-```

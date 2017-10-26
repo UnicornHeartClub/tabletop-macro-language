@@ -120,13 +120,6 @@ TTML defines a few reserved variables for you to use in your macros.
 | `$selected` | A reference to the selected token, if available |
 | `$tokens` | A list of all tokens, can be iterated over |
 
-# Installing
-
-Looking to use TTML in your project? Including the project is easy!
-
-```bash
-yarn add https://github.com/UnicornHeartClub/tabletop-macro-language
-```
 
 ## Roll
 

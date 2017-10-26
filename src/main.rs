@@ -1,3 +1,7 @@
+// setup limit for error-chain
+#![recursion_limit = "1024"]
+
+#[macro_use] extern crate error_chain;
 #[macro_use] extern crate log;
 #[macro_use] extern crate structopt_derive;
 extern crate chrono;
@@ -9,8 +13,8 @@ use chrono::DateTime;
 use chrono::prelude::Utc;
 use structopt::StructOpt;
 use ttml::die::Die;
-use ttml::parser::parse_ttml;
 use ttml::parser::execute_ast;
+use ttml::parser::parse_ttml;
 use ttml::token::Token;
 
 #[derive(StructOpt, Debug)]

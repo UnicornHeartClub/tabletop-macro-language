@@ -1,11 +1,8 @@
-extern crate chrono;
-extern crate rand;
-extern crate uuid;
-
-use self::chrono::DateTime;
-use self::chrono::prelude::Utc;
-use self::rand::distributions::{IndependentSample, Range};
-use self::uuid::Uuid;
+use chrono::DateTime;
+use chrono::prelude::Utc;
+use rand::distributions::{IndependentSample, Range};
+use rand;
+use uuid::Uuid;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum DieType {
@@ -120,7 +117,6 @@ impl Die {
         let between = Range::new(self.min, self.max);
         let mut rng = rand::thread_rng();
         let roll = between.ind_sample(&mut rng);
-        println!("roll is {}", roll);
         self.value = roll;
         self
     }

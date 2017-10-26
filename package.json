@@ -1,0 +1,30 @@
+{
+  "name": "tabletop-macro-language",
+  "version": "0.1.0",
+  "description": "A language and parser to add advanced functionality to tabletop role-playing games.",
+  "main": "index.js",
+  "directories": {
+    "example": "examples",
+    "test": "tests"
+  },
+  "scripts": {
+    "compile": "webpack --profile --colors",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "serve": "http-server"
+  },
+  "repository": "git+https://github.com/UnicornHeartClub/tabletop-macro-language.git",
+  "author": "Unicorn Heart Club",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/UnicornHeartClub/tabletop-macro-language/issues"
+  },
+  "homepage": "https://github.com/UnicornHeartClub/tabletop-macro-language#readme",
+  "devDependencies": {
+    "babel-core": "^6.26.0",
+    "babel-loader": "^7.1.2",
+    "babel-preset-env": "^1.6.1",
+    "http-server": "^0.10.0",
+    "rust-wasm-loader": "^0.1.2",
+    "webpack": "^3.8.1"
+  }
+}

@@ -4,68 +4,68 @@ use rand::distributions::{IndependentSample, Range};
 use rand;
 use uuid::Uuid;
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Serialize)]
 pub enum DieType {
-    d4,
-    d6,
-    d8,
-    d10,
-    d12,
-    d20,
-    d100,
-    fate,
-    other,
+    D4,
+    D6,
+    D8,
+    D10,
+    D12,
+    D20,
+    D100,
+    Fate,
+    Other,
 }
 
 /// Determine the minimum number to roll based on the die type
 fn get_die_min(die: &DieType) -> i8 {
     match die {
-        &DieType::d4 => 1,
-        &DieType::d6 => 1,
-        &DieType::d8 => 1,
-        &DieType::d10 => 1,
-        &DieType::d12 => 1,
-        &DieType::d20 => 1,
-        &DieType::d100 => 1,
-        &DieType::fate => -1,
-        &DieType::other => 0,
+        &DieType::D4 => 1,
+        &DieType::D6 => 1,
+        &DieType::D8 => 1,
+        &DieType::D10 => 1,
+        &DieType::D12 => 1,
+        &DieType::D20 => 1,
+        &DieType::D100 => 1,
+        &DieType::Fate => -1,
+        &DieType::Other => 0,
     }
 }
 
 /// Determine the minimum number to roll based on the die type
 fn get_die_max(die: &DieType) -> i8 {
     match die {
-        &DieType::d4 => 4,
-        &DieType::d6 => 6,
-        &DieType::d8 => 8,
-        &DieType::d10 => 10,
-        &DieType::d12 => 12,
-        &DieType::d20 => 20,
-        &DieType::d100 => 100,
-        &DieType::fate => 1,
-        &DieType::other => 0,
+        &DieType::D4 => 4,
+        &DieType::D6 => 6,
+        &DieType::D8 => 8,
+        &DieType::D10 => 10,
+        &DieType::D12 => 12,
+        &DieType::D20 => 20,
+        &DieType::D100 => 100,
+        &DieType::Fate => 1,
+        &DieType::Other => 0,
     }
 }
 
 /// Determine the number of sides based on the die type
 fn get_die_sides(die: &DieType) -> u8 {
     match die {
-        &DieType::d4 => 4,
-        &DieType::d6 => 6,
-        &DieType::d8 => 8,
-        &DieType::d10 => 10,
-        &DieType::d12 => 12,
-        &DieType::d20 => 20,
-        &DieType::d100 => 100,
-        &DieType::fate => 3,
-        &DieType::other => 0,
+        &DieType::D4 => 4,
+        &DieType::D6 => 6,
+        &DieType::D8 => 8,
+        &DieType::D10 => 10,
+        &DieType::D12 => 12,
+        &DieType::D20 => 20,
+        &DieType::D100 => 100,
+        &DieType::Fate => 3,
+        &DieType::Other => 0,
     }
 }
 
-#[derive(Debug)]
+#[derive(Serialize, Debug)]
 pub struct Die {
     /// Unique identifier of the die
-    pub _id: Uuid,
+    pub _id: String,
 
     /// The type of die (e.g. d20, d100)
     pub die: DieType,
@@ -89,7 +89,7 @@ pub struct Die {
 impl Die {
     pub fn new (die: DieType) -> Die {
         Die {
-            _id: Uuid::new_v4(),
+            _id: Uuid::new_v4().to_string(),
             die,
             max: get_die_max(&die),
             min: get_die_min(&die),

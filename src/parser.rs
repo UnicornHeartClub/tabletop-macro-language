@@ -1,8 +1,11 @@
 use errors::*;
 
 enum SyntaxType {
-    Lambda, /// An action that gets run (e.g. !say, !roll)
-    Prompt, /// A manual selection done by the user
+    /// An action that gets run (e.g. !say, !roll)
+    Lambda,
+
+    /// A manual selection done by the user
+    Prompt,
 }
 
 /// Parses TableTop Macro Language code into an Abstract Syntax Tree (AST)

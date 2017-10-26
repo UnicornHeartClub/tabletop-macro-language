@@ -1,4 +1,5 @@
+#[derive(Debug, Serialize)]
 pub struct Token {
     /// Unique identifier of the token
-    pub id: String,
+    pub _id: String,
 }

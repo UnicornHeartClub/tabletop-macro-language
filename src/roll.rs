@@ -16,14 +16,14 @@ pub struct Roll {
     pub raw_value: i8,
 
     /// The associated token (optional)
-    // pub token: Option<str>,
+    pub token: Option<String>,
 
     /// The final combined value of the die after modifiers
     pub value: i8,
 }
 
 impl Roll {
-    pub fn new (mut dice: Vec<Die>) -> Roll {
+    pub fn new(mut dice: Vec<Die>) -> Roll {
         // Roll each dice
         for die in &mut dice {
             die.roll();
@@ -36,7 +36,12 @@ impl Roll {
             dice,
             modifiers: Vec::new(),
             raw_value: value,
+            token: None,
             value,
         }
+    }
+
+    pub fn add_token(&mut self, token: String) {
+        self.token = Some(token)
     }
 }

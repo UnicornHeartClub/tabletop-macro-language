@@ -48,13 +48,13 @@ struct Output {
 pub fn main() {
     let args = Cli::from_args();
 
-    // Init the logger
+    // Initialize the logger
     loggerv::init_with_verbosity(args.verbosity).unwrap();
 
-    // Run the parser
-    info!("parsing ast for input: {}", args.input);
-    let ast = parse_ttml(&args.input);
+    // Parse the input
+    // info!("parsing ast for input: {}", args.input);
+    // let ast = parse_ttml(&args.input);
 
-    info!("executing ast");
-    execute_ast(&ast)
+    // info!("executing ast");
+    // execute_ast(&ast)
 }

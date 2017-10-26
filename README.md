@@ -35,7 +35,7 @@ See [the official documentation](#) for the complete API.
 
 ## Language Basics
 
-TableTop Macro Language takes is a simple macro language parser targeted for tabletop role-playing
+TableTop Macro Language is a simple macro language parser targeted for tabletop role-playing
 games. For more examples, see [Examples](https://github.com/UnicornHeartClub/tabletop-macro-language/tree/master/examples).
 
 The below example heals a token +1 each time a successful heal check is rolled otherwise it
@@ -170,19 +170,25 @@ output of that same program might look like the below:
     "to": []
   }],
   "rolls": [{
-    "_id": "06ebb5b0-b5b8-11e7-abc4-cec278b6b50a",
-    "die": "d20",
+    "_id": "1c75766e-4210-413d-9446-8fb162c56bc2",
+    "dice": [{
+      "_id": "0d019459-200c-4d7e-8253-df3cc38ac687",
+      "die": "d20",
+      "max": 20,
+      "min": 1,
+      "sides": 20,
+      "timestamp": "2017-10-20T10:03:21Z",
+      "value": 12
+    }],
     "modifiers": [],
     "raw_value": 12,
-    "sides": 20,
-    "timestamp": "2017-10-20T10:03:21Z",
     "token": "<some-token-id>",
-    "total": 12
+    "value": 12
   }],
   "tokens": {
     "<some-token-id>": {
       "health": -1,
-      "rolls": [ "06ebb5b0-b5b8-11e7-abc4-cec278b6b50a" ]
+      "rolls": [ "1c75766e-4210-413d-9446-8fb162c56bc2" ]
     }
   },
   "version": "0.1.0"

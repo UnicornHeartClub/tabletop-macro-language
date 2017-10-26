@@ -5,7 +5,8 @@ extern crate loggerv;
 extern crate structopt;
 extern crate ttml;
 
-use chrono::NaiveDateTime;
+use chrono::DateTime;
+use chrono::prelude::Utc;
 use structopt::StructOpt;
 use ttml::die::Die;
 use ttml::parser::parse_ttml;
@@ -18,16 +19,26 @@ struct Cli {
     /// Input to be interpretted by the TTML parser
     input: String,
 
+    /// Used to set reserved variable "$me"
+    #[structopt(short="m", long="me")]
+    me: String,
+
+    /// Used to set reserved variable "$tokens", can be passed multiple times
+    #[structopt(short="t", long="token")]
+    tokens: String,
+
     /// Enable logging, use multiple 'v's to increase verbosity
     #[structopt(short="v", long="verbose")]
     verbosity: u64,
 }
 
 struct Output {
-    executed: NaiveDateTime,
+    executed: DateTime<Utc>,
     execution_time: i64,
+    messages: Vec<String>,
     rolls: Vec<Die>,
     tokens: Vec<Token>,
+    version: String,
 }
 
 pub fn main() {

@@ -1,8 +1,7 @@
 // setup limit for error-chain
 #![recursion_limit = "1024"]
 
-#[macro_use] extern crate error_chain;
-#[macro_use] extern crate log;
+// #[macro_use] extern crate error_chain;
 #[macro_use] extern crate serde_derive;
 extern crate chrono;
 extern crate serde;
@@ -15,15 +14,15 @@ use std::ffi::CString;
 use std::ffi::CStr;
 use std::os::raw::c_char;
 use ttml::die::Die;
-use ttml::parser::execute_ast;
-use ttml::parser::parse_ttml;
+// use ttml::parser::execute_ast;
+// use ttml::parser::parse_ttml;
 use ttml::token::Token;
 
 pub fn main() {
     // IGNORE ME!
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Output {
     /// The original input
     pub input: String,
@@ -69,4 +68,15 @@ pub fn parse(raw_input: *mut c_char) -> *mut c_char {
 
     let json = serde_json::to_string(&output).unwrap();
     CString::new(json).unwrap().into_raw()
+}
+
+#[test]
+fn it_parses_input() {
+    let chars = CString::new("#test!say \"Hello\"").unwrap().into_raw();
+    let raw_output = parse(chars);
+    let json = safe_string(raw_output);
+    let output: Output = serde_json::from_str(&json).unwrap();
+
+    assert_eq!(output.input, "#test!say \"Hello\"");
+    assert_eq!(output.version, "0.1.0");
 }

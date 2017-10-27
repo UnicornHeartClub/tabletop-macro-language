@@ -1,10 +1,10 @@
 use die::Die;
 use uuid::Uuid;
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Roll {
     /// Unique identifier for the roll
-    pub _id: Uuid,
+    pub _id: String,
 
     /// The dice that compose this roll
     pub dice: Vec<Die>,
@@ -32,7 +32,7 @@ impl Roll {
         let value = dice.iter().fold(0, |sum, d| sum + d.value);
 
         Roll {
-            _id: Uuid::new_v4(),
+            _id: Uuid::new_v4().to_string(),
             dice,
             modifiers: Vec::new(),
             raw_value: value,

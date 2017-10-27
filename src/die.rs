@@ -4,7 +4,7 @@ use rand::distributions::{IndependentSample, Range};
 use rand;
 use uuid::Uuid;
 
-#[derive(Debug, Copy, Clone, PartialEq, Serialize)]
+#[derive(Copy, Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub enum DieType {
     D4,
     D6,
@@ -62,7 +62,7 @@ fn get_die_sides(die: &DieType) -> u8 {
     }
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Die {
     /// Unique identifier of the die
     pub _id: String,

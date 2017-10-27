@@ -2,16 +2,15 @@
 
 The official macro reference guide for the TableTop Macro Language.
 
-## Table of Contents
+# Table of Contents
 
 1. [Language Basics](#language-basics)
 2. [Commands](#commands)
-3. [Passing Results](#passing-results)
-4. [Reserved Variables](#reserved-variables)
-5. [Roll](#roll)
 
+# Language Basics
 
-## Language Basics
+1. [Passing Results](#passing-results)
+2. [Reserved Variables](#reserved-variables)
 
 TableTop Macro Language is a simple macro language parser targeted for tabletop role-playing
 games. For more examples, see [Examples](https://github.com/UnicornHeartClub/tabletop-macro-language/tree/master/examples).
@@ -79,16 +78,6 @@ health.
 In the case that the roll was below 15, we would run the same command but subtract one from our
 health instead.
 
-## Commands
-
-TTML provides comamnds to execute, modify, and automate tabletop role-playing scenarios.
-
-| Name | Arguments | Returns | Description |
-| ---- | --------- | ------- | ----------- |
-| `!roll` `!r` | See [Roll](#roll) | Number | Roll dice |
-| `!say` | `<message>` | void | Send a message to everyone |
-| `!whisper` | `<player> <message>` | void | Send a message to a particular player |
-
 ## Passing Results
 
 Sometimes you want to pass the result of a command to the input of another command. You can easily
@@ -120,8 +109,15 @@ TTML defines a few reserved variables for you to use in your macros.
 | `$selected` | A reference to the selected token, if available |
 | `$tokens` | A list of all tokens, can be iterated over |
 
+# Commands
 
-## Roll
+TTML provides comamnds to execute, modify, and automate tabletop role-playing scenarios.
+
+  - [!roll](#roll)
+  - [!say](#say)
+  - [!whisper](#whisper)
+
+## !roll
 
 Roll complicated or simple sets of dice.
 
@@ -132,4 +128,14 @@ the flags below.
 
 | Flag    | Description                 | Syntax                                    |
 | ------- | --------------------------- | ------------------------------------------|
-| `k`     | Keep certain dice.          | **dice**k**selector** (e.g. `r! 1d8kh1`)  |
+| `k`     | Keep certain dice.          | _(dice)_**k**_(selector)_ (e.g. `r! 1d8kh1`)  |
+
+_@todo_
+
+## !say
+
+_@todo_
+
+## !whisper
+
+_@todo_

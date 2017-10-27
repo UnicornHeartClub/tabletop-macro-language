@@ -18,6 +18,8 @@ macro language, whether inside of Power VTT or in other software.
 
 TableTop Macro Language is already integrated into [Power Virtual TableTop](https://www.poweredvtt.com).
 
+For information on how to write macros, see the [API](API.md).
+
 If you are looking to integrate TTML into your existing platform or game, TTML can be used as an
 npm package. See [Installation](#installation).
 

@@ -23,9 +23,21 @@ pub fn main() {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+pub struct ErrorOutput {
+    /// Type of error
+    error: String,
+
+    /// Message
+    message: String
+}
+
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Output {
     /// The original input
     pub input: String,
+
+    /// Errors, if any
+    pub errors: Vec<ErrorOutput>,
 
     /// Timestamp
     pub executed: DateTime<Utc>,
@@ -55,12 +67,15 @@ pub fn safe_string(input: *mut c_char) -> String {
 /// Run input and return a typed array for use in javascript
 #[no_mangle]
 pub fn parse(raw_input: *mut c_char) -> *mut c_char {
+    // Take the input and safely covert it to a String
     let input = safe_string(raw_input);
+    // Parse the ast from the macro, if we get any errors we will exit and throw a custom error
     let output = Output {
         input,
         executed: Utc::now(),
         execution_time: 0,
         messages: Vec::new(),
+        errors: Vec::new(),
         rolls: Vec::new(),
         tokens: Vec::new(),
         version: String::from("0.1.0"),

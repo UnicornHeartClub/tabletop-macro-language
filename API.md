@@ -9,11 +9,25 @@ The official macro reference guide for the TableTop Macro Language.
 
 # Language Basics
 
-1. [Passing Results](#passing-results)
-2. [Reserved Variables](#reserved-variables)
+1. [Example Macro](#example)
+2. [Passing Results](#passing-results)
+3. [Reserved Variables](#reserved-variables)
 
-TableTop Macro Language is a simple macro language parser targeted for tabletop role-playing
-games. For more examples, see [Examples](https://github.com/UnicornHeartClub/tabletop-macro-language/tree/master/examples).
+## What's a Macro?
+
+Macros allow users to define custom actions in tabletop role-playing games to issue chat commands,
+dice rolls, automate attacks, calculate damages, roll initiatives, and more.
+
+Macros can be complex and cumbersome to write. Inline with the goal's of Power VTT, we strive to
+simplify so that users of all skill levels can add complex functionality to tabletop role-playing
+games.
+
+By open-sourcing the language and parser, we hope more users and non-users will be open to using our
+macro language, whether inside of Power VTT or in other software.
+
+### Example
+
+For more examples, see [Examples](https://github.com/UnicornHeartClub/tabletop-macro-language/tree/master/examples).
 
 The below example heals a token +1 each time a successful heal check is rolled otherwise it
 subtracts 1 from the token's health.

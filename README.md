@@ -49,3 +49,6 @@ yarn compile
 yarn serve
 ```
 
+# License
+
+[MIT](LICENSE) &copy; 2017 Unicorn Heart Club LLC

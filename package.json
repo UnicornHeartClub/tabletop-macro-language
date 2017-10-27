@@ -14,7 +14,7 @@
   },
   "repository": "git+https://github.com/UnicornHeartClub/tabletop-macro-language.git",
   "author": "Unicorn Heart Club",
-  "license": "GPL-3.0",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/UnicornHeartClub/tabletop-macro-language/issues"
   },

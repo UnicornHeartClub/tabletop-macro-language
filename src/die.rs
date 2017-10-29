@@ -70,6 +70,9 @@ pub struct Die {
     /// The type of die (e.g. d20, d100)
     pub die: DieType,
 
+    /// If the die is dropped in the final roll
+    pub is_dropped: bool,
+
     /// Maximum number to roll
     pub max: i8,
 
@@ -91,12 +94,28 @@ impl Die {
         Die {
             _id: Uuid::new_v4().to_string(),
             die,
+            is_dropped: false,
             max: get_die_max(&die),
             min: get_die_min(&die),
             sides: get_die_sides(&die),
             timestamp: Utc::now(),
             value: 0,
         }
+    }
+
+    /// Drop the die from the final roll
+    pub fn drop(&mut self) {
+        self.is_dropped = true
+    }
+
+    /// Roll the die, generating a random number and calculating any modifiers
+    pub fn roll(&mut self) -> &Die {
+        // generate a random number
+        let between = Range::new(self.min, self.max);
+        let mut rng = rand::thread_rng();
+        let roll = between.ind_sample(&mut rng);
+        self.value = roll;
+        self
     }
 
     pub fn set_sides(&mut self, sides: u8) {
@@ -111,13 +130,4 @@ impl Die {
         self.max = max
     }
 
-    /// Roll the die, generating a random number and calculating any modifiers
-    pub fn roll(&mut self) -> &Die {
-        // generate a random number
-        let between = Range::new(self.min, self.max);
-        let mut rng = rand::thread_rng();
-        let roll = between.ind_sample(&mut rng);
-        self.value = roll;
-        self
-    }
 }

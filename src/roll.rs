@@ -1,4 +1,5 @@
 use die::Die;
+use die::DieType;
 use uuid::Uuid;
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -13,13 +14,13 @@ pub struct Roll {
     pub modifiers: Vec<i8>,
 
     /// The combined value of the die before modifiers
-    pub raw_value: i8,
+    pub raw_value: i16,
 
     /// The associated token (optional)
     pub token: Option<String>,
 
     /// The final combined value of the die after modifiers
-    pub value: i8,
+    pub value: i16,
 }
 
 impl Roll {
@@ -29,7 +30,7 @@ impl Roll {
             die.roll();
         }
 
-        let value = dice.iter().fold(0, |sum, d| sum + d.value);
+        let value = dice.iter().fold(0, |sum, d| sum + d.value as i16);
 
         Roll {
             _id: Uuid::new_v4().to_string(),
@@ -44,4 +45,76 @@ impl Roll {
     pub fn add_token(&mut self, token: String) {
         self.token = Some(token)
     }
+
+    pub fn keep_high(&mut self, keep: i8) {
+        // Sort the dice by value, drop everything below the keep value
+        let mut count = 0;
+        self.dice.sort_by(|a, b| b.value.cmp(&a.value));
+        for die in &mut self.dice {
+            if count >= keep {
+                die.drop();
+            }
+            count += 1;
+        }
+        // sort by timestamp again before finishing the method
+        self.dice.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
+    }
+
+    pub fn keep_low(&mut self, keep: i8) {
+        // Sort the dice by value, drop everything below the keep value
+        let mut count = 0;
+        self.dice.sort_by(|a, b| a.value.cmp(&b.value));
+        for die in &mut self.dice {
+            if count >= keep {
+                die.drop();
+            }
+            count += 1;
+        }
+        // sort by timestamp again before finishing the method
+        self.dice.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
+    }
+}
+
+fn roll_type(count: i8, die: DieType) -> Roll {
+    let mut dice = Vec::new();
+    for _ in 0..count {
+        dice.push(Die::new(die));
+    }
+    Roll::new(dice)
+}
+
+pub fn roll_d20(count: i8) -> Roll {
+    roll_type(count, DieType::D20)
+}
+
+pub fn roll_d12(count: i8) -> Roll {
+    roll_type(count, DieType::D12)
+}
+
+pub fn roll_d10(count: i8) -> Roll {
+    roll_type(count, DieType::D10)
+}
+
+pub fn roll_d8(count: i8) -> Roll {
+    roll_type(count, DieType::D8)
+}
+
+pub fn roll_d6(count: i8) -> Roll {
+    roll_type(count, DieType::D6)
+}
+
+pub fn roll_d4(count: i8) -> Roll {
+    roll_type(count, DieType::D4)
+}
+
+pub fn roll_and_keep_high(count: i8, die: DieType, keep: i8) -> Roll {
+    let mut roll = roll_type(count, die);
+    roll.keep_high(keep);
+    roll
+}
+
+pub fn roll_and_keep_low(count: i8, die: DieType, keep: i8) -> Roll {
+    let mut roll = roll_type(count, die);
+    roll.keep_low(keep);
+    roll
 }

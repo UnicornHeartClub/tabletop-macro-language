@@ -179,6 +179,57 @@ fn it_can_roll_and_keep_multiple_low() {
 }
 
 #[test]
+fn it_can_reroll_dice_once_above_a_threshold() {
+    let mut roll = roll_d20(6);
+
+    assert_eq!(roll.dice.len(), 6);
+
+    let mut rerolls = 0;
+    for d in roll.dice.iter() {
+        if d.value >= 15 {
+            rerolls += 1;
+        }
+    }
+
+    roll.reroll_dice_once_above(15);
+
+    assert_eq!(roll.dice.len(), 6 + rerolls);
+
+    // count how many rerolls we actually made
+    let mut actual_rerolls = 0;
+    for d in roll.dice.iter() {
+        if d.is_rerolled {
+            actual_rerolls += 1;
+        }
+    }
+
+    assert_eq!(actual_rerolls, rerolls);
+}
+
+#[test]
+fn it_can_reroll_dice_forever_above_a_threshold() {
+    let mut roll = roll_d12(3);
+
+    assert_eq!(roll.dice.len(), 3);
+
+    roll.reroll_dice_forever_above(10);
+
+    // count how many rerolls we actually made
+    let mut actual_rerolls = 0;
+    let mut should_rerolls = 0;
+    for d in roll.dice.iter() {
+        if d.value >= 10 {
+            should_rerolls += 1;
+        }
+        if d.is_rerolled {
+            actual_rerolls += 1;
+        }
+    }
+
+    assert_eq!(should_rerolls, actual_rerolls);
+}
+
+#[test]
 fn it_can_reroll_dice_once_below_a_threshold() {
     let mut roll = roll_d6(4);
 

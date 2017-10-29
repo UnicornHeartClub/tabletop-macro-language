@@ -79,6 +79,22 @@ impl Roll {
         self.dice.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
     }
 
+    /// Reroll dice one time that are above a certain threshold
+    pub fn reroll_dice_once_above(&mut self, threshold: i8) {
+        let mut new_dice = Vec::new();
+        for die in &mut self.dice {
+            if !die.is_rerolled && die.value >= threshold {
+                let mut d = Die::new(die.die);
+                d.roll();
+                &die.rerolled(&d);
+                new_dice.push(d);
+            }
+        }
+
+        self.dice.append(&mut new_dice);
+    }
+
+    /// Reroll dice one time that are below a certain threshold
     pub fn reroll_dice_once_below(&mut self, threshold: i8) {
         let mut new_dice = Vec::new();
         for die in &mut self.dice {
@@ -93,6 +109,23 @@ impl Roll {
         self.dice.append(&mut new_dice);
     }
 
+    /// Reroll dice forever that are above a certain threshold (e.g. Exploding Dice)
+    pub fn reroll_dice_forever_above(&mut self, threshold: i8) {
+        // Reroll any dice that need to be rerolled
+        self.reroll_dice_once_above(threshold);
+
+        let mut has_more = false;
+        for die in self.dice.iter() {
+            if !die.is_rerolled && die.value >= threshold {
+                has_more = true
+            }
+        }
+        if has_more {
+            self.reroll_dice_forever_below(threshold);
+        }
+    }
+
+    /// Reroll dice forever that are below a certain threshold
     pub fn reroll_dice_forever_below(&mut self, threshold: i8) {
         // Reroll any dice that need to be rerolled
         self.reroll_dice_once_below(threshold);

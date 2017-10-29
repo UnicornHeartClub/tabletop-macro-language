@@ -135,3 +135,9 @@ pub fn roll_with_advantage() -> Roll {
     roll.keep_high(1);
     roll
 }
+
+pub fn roll_with_disadvantage() -> Roll {
+    let mut roll = roll_d20(2);
+    roll.keep_low(1);
+    roll
+}

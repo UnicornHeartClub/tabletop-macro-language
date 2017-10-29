@@ -127,26 +127,81 @@ TTML defines a few reserved variables for you to use in your macros.
 
 TTML provides comamnds to execute, modify, and automate tabletop role-playing scenarios.
 
-  - [!roll](#roll)
-  - [!say](#say)
-  - [!whisper](#whisper)
+| Command             | Usage         | Description               |
+| ------------------- | ------------- | ------------------------- |
+| [Roll](#roll)       | `!roll`, `!r` | Roll dice.                |
+| [Say](#say)         | `!say`        | Send a message.           |
+| [Whisper](#whisper) | `!whisper`    | Send a message privately. |
 
-## !roll
+## Roll
 
 Roll complicated or simple sets of dice.
 
 `!roll, !r <dice>`
 
-Rolls can be annotated using square brackets (e.g. `!roll 1d20[I strike thee!]`) and extended using
-the flags below.
+### Syntax
 
-| Flag    | Description                 | Syntax                                    |
-| ------- | --------------------------- | ------------------------------------------|
-| `k`     | Keep certain dice.          | _(dice)_**k**_(selector)_ (e.g. `r! 1d8kh1`)  |
+`<dice>` is written as follows:
 
-_@todo_
+| **Syntax**                                         | **Usage**   |
+| -------------------------------------------------- | ----------- |
+| _(number)_**d**_(die)_[ _(flags)_ [ _(comment)_ ]] | `1d20`, `2d8k1`, `3d6 "Uncanny dodge!"`, `2d8ro2 "Custom attack"` |
 
-## !say
+#### Alternative Syntax
+
+Instead of specifying `<dice>`, the roll command can also be given the below arguments for specific
+types of rolls.
+
+| **Syntax**                | **Usage**   |
+| ------------------------- | ----------- |
+| **adv**, **advantage**    | Roll advantage |
+| **dis**, **disadvantage** | Roll disadvantage |
+
+
+### Flags
+
+Rolls can be extended using the flags below.
+
+| **Flag** | **Description**                         | **Syntax**                                     |
+| -------- | --------------------------------------- | ---------------------------------------------- |
+| `e`      | Re-roll dice forever above a threshold. (e.g. Exploding Dice) | _(dice)_**e**_(threshold)_ (e.g. `r! 1d6e6`) |
+| `k`      | Keep certain dice.                      | _(dice)_**k**_(selector)_ (e.g. `r! 1d8kh1`)   |
+| `ro`     | Re-roll dice once below a threshold.    | _(dice)_**ro**_(threshold)_ (e.g. `r! 1d8ro2`) |
+| `rr`     | Re-roll dice forever below a threshold. | _(dice)_**rr**_(threshold)_ (e.g. `r! 1d8rr2`) |
+
+| **Selector**  | **Description**                | **Syntax**                                            |
+| ------------- | ------------------------------ | ----------------------------------------------------- |
+| `l#`          | Select the lowest `#` of dice  | _(dice)(operator)_**l**_(number)_ (e.g. `r! 4d8kl3`)  |
+| `h#`          | Select the highest `#` of dice | _(dice)(operator)_**h**_(number)_ (e.g. `r! 3d6kh2`)  |
+
+### Examples
+
+Roll advantage.
+```bash
+!roll adv
+```
+
+Roll disadvantage.
+```bash
+!roll dis
+```
+
+Roll 3x d8's and keep only the top 2.
+```bash
+!roll 3d8kh2
+```
+
+Exploding dice.
+```bash
+!roll 3d8e8
+```
+
+Exploding dice with a comment.
+```bash
+!roll 3d8e8 "Going for gold"
+```
+
+## Say
 
 _@todo_
 

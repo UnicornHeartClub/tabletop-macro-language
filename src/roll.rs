@@ -84,13 +84,6 @@ impl Roll {
 
     pub fn reroll_dice_forever_below(&mut self, threshold: u8) {
     }
-
-    pub fn with_advantage(&mut self) {
-        // Roll an additional d20
-        // let mut die = Die::new(DieType::D20);
-        // die.roll();
-        // self.dice.push(die);
-    }
 }
 
 fn roll_type(count: i8, die: DieType) -> Roll {
@@ -137,8 +130,8 @@ pub fn roll_and_keep_low(count: i8, die: DieType, keep: u8) -> Roll {
     roll
 }
 
-pub fn roll_with_advantage(count: i8, die: DieType) -> Roll {
-    let roll = roll_type(count, die);
-    // roll.with_advantage();
+pub fn roll_with_advantage() -> Roll {
+    let mut roll = roll_d20(2);
+    roll.keep_high(1);
     roll
 }

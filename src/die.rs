@@ -73,11 +73,17 @@ pub struct Die {
     /// If the die is dropped in the final roll
     pub is_dropped: bool,
 
+    /// If the die is dropped in the final roll
+    pub is_rerolled: bool,
+
     /// Maximum number to roll
     pub max: i8,
 
     /// Minimum number to roll
     pub min: i8,
+
+    /// If the die was re-rolled, it will have a parent
+    pub parent: Option<String>,
 
     /// The number of faces the die has
     pub sides: u8,
@@ -95,8 +101,10 @@ impl Die {
             _id: Uuid::new_v4().to_string(),
             die,
             is_dropped: false,
+            is_rerolled: false,
             max: get_die_max(&die),
             min: get_die_min(&die),
+            parent: None,
             sides: get_die_sides(&die),
             timestamp: Utc::now(),
             value: 0,

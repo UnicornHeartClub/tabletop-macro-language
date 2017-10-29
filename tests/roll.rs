@@ -115,6 +115,7 @@ fn it_can_roll_and_keep_multiple_high() {
     let roll = roll_and_keep_high(9, DieType::D20, 2);
     let mut dropped = 0;
     let mut value = 0;
+    let mut raw_value = 0;
     let largest_die = roll.dice.iter().max_by(|a, b| a.value.cmp(&b.value)).unwrap();
     for die in roll.dice.iter() {
         if die.is_dropped {
@@ -125,8 +126,11 @@ fn it_can_roll_and_keep_multiple_high() {
         } else {
             value += die.value as i16;
         }
+
+        raw_value += die.value as i16;
     }
 
+    assert_eq!(raw_value, roll.raw_value);
     assert_eq!(value, roll.value);
     assert_eq!(dropped, 7);
 }
@@ -155,6 +159,7 @@ fn it_can_roll_and_keep_multiple_low() {
     let roll = roll_and_keep_low(20, DieType::D20, 5);
     let mut dropped = 0;
     let mut value = 0;
+    let mut raw_value = 0;
     let smallest_die = roll.dice.iter().min_by(|a, b| a.value.cmp(&b.value)).unwrap();
     for die in roll.dice.iter() {
         if die.is_dropped {
@@ -165,8 +170,23 @@ fn it_can_roll_and_keep_multiple_low() {
         } else {
             value += die.value as i16;
         }
+
+        raw_value += die.value as i16;
     }
 
+    assert_eq!(raw_value, roll.raw_value);
     assert_eq!(value, roll.value);
     assert_eq!(dropped, 15);
+}
+
+#[test]
+fn it_can_reroll_dice_once_below_a_threshold() {
+}
+
+#[test]
+fn it_can_roll_with_advantage() {
+}
+
+#[test]
+fn it_can_roll_with_disadvantage() {
 }

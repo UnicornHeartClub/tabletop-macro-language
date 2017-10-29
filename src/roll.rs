@@ -42,18 +42,19 @@ impl Roll {
         }
     }
 
+    /// Associate this roll with a token
     pub fn add_token(&mut self, token: String) {
         self.token = Some(token)
     }
 
-    pub fn keep_high(&mut self, keep: i8) {
+    /// Keep the highest rolled dice
+    pub fn keep_high(&mut self, keep: u8) {
         // Sort the dice by value, drop everything below the keep value
         let mut count = 0;
         self.dice.sort_by(|a, b| b.value.cmp(&a.value));
         for die in &mut self.dice {
             if count >= keep {
                 die.drop();
-                self.raw_value -= die.value as i16;
                 self.value -= die.value as i16;
             }
             count += 1;
@@ -62,20 +63,33 @@ impl Roll {
         self.dice.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
     }
 
-    pub fn keep_low(&mut self, keep: i8) {
+    /// Keep the lowest rolled dice
+    pub fn keep_low(&mut self, keep: u8) {
         // Sort the dice by value, drop everything below the keep value
         let mut count = 0;
         self.dice.sort_by(|a, b| a.value.cmp(&b.value));
         for die in &mut self.dice {
             if count >= keep {
                 die.drop();
-                self.raw_value -= die.value as i16;
                 self.value -= die.value as i16;
             }
             count += 1;
         }
         // sort by timestamp again before finishing the method
         self.dice.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
+    }
+
+    pub fn reroll_dice_once_below(&mut self, threshold: u8) {
+    }
+
+    pub fn reroll_dice_forever_below(&mut self, threshold: u8) {
+    }
+
+    pub fn with_advantage(&mut self) {
+        // Roll an additional d20
+        // let mut die = Die::new(DieType::D20);
+        // die.roll();
+        // self.dice.push(die);
     }
 }
 
@@ -111,14 +125,20 @@ pub fn roll_d4(count: i8) -> Roll {
     roll_type(count, DieType::D4)
 }
 
-pub fn roll_and_keep_high(count: i8, die: DieType, keep: i8) -> Roll {
+pub fn roll_and_keep_high(count: i8, die: DieType, keep: u8) -> Roll {
     let mut roll = roll_type(count, die);
     roll.keep_high(keep);
     roll
 }
 
-pub fn roll_and_keep_low(count: i8, die: DieType, keep: i8) -> Roll {
+pub fn roll_and_keep_low(count: i8, die: DieType, keep: u8) -> Roll {
     let mut roll = roll_type(count, die);
     roll.keep_low(keep);
+    roll
+}
+
+pub fn roll_with_advantage(count: i8, die: DieType) -> Roll {
+    let roll = roll_type(count, die);
+    // roll.with_advantage();
     roll
 }

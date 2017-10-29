@@ -2,60 +2,19 @@
 #![recursion_limit = "1024"]
 
 // #[macro_use] extern crate error_chain;
-#[macro_use] extern crate serde_derive;
 extern crate chrono;
 extern crate serde;
 extern crate serde_json;
 extern crate ttml;
 
-use chrono::DateTime;
 use chrono::prelude::Utc;
-use std::ffi::CString;
 use std::ffi::CStr;
+use std::ffi::CString;
 use std::os::raw::c_char;
-use ttml::die::Die;
-// use ttml::parser::execute_ast;
-// use ttml::parser::parse_ttml;
-use ttml::token::Token;
+use ttml::parser::Output;
 
 pub fn main() {
     // IGNORE ME!
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct ErrorOutput {
-    /// Type of error
-    error: String,
-
-    /// Message
-    message: String
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct Output {
-    /// The original input
-    pub input: String,
-
-    /// Errors, if any
-    pub errors: Vec<ErrorOutput>,
-
-    /// Timestamp
-    pub executed: DateTime<Utc>,
-
-    /// Time to execute final output
-    pub execution_time: i64,
-
-    /// Chat messages to be sent
-    pub messages: Vec<String>,
-
-    /// Dice rolls
-    pub rolls: Vec<Die>,
-
-    /// Tokens
-    pub tokens: Vec<Token>,
- 
-    /// API Version
-    pub version: String,
 }
 
 pub fn safe_string(input: *mut c_char) -> String {
@@ -70,7 +29,7 @@ pub fn parse(raw_input: *mut c_char) -> *mut c_char {
     // Take the input and safely covert it to a String
     let input = safe_string(raw_input);
 
-    // Parse the ast from the macro, if we get any errors we will exit and throw a custom error
+    // Parse and execute the macro
     // @todo
 
     // Send the final output

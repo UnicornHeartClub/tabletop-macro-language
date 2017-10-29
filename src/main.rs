@@ -69,7 +69,11 @@ pub fn safe_string(input: *mut c_char) -> String {
 pub fn parse(raw_input: *mut c_char) -> *mut c_char {
     // Take the input and safely covert it to a String
     let input = safe_string(raw_input);
+
     // Parse the ast from the macro, if we get any errors we will exit and throw a custom error
+    // @todo
+
+    // Send the final output
     let output = Output {
         input,
         executed: Utc::now(),

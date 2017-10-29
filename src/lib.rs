@@ -1,5 +1,6 @@
 #[macro_use] extern crate error_chain;
 #[macro_use] extern crate serde_derive;
+#[macro_use] extern crate nom;
 extern crate chrono;
 extern crate rand;
 extern crate uuid;

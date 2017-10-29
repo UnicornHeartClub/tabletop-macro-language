@@ -53,6 +53,8 @@ impl Roll {
         for die in &mut self.dice {
             if count >= keep {
                 die.drop();
+                self.raw_value -= die.value as i16;
+                self.value -= die.value as i16;
             }
             count += 1;
         }
@@ -67,6 +69,8 @@ impl Roll {
         for die in &mut self.dice {
             if count >= keep {
                 die.drop();
+                self.raw_value -= die.value as i16;
+                self.value -= die.value as i16;
             }
             count += 1;
         }

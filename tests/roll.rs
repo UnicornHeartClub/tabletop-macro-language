@@ -224,8 +224,6 @@ fn it_can_reroll_dice_forever_below_a_threshold() {
         if d.is_rerolled {
             actual_rerolls += 1;
         }
-
-        println!("roll {} was {} (rerolled? {})", d._id, d.value, d.is_rerolled);
     }
 
     assert_eq!(should_rerolls, actual_rerolls);

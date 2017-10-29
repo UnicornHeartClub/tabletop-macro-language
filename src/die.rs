@@ -67,6 +67,9 @@ pub struct Die {
     /// Unique identifier of the die
     pub _id: String,
 
+    /// If the die was re-rolled, it will have a child
+    pub child: Option<String>,
+
     /// The type of die (e.g. d20, d100)
     pub die: DieType,
 
@@ -82,9 +85,6 @@ pub struct Die {
     /// Minimum number to roll
     pub min: i8,
 
-    /// If the die was re-rolled, it will have a parent
-    pub parent: Option<String>,
-
     /// The number of faces the die has
     pub sides: u8,
 
@@ -99,12 +99,12 @@ impl Die {
     pub fn new (die: DieType) -> Die {
         Die {
             _id: Uuid::new_v4().to_string(),
+            child: None,
             die,
             is_dropped: false,
             is_rerolled: false,
             max: get_die_max(&die),
             min: get_die_min(&die),
-            parent: None,
             sides: get_die_sides(&die),
             timestamp: Utc::now(),
             value: 0,
@@ -119,7 +119,7 @@ impl Die {
     pub fn rerolled (&mut self, die: &Die) {
         self.is_rerolled = true;
         let id = &die._id;
-        self.parent = Some(id.to_owned());
+        self.child = Some(id.to_owned());
     }
 
     /// Roll the die, generating a random number and calculating any modifiers

@@ -82,7 +82,7 @@ impl Roll {
     pub fn reroll_dice_once_below(&mut self, threshold: i8) {
         let mut new_dice = Vec::new();
         for die in &mut self.dice {
-            if die.value <= threshold {
+            if !die.is_rerolled && die.value <= threshold {
                 let mut d = Die::new(die.die);
                 d.roll();
                 &die.rerolled(&d);
@@ -94,6 +94,18 @@ impl Roll {
     }
 
     pub fn reroll_dice_forever_below(&mut self, threshold: i8) {
+        // Reroll any dice that need to be rerolled
+        self.reroll_dice_once_below(threshold);
+
+        let mut has_more = false;
+        for die in self.dice.iter() {
+            if !die.is_rerolled && die.value <= threshold {
+                has_more = true
+            }
+        }
+        if has_more {
+            self.reroll_dice_forever_below(threshold);
+        }
     }
 }
 

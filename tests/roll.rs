@@ -207,6 +207,31 @@ fn it_can_reroll_dice_once_below_a_threshold() {
 }
 
 #[test]
+fn it_can_reroll_dice_forever_below_a_threshold() {
+    let mut roll = roll_d8(2);
+
+    assert_eq!(roll.dice.len(), 2);
+
+    roll.reroll_dice_forever_below(2);
+
+    // count how many rerolls we actually made
+    let mut actual_rerolls = 0;
+    let mut should_rerolls = 0;
+    for d in roll.dice.iter() {
+        if d.value <= 2 {
+            should_rerolls += 1;
+        }
+        if d.is_rerolled {
+            actual_rerolls += 1;
+        }
+
+        println!("roll {} was {} (rerolled? {})", d._id, d.value, d.is_rerolled);
+    }
+
+    assert_eq!(should_rerolls, actual_rerolls);
+}
+
+#[test]
 fn it_can_roll_with_advantage() {
     let roll = roll_with_advantage();
 

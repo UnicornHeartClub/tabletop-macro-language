@@ -116,6 +116,12 @@ impl Die {
         self.is_dropped = true
     }
 
+    pub fn rerolled (&mut self, die: &Die) {
+        self.is_rerolled = true;
+        let id = &die._id;
+        self.parent = Some(id.to_owned());
+    }
+
     /// Roll the die, generating a random number and calculating any modifiers
     pub fn roll(&mut self) -> &Die {
         // generate a random number

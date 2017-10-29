@@ -79,10 +79,21 @@ impl Roll {
         self.dice.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
     }
 
-    pub fn reroll_dice_once_below(&mut self, threshold: u8) {
+    pub fn reroll_dice_once_below(&mut self, threshold: i8) {
+        let mut new_dice = Vec::new();
+        for die in &mut self.dice {
+            if die.value <= threshold {
+                let mut d = Die::new(die.die);
+                d.roll();
+                &die.rerolled(&d);
+                new_dice.push(d);
+            }
+        }
+
+        self.dice.append(&mut new_dice);
     }
 
-    pub fn reroll_dice_forever_below(&mut self, threshold: u8) {
+    pub fn reroll_dice_forever_below(&mut self, threshold: i8) {
     }
 }
 

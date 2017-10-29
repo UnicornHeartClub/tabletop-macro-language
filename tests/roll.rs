@@ -180,6 +180,30 @@ fn it_can_roll_and_keep_multiple_low() {
 
 #[test]
 fn it_can_reroll_dice_once_below_a_threshold() {
+    let mut roll = roll_d6(4);
+
+    assert_eq!(roll.dice.len(), 4);
+
+    let mut rerolls = 0;
+    for d in roll.dice.iter() {
+        if d.value <= 4 {
+            rerolls += 1;
+        }
+    }
+
+    roll.reroll_dice_once_below(4);
+
+    assert_eq!(roll.dice.len(), 4 + rerolls);
+
+    // count how many rerolls we actually made
+    let mut actual_rerolls = 0;
+    for d in roll.dice.iter() {
+        if d.is_rerolled {
+            actual_rerolls += 1;
+        }
+    }
+
+    assert_eq!(actual_rerolls, rerolls);
 }
 
 #[test]

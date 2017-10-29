@@ -86,38 +86,6 @@ impl Roll {
     }
 }
 
-fn roll_type(count: i8, die: DieType) -> Roll {
-    let mut dice = Vec::new();
-    for _ in 0..count {
-        dice.push(Die::new(die));
-    }
-    Roll::new(dice)
-}
-
-pub fn roll_d20(count: i8) -> Roll {
-    roll_type(count, DieType::D20)
-}
-
-pub fn roll_d12(count: i8) -> Roll {
-    roll_type(count, DieType::D12)
-}
-
-pub fn roll_d10(count: i8) -> Roll {
-    roll_type(count, DieType::D10)
-}
-
-pub fn roll_d8(count: i8) -> Roll {
-    roll_type(count, DieType::D8)
-}
-
-pub fn roll_d6(count: i8) -> Roll {
-    roll_type(count, DieType::D6)
-}
-
-pub fn roll_d4(count: i8) -> Roll {
-    roll_type(count, DieType::D4)
-}
-
 pub fn roll_and_keep_high(count: i8, die: DieType, keep: u8) -> Roll {
     let mut roll = roll_type(count, die);
     roll.keep_high(keep);
@@ -128,6 +96,38 @@ pub fn roll_and_keep_low(count: i8, die: DieType, keep: u8) -> Roll {
     let mut roll = roll_type(count, die);
     roll.keep_low(keep);
     roll
+}
+
+pub fn roll_d4(count: i8) -> Roll {
+    roll_type(count, DieType::D4)
+}
+
+pub fn roll_d6(count: i8) -> Roll {
+    roll_type(count, DieType::D6)
+}
+
+pub fn roll_d8(count: i8) -> Roll {
+    roll_type(count, DieType::D8)
+}
+
+pub fn roll_d10(count: i8) -> Roll {
+    roll_type(count, DieType::D10)
+}
+
+pub fn roll_d12(count: i8) -> Roll {
+    roll_type(count, DieType::D12)
+}
+
+pub fn roll_d20(count: i8) -> Roll {
+    roll_type(count, DieType::D20)
+}
+
+fn roll_type(count: i8, die: DieType) -> Roll {
+    let mut dice = Vec::new();
+    for _ in 0..count {
+        dice.push(Die::new(die));
+    }
+    Roll::new(dice)
 }
 
 pub fn roll_with_advantage() -> Roll {

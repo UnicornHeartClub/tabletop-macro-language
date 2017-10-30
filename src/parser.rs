@@ -53,11 +53,15 @@ named!(take_macro_name <&str>, do_parse!(
 ));
 
 // Read a command 
-named!(read_command <Vec<&[u8]>>, many0!(do_parse!(
-    alt!(tag!("!roll") | tag!("!r")) >>
-    command: take_until!(" ") >>
+named!(take_command_name <&[u8]>, do_parse!(
+    command: alt!(
+        tag!("!roll") | tag!("!r") |
+        tag!("!say") | tag!("!s") |
+        tag!("!whisper") | tag!("!w")
+    ) >>
+    value: take_until!(" ") >>
     (command)
-)));
+));
 
 
 /// Parses TTML and executes on-the-fly
@@ -65,6 +69,7 @@ named!(read_command <Vec<&[u8]>>, many0!(do_parse!(
     // // parse_macro(input.as_bytes())
 // }
 
+// @todo - make the parsers above public functions so we can test them from the tests/ dir
 #[test]
 fn test_take_macro_name() {
     // macro names can be alphanumeric
@@ -99,7 +104,34 @@ fn test_take_macro_name() {
 }
 
 #[test]
-fn test_read_command() {
-    let cmd = read_command(b"!roll 1d20");
-    println!("cmd {}", String::from_utf8_lossy(cmd.unwrap().0));
+fn test_take_command_name_roll() {
+    let (rest, cmd) = take_command_name(b"!roll 1d20").unwrap();
+    assert_eq!(cmd, b"!roll");
+    assert_eq!(rest, b" 1d20");
+
+    let (rest, cmd) = take_command_name(b"!r 1d20").unwrap();
+    assert_eq!(cmd, b"!r");
+    assert_eq!(rest, b" 1d20");
+}
+
+#[test]
+fn test_take_command_name_say() {
+    let (rest, cmd) = take_command_name(b"!say \"Hello\"").unwrap();
+    assert_eq!(cmd, b"!say");
+    assert_eq!(rest, b" \"Hello\"");
+
+    let (rest, cmd) = take_command_name(b"!s \"Hello\"").unwrap();
+    assert_eq!(cmd, b"!s");
+    assert_eq!(rest, b" \"Hello\"");
+}
+
+#[test]
+fn test_take_command_name_whisper() {
+    let (rest, cmd) = take_command_name(b"!whisper $gm \"Hello\"").unwrap();
+    assert_eq!(cmd, b"!whisper");
+    assert_eq!(rest, b" $gm \"Hello\"");
+
+    let (rest, cmd) = take_command_name(b"!w $gm \"Hello\"").unwrap();
+    assert_eq!(cmd, b"!w");
+    assert_eq!(rest, b" $gm \"Hello\"");
 }

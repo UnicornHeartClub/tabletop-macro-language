@@ -1,7 +1,7 @@
 use chrono::DateTime;
 use chrono::prelude::{Local, Utc};
 use errors::*;
-use nom::{alphanumeric, IResult};
+use nom::{alphanumeric, ErrorKind, IResult};
 use output::Output;
 use std::str;
 
@@ -69,5 +69,18 @@ fn test_name() {
     let (_, result) = name(b"#macro_name").unwrap();
     assert_eq!(result, MacroOp::Name(String::from("macro_name")));
 
+    let (_, result) = name(b"#macro-name").unwrap();
+    assert_eq!(result, MacroOp::Name(String::from("macro-name")));
+
+    let (_, result) = name(b"#123macro-name").unwrap();
+    assert_eq!(result, MacroOp::Name(String::from("123macro-name")));
+
+    let (_, result) = name(b"#Z123macro-name").unwrap();
+    assert_eq!(result, MacroOp::Name(String::from("Z123macro-name")));
+
     let bad_result = name(b"macro_name");
+    match bad_result {
+        IResult::Error(e) => assert_eq!(e, ErrorKind::Tag),
+        _ => assert_eq!(1, 0),
+    }
 }

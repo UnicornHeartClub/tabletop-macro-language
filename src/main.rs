@@ -11,7 +11,7 @@ use chrono::prelude::Utc;
 use std::ffi::CStr;
 use std::ffi::CString;
 use std::os::raw::c_char;
-use ttml::parser::Output;
+use ttml::output::Output;
 
 pub fn main() {
     // IGNORE ME!
@@ -29,19 +29,32 @@ pub fn parse(raw_input: *mut c_char) -> *mut c_char {
     // Take the input and safely covert it to a String
     let input = safe_string(raw_input);
 
-    // Parse and execute the macro
-    // @todo
+    let executed = Utc::now();
 
-    // Send the final output
+    let errors = Vec::new();
+    let messages = Vec::new();
+    let rolls = Vec::new();
+    let tokens = Vec::new();
+    let version = String::from("0.1.0");
+
+    // let results = parse_macro(input.as_bytes());
+    // match results {
+        // IResult::Done(_, x) => println!("Parsing succeeded {}", String::from_utf8_lossy(x)),
+        // _ => println!("Error while parsing!"),
+    // }
+
+    let finished = Utc::now().timestamp();
+    let execution_time = finished - executed.timestamp();
+
     let output = Output {
-        input,
-        executed: Utc::now(),
-        execution_time: 0,
-        messages: Vec::new(),
-        errors: Vec::new(),
-        rolls: Vec::new(),
-        tokens: Vec::new(),
-        version: String::from("0.1.0"),
+        input: String::from(input),
+        executed,
+        execution_time,
+        errors,
+        messages,
+        rolls,
+        tokens,
+        version,
     };
 
     let json = serde_json::to_string(&output).unwrap();

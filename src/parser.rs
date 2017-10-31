@@ -1,5 +1,5 @@
 // use errors::*;
-use nom::{alphanumeric, ErrorKind, IResult};
+use nom::{alphanumeric, anychar, eol, ErrorKind, IResult};
 
 #[derive(Debug, PartialEq, Eq)]
 struct Program {
@@ -9,20 +9,39 @@ struct Program {
 
 #[derive(Debug, PartialEq, Eq)]
 struct Step {
+    result: StepResult,
     op: MacroOp,
     args: Vec<String>
 }
 
 #[derive(Debug, PartialEq, Eq)]
 enum MacroOp {
+    /// Addition (+)
     Add,
+    /// Division (/)
     Divide,
+    /// Multiplication (*)
     Multiply,
+    /// Macro Name
     Name(String),
+    /// Prompt (!prompt)
+    Prompt,
+    /// Roll (!roll)
     Roll,
+    /// Say (!say)
     Say,
+    /// Subtraction (-)
     Subtract,
+    /// Whisper (!whisper)
     Whisper,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+enum StepResult {
+    /// Ignore Result (default)
+    Ignore,
+    /// Pass Result (>>)
+    Pass,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -77,6 +96,11 @@ named!(primitive <&[u8], MacroOp>, alt!(
     map!(tag!("/"), |_| MacroOp::Divide)
 ));
 
+named!(step_result <&[u8], StepResult>, alt_complete!(
+    map!(ws!(tag!(">>")), |_| StepResult::Pass) |
+    value!(StepResult::Ignore)
+));
+
 /// Parse the complete macro
 named!(parse <&[u8], Program>, do_parse!(
     prog_name: name >>
@@ -91,8 +115,10 @@ named!(parse <&[u8], Program>, do_parse!(
 named!(parse_step <&[u8], Step>, do_parse!(
     op_type: op >>
     args: ws!(many0!(arguments)) >>
+    result: step_result >>
     (Step {
         op: op_type,
+        result,
         args,
     })
 ));
@@ -119,66 +145,79 @@ named!(string <&[u8], String>, do_parse!(
 #[test]
 fn test_simple_parser() {
     let program = Program {
-        name: MacroOp::Name(String::from("macro-name")),
+        name: MacroOp::Name(String::from("simple-macro-name")),
         steps: vec![Step {
             op: MacroOp::Roll,
+            result: StepResult::Ignore,
             args: vec![ "1d20".to_string() ],
         }],
     };
-    let (_, result) = parse(b"#macro-name !roll 1d20").unwrap();
+    let (_, result) = parse(b"#simple-macro-name !roll 1d20").unwrap();
     assert_eq!(result, program);
 
     let program = Program {
-        name: MacroOp::Name(String::from("macro-name-2")),
+        name: MacroOp::Name(String::from("simple-macro-name-2")),
         steps: vec![Step {
             op: MacroOp::Say,
+            result: StepResult::Ignore,
             args: vec![ "Hello, world!".to_string() ],
         }],
     };
-    let (_, result) = parse(b"#macro-name-2 !say \"Hello, world!\"").unwrap();
+    let (_, result) = parse(b"#simple-macro-name-2 !say \"Hello, world!\"").unwrap();
     assert_eq!(result, program);
 }
 
 #[test]
 fn test_complex_parser() {
     let program = Program {
-        name: MacroOp::Name(String::from("macro-name")),
+        name: MacroOp::Name(String::from("complex-macro-name")),
         steps: vec![
             Step {
-                op: MacroOp::Roll,
                 args: vec![ "1d20".to_string() ],
+                op: MacroOp::Roll,
+                result: StepResult::Ignore,
             },
             Step {
-                op: MacroOp::Say,
                 args: vec![ "Smite!".to_string() ],
+                op: MacroOp::Say,
+                result: StepResult::Ignore,
             },
         ],
     };
-    let (_, result) = parse(b"#macro-name !roll 1d20 !say \"Smite!\"").unwrap();
+    let (_, result) = parse(b"#complex-macro-name !roll 1d20 !say \"Smite!\"").unwrap();
     assert_eq!(result, program);
 
     let program = Program {
-        name: MacroOp::Name(String::from("macro-name-2")),
+        name: MacroOp::Name(String::from("complex-macro-name-2")),
         steps: vec![
             Step {
-                op: MacroOp::Roll,
                 args: vec![ "3d8".to_string() ],
-            },
-            Step {
-                op: MacroOp::Add,
-                args: vec![ "3".to_string() ],
-            },
-            Step {
-                op: MacroOp::Say,
-                args: vec![ "Smite!".to_string() ],
-            },
-            Step {
                 op: MacroOp::Roll,
+                result: StepResult::Ignore,
+            },
+            Step {
+                args: vec![ "3".to_string() ],
+                op: MacroOp::Add,
+                result: StepResult::Ignore,
+            },
+            Step {
+                args: vec![ "Smite!".to_string() ],
+                op: MacroOp::Say,
+                result: StepResult::Ignore,
+            },
+            Step {
                 args: vec![ "1d20".to_string() ],
+                op: MacroOp::Roll,
+                result: StepResult::Pass,
+            },
+            Step {
+                args: vec![ "I rolled a ".to_string() ],
+                op: MacroOp::Say,
+                result: StepResult::Ignore,
             },
         ],
     };
-    let (_, result) = parse(b"#macro-name-2 !roll 3d8+3 !say \"Smite!\" !roll 1d20").unwrap();
+    let (_, result) = parse(b"#complex-macro-name-2 !roll 3d8+3 !say \"Smite!\" !roll 1d20 >> !say \"I rolled a \" $1").unwrap();
     assert_eq!(result, program);
 }
 
@@ -258,4 +297,13 @@ fn test_single_quoted_parser() {
     assert_eq!(result, String::from("test 123"));
     let (_, result) = single_quoted(b"'   Single String Args'").unwrap();
     assert_eq!(result, String::from("Single String Args"));
+}
+
+#[test]
+fn test_step_result_parser() {
+    let (_, result) = step_result(b">>").unwrap();
+    assert_eq!(result, StepResult::Pass);
+
+    let (_, result) = step_result(b" ").unwrap();
+    assert_eq!(result, StepResult::Ignore);
 }

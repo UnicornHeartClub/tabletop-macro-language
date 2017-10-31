@@ -35,7 +35,7 @@ subtracts 1 from the token's health.
 
 ```bash
 #heal
-!say "I cast a bad healing spell on myself" -> !roll 1d20 >= 15 ? !hp $me 1 : !hp $me -1
+!say "I cast a bad healing spell on myself" >> !roll 1d20 >= 15 ? !hp $me 1 : !hp $me -1
 ```
 
 Let's break down that example:
@@ -55,7 +55,7 @@ There are many commands you can run in TTML, one of them is the `!say` command w
 message to everyone.
 
 ```bash
-->
+>>
 ```
 
 An arrow denotes a next step in the process. Multiple commands can be chained together for more
@@ -73,7 +73,7 @@ rolling a single d20 die and checking if the output is greater than or equal to 
 ```
 
 The `?` at the begining here denotes that we have a true/false statement to make. Similar to an
-arrow (`->`), `?` denote a new statement to make but give you two options based on the outcome.
+arrow (`>>`), `?` denote a new statement to make but give you two options based on the outcome.
 
 If the roll we just made is greater than or equal to 15, we will execute the next statement that is
 between the `?` and before the `:`. Otherwise, if the roll is less than 15, we will execute only the
@@ -96,7 +96,7 @@ health instead.
 ## Passing Results
 
 Sometimes you want to pass the result of a command to the input of another command. You can easily
-accomplish this in TTML with the `->` operator.
+accomplish this in TTML with the `>>` operator.
 
 By default, each command outputs an array of data. A previous command's output can be referenced
 from the current command via `${n}` where `n` is a number >= 1 that references the index of the
@@ -106,7 +106,7 @@ Sounds complicated, but it's very easy. Take the below example to roll initiativ
 
 ```bash
 #initiative
-!roll 1d20+$me.dexterity -> $me.initiative = $1
+!roll 1d20+$me.dexterity >> $me.initiative = $1
 ```
 
 Here, we roll a d20 die and add our dexterity modifier to it. We then pass that result to the next

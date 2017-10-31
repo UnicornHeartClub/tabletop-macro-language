@@ -169,6 +169,10 @@ fn test_complex_parser() {
                 args: vec![ "3d8".to_string() ],
             },
             Step {
+                op: MacroOp::Add,
+                args: vec![ "3".to_string() ],
+            },
+            Step {
                 op: MacroOp::Say,
                 args: vec![ "Smite!".to_string() ],
             },
@@ -178,7 +182,7 @@ fn test_complex_parser() {
             },
         ],
     };
-    let (_, result) = parse(b"#macro-name-2 !roll 3d8 !say \"Smite!\" !roll 1d20").unwrap();
+    let (_, result) = parse(b"#macro-name-2 !roll 3d8+3 !say \"Smite!\" !roll 1d20").unwrap();
     assert_eq!(result, program);
 }
 

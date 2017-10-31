@@ -43,6 +43,11 @@ enum SayOp {
     To,
 }
 
+named!(arguments <&[u8], String>, alt!(
+    string |
+    quoted
+));
+
 /// Matches a command
 named!(command <&[u8], MacroOp>, alt!(
     map!(ws!(tag!("!roll")),     |_| MacroOp::Roll)      |
@@ -79,7 +84,7 @@ named!(primitive <&[u8], MacroOp>, alt!(
 named!(parse <&[u8], Program>, do_parse!(
     prog_name: name >>
     op_type: op >>
-    args: ws!(many0!(string)) >>
+    args: ws!(many0!(arguments)) >> // @todo this needs to change from string --> args
     (Program {
         name: prog_name,
         steps: vec![Step {
@@ -89,13 +94,18 @@ named!(parse <&[u8], Program>, do_parse!(
     })
 ));
 
+/// Matches arguments in quotes ("")
+named!(quoted <&[u8], String>, do_parse!(
+    word: ws!(delimited!(tag!("\""),take_until!("\""), tag!("\""))) >>
+    (String::from_utf8(word.to_vec()).unwrap())
+));
+
+
 /// Match alphanumeric values to strings
-named!(string <&[u8], String>,
-    do_parse!(
-        word: ws!(alphanumeric) >>
-        (String::from_utf8(word.to_vec()).unwrap())
-    )
-);
+named!(string <&[u8], String>, do_parse!(
+    word: ws!(alphanumeric) >>
+    (String::from_utf8(word.to_vec()).unwrap())
+));
 
 // @todo Match delimited values between " and ' to strings
 
@@ -111,15 +121,15 @@ fn test_parser() {
     let (_, result) = parse(b"#macro-name !roll 1d20").unwrap();
     assert_eq!(result, program);
 
-    // let program = Program {
-        // name: MacroOp::Name(String::from("macro-name-2")),
-        // steps: vec![Step {
-            // op: MacroOp::Say,
-            // args: vec![ "\"Hello, world!\"".to_string() ],
-        // }],
-    // };
-    // let (_, result) = parse(b"#macro-name-2 !say \"Hello, world!\"").unwrap();
-    // assert_eq!(result, program);
+    let program = Program {
+        name: MacroOp::Name(String::from("macro-name-2")),
+        steps: vec![Step {
+            op: MacroOp::Say,
+            args: vec![ "Hello, world!".to_string() ],
+        }],
+    };
+    let (_, result) = parse(b"#macro-name-2 !say \"Hello, world!\"").unwrap();
+    assert_eq!(result, program);
 }
 
 #[test]
@@ -172,4 +182,20 @@ fn test_op_parser() {
     assert_eq!(result, MacroOp::Say);
     let (_, result) = command(b"   !whisper").unwrap();
     assert_eq!(result, MacroOp::Whisper);
+}
+
+#[test]
+fn test_arguments_parser() {
+    let (_, result) = arguments(b"\"hello\"").unwrap();
+    assert_eq!(result, String::from("hello"));
+    let (_, result) = arguments(b"   Hello  ").unwrap();
+    assert_eq!(result, String::from("Hello"));
+}
+
+#[test]
+fn test_quoted_parser() {
+    let (_, result) = quoted(b"\"hello\"").unwrap();
+    assert_eq!(result, String::from("hello"));
+    let (_, result) = quoted(b"\"   Hello  \"").unwrap();
+    assert_eq!(result, String::from("Hello  "));
 }

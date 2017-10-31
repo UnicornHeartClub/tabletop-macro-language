@@ -84,14 +84,20 @@ named!(primitive <&[u8], MacroOp>, alt!(
 /// Parse the complete macro
 named!(parse <&[u8], Program>, do_parse!(
     prog_name: name >>
-    op_type: op >>
-    args: ws!(many0!(arguments)) >>
+    steps: many0!(parse_step) >>
     (Program {
         name: prog_name,
-        steps: vec![Step {
-            op: op_type,
-            args,
-        }],
+        steps: steps,
+    })
+));
+
+/// Parse a step of the program
+named!(parse_step <&[u8], Step>, do_parse!(
+    op_type: op >>
+    args: ws!(many0!(arguments)) >>
+    (Step {
+        op: op_type,
+        args,
     })
 ));
 
@@ -115,7 +121,7 @@ named!(string <&[u8], String>, do_parse!(
 ));
 
 #[test]
-fn test_parser() {
+fn test_simple_parser() {
     let program = Program {
         name: MacroOp::Name(String::from("macro-name")),
         steps: vec![Step {
@@ -134,6 +140,45 @@ fn test_parser() {
         }],
     };
     let (_, result) = parse(b"#macro-name-2 !say \"Hello, world!\"").unwrap();
+    assert_eq!(result, program);
+}
+
+#[test]
+fn test_complex_parser() {
+    let program = Program {
+        name: MacroOp::Name(String::from("macro-name")),
+        steps: vec![
+            Step {
+                op: MacroOp::Roll,
+                args: vec![ "1d20".to_string() ],
+            },
+            Step {
+                op: MacroOp::Say,
+                args: vec![ "Smite!".to_string() ],
+            },
+        ],
+    };
+    let (_, result) = parse(b"#macro-name !roll 1d20 !say \"Smite!\"").unwrap();
+    assert_eq!(result, program);
+
+    let program = Program {
+        name: MacroOp::Name(String::from("macro-name-2")),
+        steps: vec![
+            Step {
+                op: MacroOp::Roll,
+                args: vec![ "3d8".to_string() ],
+            },
+            Step {
+                op: MacroOp::Say,
+                args: vec![ "Smite!".to_string() ],
+            },
+            Step {
+                op: MacroOp::Roll,
+                args: vec![ "1d20".to_string() ],
+            },
+        ],
+    };
+    let (_, result) = parse(b"#macro-name-2 !roll 3d8 !say \"Smite!\" !roll 1d20").unwrap();
     assert_eq!(result, program);
 }
 

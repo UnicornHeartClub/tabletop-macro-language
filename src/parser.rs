@@ -45,7 +45,8 @@ enum SayOp {
 
 named!(arguments <&[u8], String>, alt!(
     string |
-    quoted
+    quoted |
+    single_quoted
 ));
 
 /// Matches a command
@@ -84,7 +85,7 @@ named!(primitive <&[u8], MacroOp>, alt!(
 named!(parse <&[u8], Program>, do_parse!(
     prog_name: name >>
     op_type: op >>
-    args: ws!(many0!(arguments)) >> // @todo this needs to change from string --> args
+    args: ws!(many0!(arguments)) >>
     (Program {
         name: prog_name,
         steps: vec![Step {
@@ -100,14 +101,18 @@ named!(quoted <&[u8], String>, do_parse!(
     (String::from_utf8(word.to_vec()).unwrap())
 ));
 
+/// Matches arguments in quotes ('')
+named!(single_quoted <&[u8], String>, do_parse!(
+    word: ws!(delimited!(tag!("'"),take_until!("'"), tag!("'"))) >>
+    (String::from_utf8(word.to_vec()).unwrap())
+));
+
 
 /// Match alphanumeric values to strings
 named!(string <&[u8], String>, do_parse!(
     word: ws!(alphanumeric) >>
     (String::from_utf8(word.to_vec()).unwrap())
 ));
-
-// @todo Match delimited values between " and ' to strings
 
 #[test]
 fn test_parser() {
@@ -190,6 +195,8 @@ fn test_arguments_parser() {
     assert_eq!(result, String::from("hello"));
     let (_, result) = arguments(b"   Hello  ").unwrap();
     assert_eq!(result, String::from("Hello"));
+    let (_, result) = arguments(b"'   Single String Args'").unwrap();
+    assert_eq!(result, String::from("Single String Args"));
 }
 
 #[test]
@@ -198,4 +205,12 @@ fn test_quoted_parser() {
     assert_eq!(result, String::from("hello"));
     let (_, result) = quoted(b"\"   Hello  \"").unwrap();
     assert_eq!(result, String::from("Hello  "));
+}
+
+#[test]
+fn test_single_quoted_parser() {
+    let (_, result) = single_quoted(b"'test 123'").unwrap();
+    assert_eq!(result, String::from("test 123"));
+    let (_, result) = single_quoted(b"'   Single String Args'").unwrap();
+    assert_eq!(result, String::from("Single String Args"));
 }

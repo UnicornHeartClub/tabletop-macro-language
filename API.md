@@ -11,7 +11,8 @@ The official macro reference guide for the TableTop Macro Language.
 
 1. [Example Macro](#example)
 2. [Passing Results](#passing-results)
-3. [Reserved Variables](#reserved-variables)
+3. [Prompts](#prompts)
+4. [Reserved Variables](#reserved-variables)
 
 ## What's a Macro?
 
@@ -111,7 +112,6 @@ Sounds complicated, but it's very easy. Take the below example to roll initiativ
 Here, we roll a d20 die and add our dexterity modifier to it. We then pass that result to the next
 command and set our token's initiative equal to our roll result using `$1`.
 
-
 ## Reserved Variables
 
 TTML defines a few reserved variables for you to use in your macros.
@@ -127,11 +127,28 @@ TTML defines a few reserved variables for you to use in your macros.
 
 TTML provides comamnds to execute, modify, and automate tabletop role-playing scenarios.
 
-| Command             | Usage         | Description               |
-| ------------------- | ------------- | ------------------------- |
-| [Roll](#roll)       | `!roll`, `!r` | Roll dice.                |
-| [Say](#say)         | `!say`        | Send a message.           |
-| [Whisper](#whisper) | `!whisper`    | Send a message privately. |
+| Command             | Usage            | Description               |
+| ------------------- | ---------------- | ------------------------- |
+| [Prompt](#prompt)   | `!prompt`, `!p`  | Prompt for input.         |
+| [Roll](#roll)       | `!roll`, `!r`    | Roll dice.                |
+| [Say](#say)         | `!say`           | Send a message.           |
+| [Whisper](#whisper) | `!whisper`       | Send a message privately. |
+
+## Prompt
+
+There are often times you would like to be able to select from a list of options when running a
+macro. Or perhaps it would be easier to click on a token. Either way, **Prompts** let you define
+when your macro might need additional input.
+
+`!prompt, !p <prompt>`
+
+### Syntax
+
+`<prompt>` is written as follows:
+
+| **Syntax**                      | **Usage**                                 |
+| ------------------------------- | ----------------------------------------- |
+| _(type)_ _(name)_ _([options])_ | `options "Choose attack type" $me.skills` |
 
 ## Roll
 
@@ -205,6 +222,6 @@ Exploding dice with a comment.
 
 _@todo_
 
-## !whisper
+## Whisper
 
 _@todo_

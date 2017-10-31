@@ -1,5 +1,15 @@
+// @todo - It would be nice to break each parser into it's own module
+// e.g. parser::roll, parser::say, parser::core
+
 // use errors::*;
-use nom::{alphanumeric, anychar, eol, ErrorKind, IResult};
+use nom::{alphanumeric, anychar, digit, ErrorKind, IResult};
+use roll::RollArg;
+
+#[derive(Debug, PartialEq, Eq)]
+struct Argument {
+    arg: Arg,
+    value: String,
+}
 
 #[derive(Debug, PartialEq, Eq)]
 struct Program {
@@ -9,9 +19,9 @@ struct Program {
 
 #[derive(Debug, PartialEq, Eq)]
 struct Step {
-    result: StepResult,
+    args: Vec<Argument>,
     op: MacroOp,
-    args: Vec<String>
+    result: StepResult,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -45,23 +55,46 @@ enum StepResult {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-enum RollOp {
-    Advantage,
-    Comment,
-    Disadvantage,
-    NdD,
+enum Arg {
+    /// Number (Float, Integer)
+    Number,
+    /// Unrecognized argument
+    Unrecognized,
+    /// Roll arguments
+    Roll(RollArg),
+    /// Say arguments
+    Say(SayArg),
+    /// Static variable ($)
+    Variable,
 }
 
 #[derive(Debug, PartialEq, Eq)]
-enum SayOp {
+enum SayArg {
     Message,
     To,
 }
 
-named!(arguments <&[u8], String>, alt!(
-    string |
-    quoted |
-    single_quoted
+/// Matches unknown arguments to commands
+named!(arguments <&[u8], Argument>, alt_complete!(
+    map!(num, | a | Argument { arg: Arg::Number, value: a }) |
+    map!(string, | a | Argument { arg: Arg::Unrecognized, value: a }) |
+    map!(quoted, | a | Argument { arg: Arg::Unrecognized, value: a }) |
+    map!(single_quoted, | a | Argument { arg: Arg::Unrecognized, value: a }) |
+    map!(variable, | a | Argument { arg: Arg::Variable, value: a })
+));
+
+/// Matches !roll arguments
+named!(arguments_roll <&[u8], Argument>, alt_complete!(
+    map!(string, | a | Argument { arg: Arg::Roll(RollArg::NdD), value: a }) | // @todo - actually figure our the roll arg
+    map!(variable, | a | Argument { arg: Arg::Variable, value: a })
+));
+
+/// Matches !say arguments
+named!(arguments_say <&[u8], Argument>, alt_complete!(
+    map!(string, | a | Argument { arg: Arg::Say(SayArg::Message), value: a }) |
+    map!(quoted, | a | Argument { arg: Arg::Say(SayArg::Message), value: a }) |
+    map!(single_quoted, | a | Argument { arg: Arg::Say(SayArg::Message), value: a }) |
+    map!(variable, | a | Argument { arg: Arg::Variable, value: a })
 ));
 
 /// Matches a command
@@ -81,6 +114,11 @@ named!(name <&[u8], MacroOp>, ws!(do_parse!(
     (MacroOp::Name(name))
 )));
 
+named!(num <&[u8], String>, do_parse!(
+    number: ws!(digit) >>
+    (String::from_utf8(number.to_vec()).unwrap())
+));
+
 /// Matches any type of operation
 named!(op <&[u8], MacroOp>, alt!(
     name |
@@ -96,11 +134,6 @@ named!(primitive <&[u8], MacroOp>, alt!(
     map!(tag!("/"), |_| MacroOp::Divide)
 ));
 
-named!(step_result <&[u8], StepResult>, alt_complete!(
-    map!(ws!(tag!(">>")), |_| StepResult::Pass) |
-    value!(StepResult::Ignore)
-));
-
 /// Parse the complete macro
 named!(parse <&[u8], Program>, do_parse!(
     prog_name: name >>
@@ -114,7 +147,11 @@ named!(parse <&[u8], Program>, do_parse!(
 /// Parse a step of the program
 named!(parse_step <&[u8], Step>, do_parse!(
     op_type: op >>
-    args: ws!(many0!(arguments)) >>
+    args: many0!(switch!(value!(&op_type),
+        &MacroOp::Roll => call!(arguments_roll) |
+        &MacroOp::Say => call!(arguments_say) |
+        _ => call!(arguments)
+    )) >>
     result: step_result >>
     (Step {
         op: op_type,
@@ -135,6 +172,11 @@ named!(single_quoted <&[u8], String>, do_parse!(
     (String::from_utf8(word.to_vec()).unwrap())
 ));
 
+/// Matches a passed or ignored result
+named!(step_result <&[u8], StepResult>, alt_complete!(
+    map!(ws!(tag!(">>")), |_| StepResult::Pass) |
+    value!(StepResult::Ignore)
+));
 
 /// Match alphanumeric values to strings
 named!(string <&[u8], String>, do_parse!(
@@ -142,14 +184,26 @@ named!(string <&[u8], String>, do_parse!(
     (String::from_utf8(word.to_vec()).unwrap())
 ));
 
+/// Matches variables
+named!(variable <&[u8], String>, do_parse!(
+    var: ws!(preceded!(tag!("$"), alphanumeric)) >>
+    (String::from_utf8(var.to_vec()).unwrap())
+));
+
+// ---- Tests ----
+// @todo - I would like to move these into the tests/ folder
+
 #[test]
 fn test_simple_parser() {
     let program = Program {
         name: MacroOp::Name(String::from("simple-macro-name")),
         steps: vec![Step {
+            args: vec![Argument {
+                arg: Arg::Roll(RollArg::NdD),
+                value: "1d20".to_string()
+            }],
             op: MacroOp::Roll,
             result: StepResult::Ignore,
-            args: vec![ "1d20".to_string() ],
         }],
     };
     let (_, result) = parse(b"#simple-macro-name !roll 1d20").unwrap();
@@ -158,9 +212,12 @@ fn test_simple_parser() {
     let program = Program {
         name: MacroOp::Name(String::from("simple-macro-name-2")),
         steps: vec![Step {
+            args: vec![Argument {
+                arg: Arg::Say(SayArg::Message),
+                value: "Hello, world!".to_string()
+            }],
             op: MacroOp::Say,
             result: StepResult::Ignore,
-            args: vec![ "Hello, world!".to_string() ],
         }],
     };
     let (_, result) = parse(b"#simple-macro-name-2 !say \"Hello, world!\"").unwrap();
@@ -173,12 +230,18 @@ fn test_complex_parser() {
         name: MacroOp::Name(String::from("complex-macro-name")),
         steps: vec![
             Step {
-                args: vec![ "1d20".to_string() ],
+                args: vec![Argument {
+                    arg: Arg::Roll(RollArg::NdD),
+                    value: "1d20".to_string()
+                }],
                 op: MacroOp::Roll,
                 result: StepResult::Ignore,
             },
             Step {
-                args: vec![ "Smite!".to_string() ],
+                args: vec![Argument {
+                    arg: Arg::Say(SayArg::Message),
+                    value: "Smite!".to_string()
+                }],
                 op: MacroOp::Say,
                 result: StepResult::Ignore,
             },
@@ -191,27 +254,48 @@ fn test_complex_parser() {
         name: MacroOp::Name(String::from("complex-macro-name-2")),
         steps: vec![
             Step {
-                args: vec![ "3d8".to_string() ],
+                args: vec![Argument {
+                    arg: Arg::Roll(RollArg::NdD),
+                    value: "3d8".to_string()
+                }],
                 op: MacroOp::Roll,
                 result: StepResult::Ignore,
             },
             Step {
-                args: vec![ "3".to_string() ],
+                args: vec![Argument {
+                    arg: Arg::Number,
+                    value: "3".to_string()
+                }],
                 op: MacroOp::Add,
                 result: StepResult::Ignore,
             },
             Step {
-                args: vec![ "Smite!".to_string() ],
+                args: vec![Argument {
+                    arg: Arg::Say(SayArg::Message),
+                    value: "Smite!".to_string()
+                }],
                 op: MacroOp::Say,
                 result: StepResult::Ignore,
             },
             Step {
-                args: vec![ "1d20".to_string() ],
+                args: vec![Argument {
+                    arg: Arg::Roll(RollArg::NdD),
+                    value: "1d20".to_string()
+                }],
                 op: MacroOp::Roll,
                 result: StepResult::Pass,
             },
             Step {
-                args: vec![ "I rolled a ".to_string() ],
+                args: vec![
+                    Argument {
+                        arg: Arg::Say(SayArg::Message),
+                        value: "I rolled a ".to_string()
+                    },
+                    Argument {
+                        arg: Arg::Variable,
+                        value: "1".to_string()
+                    }
+                ],
                 op: MacroOp::Say,
                 result: StepResult::Ignore,
             },
@@ -276,11 +360,11 @@ fn test_op_parser() {
 #[test]
 fn test_arguments_parser() {
     let (_, result) = arguments(b"\"hello\"").unwrap();
-    assert_eq!(result, String::from("hello"));
+    assert_eq!(result, Argument { arg: Arg::Unrecognized, value: String::from("hello") });
     let (_, result) = arguments(b"   Hello  ").unwrap();
-    assert_eq!(result, String::from("Hello"));
+    assert_eq!(result, Argument { arg: Arg::Unrecognized, value: String::from("Hello") });
     let (_, result) = arguments(b"'   Single String Args'").unwrap();
-    assert_eq!(result, String::from("Single String Args"));
+    assert_eq!(result, Argument { arg: Arg::Unrecognized, value: String::from("Single String Args") });
 }
 
 #[test]

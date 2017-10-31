@@ -2,6 +2,21 @@ use die::Die;
 use die::DieType;
 use uuid::Uuid;
 
+// Arguments for the roll command, used by the parser
+#[derive(Debug, PartialEq, Eq)]
+pub enum RollArg {
+    Advantage,
+    Comment,
+    Disadvantage,
+    E,
+    H,
+    K,
+    L,
+    NdD,
+    RO,
+    RR,
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Roll {
     /// Unique identifier for the roll

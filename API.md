@@ -131,8 +131,8 @@ TTML provides comamnds to execute, modify, and automate tabletop role-playing sc
 | ------------------- | ---------------- | ------------------------- |
 | [Prompt](#prompt)   | `!prompt`, `!p`  | Prompt for input.         |
 | [Roll](#roll)       | `!roll`, `!r`    | Roll dice.                |
-| [Say](#say)         | `!say`           | Send a message.           |
-| [Whisper](#whisper) | `!whisper`       | Send a message privately. |
+| [Say](#say)         | `!say`, `!s`     | Send a message.           |
+| [Whisper](#whisper) | `!whisper`, `!w` | Send a message privately. |
 
 ## Prompt
 

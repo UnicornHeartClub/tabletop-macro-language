@@ -1,8 +1,8 @@
 // @todo - It would be nice to break each parser into it's own module
 // e.g. parser::roll, parser::say, parser::core
 
-// use errors::*;
 use nom::{alphanumeric, digit, ErrorKind, IResult};
+use nom::simple_errors::Err;
 use std::str;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -147,14 +147,14 @@ pub fn arguments_whisper_p(input: &[u8]) -> IResult<&[u8], Argument> {
 
 /// Matches any command
 pub fn command_p(input: &[u8]) -> IResult<&[u8], MacroOp> {
-    alt!(input,
+    add_return_error!(input, ErrorKind::Custom(2), alt!(
         map!(ws!(tag!("!roll")),     |_| MacroOp::Roll)      |
         map!(ws!(tag!("!r")),        |_| MacroOp::Roll)      |
         map!(ws!(tag!("!say")),      |_| MacroOp::Say)       |
         map!(ws!(tag!("!s")),        |_| MacroOp::Say)       |
         map!(ws!(tag!("!whisper")),  |_| MacroOp::Whisper)   |
         map!(ws!(tag!("!w")),        |_| MacroOp::Whisper)
-    )
+    ))
 }
 
 /// Matches disadvantage roll argument
@@ -164,14 +164,13 @@ pub fn disadvantage_p(input: &[u8]) -> IResult<&[u8], &[u8]> {
 
 /// Matches a macro name
 pub fn name_p(input: &[u8]) -> IResult<&[u8], MacroOp> {
-    ws!(
-        input,
+    add_return_error!(input, ErrorKind::Custom(1), ws!(
         do_parse!(
             tag!("#") >>
             name: map_res!(is_not!(" \t\r\n"), |r: &[u8]| String::from_utf8(r.to_vec())) >>
             (MacroOp::Name(name))
         )
-    )
+    ))
 }
 
 /// Match numbers to argument strings
@@ -339,6 +338,16 @@ pub fn variable_p(input: &[u8]) -> IResult<&[u8], String> {
         var: ws!(preceded!(tag!("$"), alphanumeric)) >>
         (String::from_utf8(var.to_vec()).unwrap())
     )
+}
+
+/// Maps error codes to readable strings
+pub fn error_to_string(e: Err) -> String {
+    let err = match e {
+        ErrorKind::Custom(1)    => "Missing or invalid macro name",
+        ErrorKind::Custom(2)    => "Invalid or unrecognized command",
+        _                       => "Unknown problem encountered while parsing",
+    };
+    err.to_string()
 }
 
 // Define our macros

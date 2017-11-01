@@ -170,10 +170,7 @@ fn test_name_parser() {
     assert_eq!(result, MacroOp::Name(String::from("macro-name")));
 
     let bad_result = name_p(b"macro_name");
-    match bad_result {
-        IResult::Error(e) => assert_eq!(e, ErrorKind::Tag),
-        _ => assert_eq!(1, 0),
-    }
+    assert_eq!(bad_result, IResult::Error(ErrorKind::Custom(1)))
 }
 
 #[test]
@@ -299,4 +296,13 @@ fn test_arguments_whisper_parser() {
         arg: Arg::Say(SayArg::To),
         value: "me".to_string(),
     });
+}
+
+#[test]
+fn test_error_handling() {
+    let result = name_p(b"invalid input").unwrap_err();
+    assert_eq!(error_to_string(result), "Missing or invalid macro name".to_string());
+
+    let result = command_p(b"invalid input").unwrap_err();
+    assert_eq!(error_to_string(result), "Invalid or unrecognized command".to_string());
 }

@@ -67,6 +67,7 @@ We have a lot to get done but are looking to get it done quick!
   - [ ] Set Equals
 - [ ] Examples _(In Progress, Needs Updating)_
 - [ ] Documentation _(In Progress)_
+- [ ] Error Handling
 - [ ] Static/Reserved Variables
 - [ ] Macro Executor
 

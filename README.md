@@ -1,11 +1,13 @@
 # TableTop Macro Language
 
+:warning: **This is under active development. The API is subject to change without notice.** :warning:
+
 A language and parser to add advanced functionality to tabletop role-playing games.
 
-- [API](API.md) - A full reference on the TableTop Macro Language (TTML)
-- [Documentation](DOCUMENTATION.md) - How the program works behind-the-scenes
-- [Installation](#installation) - Use TTML for your own projects
-- [Contributing](#contributing) - Help us make the language better
+- :notebook: [API](API.md) - A full reference on the TableTop Macro Language (TTML)
+- :books: [Documentation](DOCUMENTATION.md) - How the program works behind-the-scenes
+- :package: [Installation](#installation) - Use TTML for your own projects
+- :star: [Contributing](#contributing) - Help us make the language better
 
 ## Using
 
@@ -26,7 +28,7 @@ yarn add https://github.com/UnicornHeartClub/tabletop-macro-language
 
 # Contributing
 
-Want to help us improve the parser and language? We 💛 pull requests! Make sure you [disucss with us](https://github.com/UnicornHeartClub/tabletop-macro-language/issues/new) first
+Want to help us improve the parser and language? We 💛 pull requests! Make sure you [discuss with us](https://github.com/UnicornHeartClub/tabletop-macro-language/issues/new) first
 first but generally any new functionality should adhere to the tests.
 
 ## Development

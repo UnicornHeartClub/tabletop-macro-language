@@ -3,7 +3,6 @@ extern crate nom;
 
 use nom::{IResult, ErrorKind};
 use ttml::parser::*;
-use ttml::roll::RollArg;
 
 #[test]
 fn test_simple_parser() {
@@ -56,6 +55,10 @@ fn test_complex_parser() {
                     Argument {
                         arg: Arg::Roll(RollArg::D),
                         value: "20".to_string()
+                    },
+                    Argument {
+                        arg: Arg::Roll(RollArg::Comment),
+                        value: "A cool roll comment".to_string()
                     }
                 ],
                 op: MacroOp::Roll,
@@ -71,7 +74,7 @@ fn test_complex_parser() {
             },
         ],
     };
-    let (_, result) = parse_p(b"#complex-macro-name !roll 1d20 !say \"Smite!\"").unwrap();
+    let (_, result) = parse_p(b"#complex-macro-name !roll 1d20 \"A cool roll comment\" !say \"Smite!\"").unwrap();
     assert_eq!(result, program);
 
     let program = Program {
@@ -273,5 +276,12 @@ fn test_arguments_roll_parser() {
     assert_eq!(result, Argument {
         arg: Arg::Roll(RollArg::Disadvantage),
         value: "".to_string(),
+    });
+
+    // Comment
+    let (_, result) = arguments_roll_p(b"\"I am a comment\"").unwrap();
+    assert_eq!(result, Argument {
+        arg: Arg::Roll(RollArg::Comment),
+        value: "I am a comment".to_string(),
     });
 }

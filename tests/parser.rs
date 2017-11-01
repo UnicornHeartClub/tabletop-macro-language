@@ -285,3 +285,18 @@ fn test_arguments_roll_parser() {
         value: "I am a comment".to_string(),
     });
 }
+
+#[test]
+fn test_arguments_whisper_parser() {
+    let (_, result) = arguments_whisper_p(b"\"I am a message\"").unwrap();
+    assert_eq!(result, Argument {
+        arg: Arg::Say(SayArg::Message),
+        value: "I am a message".to_string(),
+    });
+
+    let (_, result) = arguments_whisper_p(b"$me").unwrap();
+    assert_eq!(result, Argument {
+        arg: Arg::Say(SayArg::To),
+        value: "me".to_string(),
+    });
+}

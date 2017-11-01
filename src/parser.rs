@@ -135,6 +135,16 @@ pub fn arguments_say_p(input: &[u8]) -> IResult<&[u8], Argument> {
     )
 }
 
+/// Matches !whisper arguments
+pub fn arguments_whisper_p(input: &[u8]) -> IResult<&[u8], Argument> {
+    alt_complete!(input,
+        map!(variable, | a | Argument { arg: Arg::Say(SayArg::To), value: a }) |
+        map!(string, | a | Argument { arg: Arg::Say(SayArg::Message), value: a }) |
+        map!(quoted, | a | Argument { arg: Arg::Say(SayArg::Message), value: a }) |
+        map!(single_quoted, | a | Argument { arg: Arg::Say(SayArg::Message), value: a })
+    )
+}
+
 /// Matches any command
 pub fn command_p(input: &[u8]) -> IResult<&[u8], MacroOp> {
     alt!(input,
@@ -200,6 +210,7 @@ pub fn parse_step_p(input: &[u8]) -> IResult<&[u8], Step> {
         args: many0!(switch!(value!(&op_type),
             &MacroOp::Roll => call!(arguments_roll) |
             &MacroOp::Say => call!(arguments_say) |
+            &MacroOp::Whisper => call!(arguments_whisper) |
             _ => call!(arguments)
         )) >>
         result: step_result >>
@@ -335,6 +346,7 @@ named!(advantage <&[u8]>, call!(advantage_p));
 named!(arguments <&[u8], Argument>, call!(arguments_p));
 named!(arguments_roll <&[u8], Argument>, call!(arguments_roll_p));
 named!(arguments_say <&[u8], Argument>, call!(arguments_say_p));
+named!(arguments_whisper <&[u8], Argument>, call!(arguments_whisper_p));
 named!(command <&[u8], MacroOp>, call!(command_p));
 named!(disadvantage <&[u8]>, call!(disadvantage_p));
 named!(name <&[u8], MacroOp>, call!(name_p));

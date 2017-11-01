@@ -61,9 +61,9 @@ We have a lot to get done but are looking to get it done quick!
   - [x] ~~Primitives~~
   - [x] ~~Commands~~
   - [x] ~~Pass Results~~
-  - [ ] Roll Parser _(In Progress)_
+  - [x] ~~Roll Parser~~
+  - [x] ~~Say/Whisper Parser~~
   - [ ] Prompt Parser
-  - [ ] Say/Whisper Parser
   - [ ] Set Equals
 - [ ] Examples _(In Progress, Needs Updating)_
 - [ ] Documentation _(In Progress)_

@@ -47,7 +47,7 @@ cargo test
 # Compile wasm/javascript library
 yarn compile
 
-# Run example "index.html"
+# Run local playground (http://localhost:8080)
 yarn serve
 ```
 

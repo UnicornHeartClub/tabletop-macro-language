@@ -3,8 +3,179 @@
   <head>
     <title>TableTop Macro Language Test Page</title>
   </head>
+  <style>
+    @import url("https://fonts.googleapis.com/css?family=Open+Sans:300,400,400i,700");
+
+    html,body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif, 'Apple Color Emoji';
+    }
+    input, textarea, button {
+      font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif, 'Apple Color Emoji';
+    }
+
+    form {
+      height: 100%;
+      width: 100%;
+    }
+
+    .container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    pre {
+      color: #FAFAFA;
+      padding: 0 12px;
+      font-size: 12px;
+    }
+
+    .body {
+      display: flex;
+      flex: 1;
+    }
+
+    .input {
+      flex: 2;
+      display: flex;
+    }
+
+    .output {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .program {
+      overflow-y: auto;
+      flex: 2;
+      background-color: #757575;
+    }
+
+    .execution {
+      flex: 1;
+      background-color: #616161;
+    }
+
+    .header {
+      background-color: #212121;
+      height: 48px;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 6px;
+    }
+
+    button {
+      padding: 6px 24px;
+      margin: 6px 0;
+      font-size: 18px;
+      line-height: 18px;
+      font-weight: 700;
+      color: #212121;
+      background-color: #ffeb3b;
+      border: 0;
+      border-radius: 3px;
+      transition: opacity 0.15s ease-out;
+    }
+
+    button:hover {
+      cursor: pointer;
+      opacity: 0.7;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 21px;
+      line-height: 48px;
+      color: #FAFAFA;
+    }
+
+    h3 {
+      font-size: 14px;
+      text-transform: uppercase;
+      font-weight: 300;
+      margin: 12px;
+      color: #FAFAFA;
+    }
+
+    textarea {
+      background-color: #E0E0E0;
+      color: #111;
+      border: 0;
+      flex: 1;
+      font-size: 16px;
+      padding: 12px;
+    }
+  </style>
   <body>
-    <div id="container"></div>
+    <form id="form">
+      <div class="container">
+        <div class="header">
+          <h1>TableTop Macro Language Playground</h1>
+
+          <button id="submit" type="submit">Run &nbsp;&#9654;</button>
+        </div>
+
+        <div class="body">
+          <div class="input">
+            <textarea id="textarea"></textarea>
+          </div>
+
+          <div class="output">
+            <div class="program">
+              <h3>Program Output</h3>
+              <div class="json">
+                <pre id="prog"></pre>
+              </div>
+            </div>
+
+            <div class="execution">
+              <h3>Execution</h3>
+              <div class="json">
+                <pre id="exec"></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
     <script src="/dist/bundle.js"></script>
+    <script>
+      (function(ttml) {
+        function getTextarea() {
+          return document.getElementById('textarea').value.trim()
+        }
+
+        function updateTextarea(str) {
+          document.getElementById('textarea').innerHTML = str
+        }
+
+        function updateProg(str) {
+          document.getElementById('prog').innerHTML = str
+        }
+
+        ttml.init().then(function (t) {
+          const defaultMacro = '#test-macro !say "Hello world!" !roll 1d20e20'
+          updateTextarea(defaultMacro)
+          const prog = t.parseInput(defaultMacro)
+          updateProg(JSON.stringify(prog, null, 2))
+
+          // Listen for the form
+          document.getElementById('form').addEventListener('submit', function(e) {
+            e.preventDefault()
+            const input = getTextarea()
+            console.log(input)
+            const prog = t.parseInput(input)
+            console.log(prog)
+            updateProg(JSON.stringify(prog, null, 2))
+          })
+        })
+      })(window.ttml)
+    </script>
   </body>
 </html>

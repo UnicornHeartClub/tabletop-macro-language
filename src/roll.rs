@@ -8,11 +8,12 @@ pub enum RollArg {
     Advantage,
     Comment,
     Disadvantage,
+    D, // e.g. d20
     E,
     H,
     K,
     L,
-    NdD,
+    N, // e.g. 1 (part of 1d20)
     RO,
     RR,
 }

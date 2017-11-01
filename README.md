@@ -51,6 +51,25 @@ yarn compile
 yarn serve
 ```
 
+## Roadmap
+
+We have a lot to get done but are looking to get it done quick!
+
+- [x] ~~Die/Roll Models~~
+- [ ] JavaScript Library _(In Progress)_
+- [ ] Macro Parser _(In Progress)_
+  - [x] ~~Primitives~~
+  - [x] ~~Commands~~
+  - [x] ~~Pass Results~~
+  - [ ] Roll Parser _(In Progress)_
+  - [ ] Prompt Parser
+  - [ ] Say/Whisper Parser
+  - [ ] Set Equals
+- [ ] Examples _(In Progress, Needs Updating)_
+- [ ] Documentation _(In Progress)_
+- [ ] Static/Reserved Variables
+- [ ] Macro Executor
+
 # License
 
 [MIT](LICENSE) &copy; 2017 Unicorn Heart Club LLC

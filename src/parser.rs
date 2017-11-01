@@ -5,26 +5,26 @@ use nom::{alphanumeric, digit, ErrorKind, IResult};
 use nom::simple_errors::Err;
 use std::str;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Argument {
     pub arg: Arg,
     pub value: String,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Program {
     pub name: MacroOp,
     pub steps: Vec<Step>,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Step {
     pub args: Vec<Argument>,
     pub op: MacroOp,
     pub result: StepResult,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum MacroOp {
     /// Addition (+)
     Add,
@@ -46,7 +46,7 @@ pub enum MacroOp {
     Whisper,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum StepResult {
     /// Ignore Result (default)
     Ignore,
@@ -54,7 +54,7 @@ pub enum StepResult {
     Pass,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Arg {
     /// Number (Float, Integer)
     Number,
@@ -69,7 +69,7 @@ pub enum Arg {
 }
 
 // Arguments for the roll command, used by the parser
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum RollArg {
     Advantage,
     Comment,
@@ -84,7 +84,7 @@ pub enum RollArg {
     RR,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SayArg {
     Message,
     To,

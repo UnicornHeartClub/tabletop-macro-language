@@ -121,7 +121,7 @@ impl Roll {
             }
         }
         if has_more {
-            self.reroll_dice_forever_below(threshold);
+            self.reroll_dice_forever_above(threshold);
         }
     }
 

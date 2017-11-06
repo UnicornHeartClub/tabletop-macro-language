@@ -12,8 +12,9 @@ use std::ffi::CStr;
 use std::ffi::CString;
 use std::os::raw::c_char;
 use std::time::Instant;
+use ttml::executor::execute_roll;
 use ttml::output::Output;
-use ttml::parser::{parse_p, Program};
+use ttml::parser::{MacroOp, parse_p};
 
 fn main() {
     // IGNORE ME!
@@ -39,7 +40,7 @@ pub fn parse(raw_input: *mut c_char) -> *mut c_char {
     // @todo build our vectors
     let errors = Vec::new();
     let messages = Vec::new();
-    let rolls = Vec::new();
+    let mut rolls = Vec::new();
     let tokens = Vec::new();
     let version = String::from("0.1.0");
 
@@ -51,8 +52,18 @@ pub fn parse(raw_input: *mut c_char) -> *mut c_char {
     } else {
         let (_, program) = prog.unwrap();
 
+        for step in &program.steps {
+            match step.op {
+                MacroOp::Roll => {
+                    let roll = execute_roll(&step);
+                    rolls.push(roll);
+                },
+                _ => println!("Not yet implemented {:?}", step.op)
+            }
+        };
+
         let elapsed = start.elapsed();
-        let execution_time = ((elapsed.as_secs() * 1000) + (elapsed.subsec_nanos() / 1000000) as u64);
+        let execution_time = (elapsed.as_secs() * 1000) + (elapsed.subsec_nanos() / 1000000) as u64;
 
         let output = Output {
             input: String::from_utf8(output_input).unwrap(),

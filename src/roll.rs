@@ -178,6 +178,10 @@ pub fn roll_d20(count: i8) -> Roll {
     roll_type(count, DieType::D20)
 }
 
+pub fn roll_d100(count: i8) -> Roll {
+    roll_type(count, DieType::D100)
+}
+
 fn roll_type(count: i8, die: DieType) -> Roll {
     let mut dice = Vec::new();
     for _ in 0..count {

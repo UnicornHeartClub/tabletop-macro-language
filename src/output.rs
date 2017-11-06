@@ -1,7 +1,7 @@
 use chrono::DateTime;
 use chrono::prelude::Utc;
 use token::Token;
-use die::Die;
+use roll::Roll;
 use parser::Program;
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -25,7 +25,7 @@ pub struct Output {
     pub program: Program,
 
     /// Dice rolls
-    pub rolls: Vec<Die>,
+    pub rolls: Vec<Roll>,
 
     /// Tokens
     pub tokens: Vec<Token>,

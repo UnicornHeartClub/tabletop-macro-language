@@ -4,6 +4,11 @@ use roll::*;
 
 pub fn execute_roll (step: &Step) -> Roll {
     // Take the arguments determine what we need to do
+    let mut rr = 0;
+    let mut ro = 0;
+    let mut kh = 0;
+    let mut kl = 0;
+    let mut e = 0;
     let mut number_of_dice = 0;
     let mut number_of_sides = 0;
     let mut die_type = DieType::Other;
@@ -22,10 +27,18 @@ pub fn execute_roll (step: &Step) -> Roll {
                 4     => DieType::D4,
                 _     => DieType::Other,
             };
+        } else if let &Arg::Roll(RollArg::RR(num)) = arg {
+            rr = num;
+        } else if let &Arg::Roll(RollArg::RO(num)) = arg {
+            ro = num;
+        } else if let &Arg::Roll(RollArg::H(num)) = arg {
+            kh = num;
+        } else if let &Arg::Roll(RollArg::L(num)) = arg {
+            kl = num;
         }
     }
 
-    match die_type {
+    let mut roll = match die_type {
         DieType::D100   => roll_d100(number_of_dice as u16),
         DieType::D20    => roll_d20(number_of_dice as u16),
         DieType::D12    => roll_d12(number_of_dice as u16),
@@ -46,5 +59,27 @@ pub fn execute_roll (step: &Step) -> Roll {
             }
             Roll::new(dice)
         }
+    };
+
+    if e > 0 {
+        // todo
+    } else if e < 0 {
+        // todo
+    } else if rr > 0 {
+        roll.reroll_dice_forever_above(rr);
+    } else if rr < 0 {
+        roll.reroll_dice_forever_below(rr);
+    } else if ro > 0 {
+        roll.reroll_dice_once_above(ro);
+    } else if ro < 0 {
+        roll.reroll_dice_once_below(ro);
     }
+
+    if kh != 0 {
+        roll.keep_high(kh);
+    } else if kl != 0 {
+        roll.keep_low(kl);
+    }
+
+    roll
 }

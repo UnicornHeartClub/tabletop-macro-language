@@ -5,6 +5,8 @@ use nom::{alphanumeric, digit, ErrorKind, IResult};
 use nom::simple_errors::Err;
 use std::str;
 
+use roll::Roll;
+
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Program {
     pub name: MacroOp,
@@ -12,10 +14,17 @@ pub struct Program {
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum StepValue {
+    Int(i16),
+    Text(String),
+}
+
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Step {
     pub args: Vec<Arg>,
     pub op: MacroOp,
     pub result: StepResult,
+    pub value: Option<StepValue>,
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -38,6 +47,11 @@ pub enum MacroOp {
     Subtract,
     /// Whisper (!whisper)
     Whisper,
+}
+
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ProgramResult {
+    Roll,
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -70,9 +84,9 @@ pub enum RollArg {
     Disadvantage,
     D(u8), // e.g. d20
     E(i16),
-    H(i16),
+    H(u16),
     K,
-    L(i16),
+    L(u16),
     N(u8), // e.g. 1 (part of 1d20)
     RO(i16),
     RR(i16),
@@ -212,6 +226,7 @@ pub fn parse_step_p(input: &[u8]) -> IResult<&[u8], Step> {
             op: op_type,
             result,
             args,
+            value: None,
         })
     )
 }
@@ -250,7 +265,7 @@ pub fn roll_flag_h_p(input: &[u8]) -> IResult<&[u8], Arg> {
         tag!("h") >>
         num: digit >>
         s: value!(String::from_utf8(num.to_vec()).unwrap()) >>
-        (Arg::Roll(RollArg::H((s.parse::<i16>().unwrap()))))
+        (Arg::Roll(RollArg::H((s.parse::<u16>().unwrap()))))
     )
 }
 
@@ -268,7 +283,7 @@ pub fn roll_flag_l_p(input: &[u8]) -> IResult<&[u8], Arg> {
         tag!("l") >>
         num: digit >>
         s: value!(String::from_utf8(num.to_vec()).unwrap()) >>
-        (Arg::Roll(RollArg::L((s.parse::<i16>().unwrap()))))
+        (Arg::Roll(RollArg::L((s.parse::<u16>().unwrap()))))
     )
 }
 

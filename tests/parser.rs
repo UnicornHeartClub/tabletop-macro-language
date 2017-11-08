@@ -15,6 +15,7 @@ fn test_simple_parser() {
             ],
             op: MacroOp::Roll,
             result: StepResult::Ignore,
+            value: None,
         }],
     };
     let (_, result) = parse_p(b"#simple-macro-name !roll 1d20").unwrap();
@@ -28,6 +29,7 @@ fn test_simple_parser() {
             ],
             op: MacroOp::Say,
             result: StepResult::Ignore,
+            value: None,
         }],
     };
     let (_, result) = parse_p(b"#simple-macro-name-2 !say \"Hello, world!\"").unwrap();
@@ -47,6 +49,7 @@ fn test_complex_parser() {
                 ],
                 op: MacroOp::Roll,
                 result: StepResult::Ignore,
+                value: None,
             },
             Step {
                 args: vec![
@@ -54,6 +57,7 @@ fn test_complex_parser() {
                 ],
                 op: MacroOp::Say,
                 result: StepResult::Ignore,
+                value: None,
             },
         ],
     };
@@ -70,6 +74,7 @@ fn test_complex_parser() {
                 ],
                 op: MacroOp::Roll,
                 result: StepResult::Ignore,
+                value: None,
             },
             Step {
                 args: vec![
@@ -77,6 +82,7 @@ fn test_complex_parser() {
                 ],
                 op: MacroOp::Add,
                 result: StepResult::Ignore,
+                value: None,
             },
             Step {
                 args: vec![
@@ -84,6 +90,7 @@ fn test_complex_parser() {
                 ],
                 op: MacroOp::Say,
                 result: StepResult::Ignore,
+                value: None,
             },
             Step {
                 args: vec![
@@ -94,6 +101,7 @@ fn test_complex_parser() {
                 ],
                 op: MacroOp::Roll,
                 result: StepResult::Pass,
+                value: None,
             },
             Step {
                 args: vec![
@@ -102,6 +110,7 @@ fn test_complex_parser() {
                 ],
                 op: MacroOp::Say,
                 result: StepResult::Ignore,
+                value: None,
             },
         ],
     };

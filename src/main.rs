@@ -14,7 +14,7 @@ use std::os::raw::c_char;
 use std::time::Instant;
 use ttml::executor::execute_roll;
 use ttml::output::Output;
-use ttml::parser::{MacroOp, parse_p};
+use ttml::parser::{MacroOp, StepResult, StepValue, parse_p};
 
 fn main() {
     // IGNORE ME!
@@ -50,12 +50,23 @@ pub fn parse(raw_input: *mut c_char) -> *mut c_char {
         // @todo actually handle the error
         CString::new("{}").unwrap().into_raw()
     } else {
-        let (_, program) = prog.unwrap();
+        let (_, mut program) = prog.unwrap();
+        // Anything we marked as "Pass" will be stored in the variable vector
+        // We can reference any result by calling $# where # = the index of the vec
+        // this is so we can use results in any subsequent macro function
+        // e.g. $2 would resolve to the second passed result
+        let mut results = Vec::new();
 
-        for step in &program.steps {
+        for step in &mut program.steps {
             match step.op {
                 MacroOp::Roll => {
+                    // Check if we have a variable to replace
+                    // @todo
                     let roll = execute_roll(&step);
+                    if step.result == StepResult::Pass {
+                        step.value = Some(StepValue::Int(roll.value));
+                        results.push(StepValue::Int(roll.value));
+                    }
                     rolls.push(roll);
                 },
                 _ => println!("Not yet implemented {:?}", step.op)
@@ -83,7 +94,7 @@ pub fn parse(raw_input: *mut c_char) -> *mut c_char {
 }
 
 // #[test]
-// fn it_parses_input() {
+// fn it_parses_simple_input() {
     // let chars = CString::new("#test!say \"Hello\"").unwrap().into_raw();
     // let raw_output = parse(chars);
     // let json = safe_string(raw_output);

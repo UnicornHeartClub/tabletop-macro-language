@@ -15,6 +15,7 @@ const webpack = require('webpack');
          use: {
            loader: 'rust-wasm-loader',
            options: {
+             release: true,
              path: 'dist',
            },
          },

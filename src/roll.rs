@@ -48,7 +48,7 @@ impl Roll {
     }
 
     /// Keep the highest rolled dice
-    pub fn keep_high(&mut self, keep: u8) {
+    pub fn keep_high(&mut self, keep: u16) {
         // Sort the dice by value, drop everything below the keep value
         let mut count = 0;
         self.dice.sort_by(|a, b| b.value.cmp(&a.value));
@@ -64,7 +64,7 @@ impl Roll {
     }
 
     /// Keep the lowest rolled dice
-    pub fn keep_low(&mut self, keep: u8) {
+    pub fn keep_low(&mut self, keep: u16) {
         // Sort the dice by value, drop everything below the keep value
         let mut count = 0;
         self.dice.sort_by(|a, b| a.value.cmp(&b.value));
@@ -86,6 +86,8 @@ impl Roll {
             if !die.is_rerolled && die.value >= threshold {
                 let mut d = Die::new(die.die);
                 d.roll();
+                let value = d.value;
+                self.value += value;
                 &die.rerolled(&d);
                 new_dice.push(d);
             }
@@ -101,8 +103,11 @@ impl Roll {
             if !die.is_rerolled && die.value <= threshold {
                 let mut d = Die::new(die.die);
                 d.roll();
+                let value = d.value;
+                self.value += value;
                 &die.rerolled(&d);
                 new_dice.push(d);
+
             }
         }
 
@@ -142,13 +147,13 @@ impl Roll {
     }
 }
 
-pub fn roll_and_keep_high(count: u16, die: DieType, keep: u8) -> Roll {
+pub fn roll_and_keep_high(count: u16, die: DieType, keep: u16) -> Roll {
     let mut roll = roll_type(count, die);
     roll.keep_high(keep);
     roll
 }
 
-pub fn roll_and_keep_low(count: u16, die: DieType, keep: u8) -> Roll {
+pub fn roll_and_keep_low(count: u16, die: DieType, keep: u16) -> Roll {
     let mut roll = roll_type(count, die);
     roll.keep_low(keep);
     roll

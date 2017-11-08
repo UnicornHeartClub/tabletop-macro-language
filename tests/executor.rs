@@ -12,6 +12,7 @@ fn it_returns_a_roll() {
         ],
         op: MacroOp::Roll,
         result: StepResult::Ignore,
+        value: None,
     };
 
     let roll = execute_roll(&step);

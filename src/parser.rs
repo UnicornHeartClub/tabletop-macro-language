@@ -6,12 +6,6 @@ use nom::simple_errors::Err;
 use std::str;
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Argument {
-    pub arg: Arg,
-    pub value: String,
-}
-
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Program {
     pub name: MacroOp,
     pub steps: Vec<Step>,
@@ -19,7 +13,7 @@ pub struct Program {
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Step {
-    pub args: Vec<Argument>,
+    pub args: Vec<Arg>,
     pub op: MacroOp,
     pub result: StepResult,
 }
@@ -57,91 +51,91 @@ pub enum StepResult {
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Arg {
     /// Number (Float, Integer)
-    Number,
+    Number(u32),
     /// Unrecognized argument
-    Unrecognized,
+    Unrecognized(String),
     /// Roll arguments
     Roll(RollArg),
     /// Say arguments
     Say(SayArg),
     /// Static variable ($)
-    Variable,
+    Variable(String),
 }
 
 // Arguments for the roll command, used by the parser
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum RollArg {
     Advantage,
-    Comment,
+    Comment(String),
     Disadvantage,
-    D, // e.g. d20
-    E,
-    H,
+    D(u8), // e.g. d20
+    E(i16),
+    H(i16),
     K,
-    L,
-    N, // e.g. 1 (part of 1d20)
-    RO,
-    RR,
+    L(i16),
+    N(u8), // e.g. 1 (part of 1d20)
+    RO(i16),
+    RR(i16),
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SayArg {
-    Message,
-    To,
+    Message(String),
+    To(String),
 }
 
 /// Matches advantage roll argument
-pub fn advantage_p(input: &[u8]) -> IResult<&[u8], &[u8]> {
-    alt_complete!(input, tag!("advantage") | tag!("adv"))
+pub fn advantage_p(input: &[u8]) -> IResult<&[u8], Arg> {
+    map!(input, alt_complete!(tag!("advantage") | tag!("adv")), |_| Arg::Roll(RollArg::Advantage))
 }
 
 /// Matches arguments of unknown commands
-pub fn arguments_p(input: &[u8]) -> IResult<&[u8], Argument> {
+pub fn arguments_p(input: &[u8]) -> IResult<&[u8], Arg> {
     alt_complete!(input,
-        map!(num, | a | Argument { arg: Arg::Number, value: a }) |
-        map!(string, | a | Argument { arg: Arg::Unrecognized, value: a }) |
-        map!(quoted, | a | Argument { arg: Arg::Unrecognized, value: a }) |
-        map!(single_quoted, | a | Argument { arg: Arg::Unrecognized, value: a }) |
-        map!(variable, | a | Argument { arg: Arg::Variable, value: a })
+        num |
+        map!(string, | a | Arg::Unrecognized(a)) |
+        map!(quoted, | a | Arg::Unrecognized(a)) |
+        map!(single_quoted, | a | Arg::Unrecognized(a)) |
+        map!(variable, | a | Arg::Variable(a))
     )
 }
 
 /// Matches !roll arguments
-pub fn arguments_roll_p(input: &[u8]) -> IResult<&[u8], Argument> {
+pub fn arguments_roll_p(input: &[u8]) -> IResult<&[u8], Arg> {
     alt_complete!(input,
-        map!(advantage,     | _ | Argument { arg: Arg::Roll(RollArg::Advantage), value: String::from("") }) |
-        map!(disadvantage,  | _ | Argument { arg: Arg::Roll(RollArg::Disadvantage), value: String::from("") }) |
-        map!(roll_num,      | a | Argument { arg: Arg::Roll(RollArg::N), value: a }) |
-        map!(roll_die,      | a | Argument { arg: Arg::Roll(RollArg::D), value: a }) |
-        map!(roll_flag_e,   | a | Argument { arg: Arg::Roll(RollArg::E), value: a }) |
-        map!(roll_flag_h,   | a | Argument { arg: Arg::Roll(RollArg::H), value: a }) |
-        map!(roll_flag_k,   | a | Argument { arg: Arg::Roll(RollArg::K), value: a }) |
-        map!(roll_flag_l,   | a | Argument { arg: Arg::Roll(RollArg::L), value: a }) |
-        map!(roll_flag_ro,  | a | Argument { arg: Arg::Roll(RollArg::RO), value: a }) |
-        map!(roll_flag_rr,  | a | Argument { arg: Arg::Roll(RollArg::RR), value: a }) |
-        map!(quoted,        | a | Argument { arg: Arg::Roll(RollArg::Comment), value: a }) |
-        map!(single_quoted, | a | Argument { arg: Arg::Roll(RollArg::Comment), value: a }) |
-        map!(variable,      | a | Argument { arg: Arg::Variable, value: a })
+        advantage |
+        disadvantage |
+        roll_num |
+        roll_die |
+        roll_flag_e |
+        roll_flag_h |
+        roll_flag_k |
+        roll_flag_l |
+        roll_flag_ro |
+        roll_flag_rr |
+        map!(quoted,        | a | Arg::Roll(RollArg::Comment(a))) |
+        map!(single_quoted, | a | Arg::Roll(RollArg::Comment(a))) |
+        map!(variable,      | a | Arg::Variable(a))
     )
 }
 
 /// Matches !say arguments
-pub fn arguments_say_p(input: &[u8]) -> IResult<&[u8], Argument> {
+pub fn arguments_say_p(input: &[u8]) -> IResult<&[u8], Arg> {
     alt_complete!(input,
-        map!(string, | a | Argument { arg: Arg::Say(SayArg::Message), value: a }) |
-        map!(quoted, | a | Argument { arg: Arg::Say(SayArg::Message), value: a }) |
-        map!(single_quoted, | a | Argument { arg: Arg::Say(SayArg::Message), value: a }) |
-        map!(variable, | a | Argument { arg: Arg::Variable, value: a })
+        map!(string, | a | Arg::Say(SayArg::Message(a))) |
+        map!(quoted, | a | Arg::Say(SayArg::Message(a))) |
+        map!(single_quoted, | a | Arg::Say(SayArg::Message(a))) |
+        map!(variable, | a | Arg::Variable(a))
     )
 }
 
 /// Matches !whisper arguments
-pub fn arguments_whisper_p(input: &[u8]) -> IResult<&[u8], Argument> {
+pub fn arguments_whisper_p(input: &[u8]) -> IResult<&[u8], Arg> {
     alt_complete!(input,
-        map!(variable, | a | Argument { arg: Arg::Say(SayArg::To), value: a }) |
-        map!(string, | a | Argument { arg: Arg::Say(SayArg::Message), value: a }) |
-        map!(quoted, | a | Argument { arg: Arg::Say(SayArg::Message), value: a }) |
-        map!(single_quoted, | a | Argument { arg: Arg::Say(SayArg::Message), value: a })
+        map!(variable, | a | Arg::Say(SayArg::To(a))) |
+        map!(string, | a | Arg::Say(SayArg::Message(a))) |
+        map!(quoted, | a | Arg::Say(SayArg::Message(a))) |
+        map!(single_quoted, | a | Arg::Say(SayArg::Message(a)))
     )
 }
 
@@ -158,8 +152,8 @@ pub fn command_p(input: &[u8]) -> IResult<&[u8], MacroOp> {
 }
 
 /// Matches disadvantage roll argument
-pub fn disadvantage_p(input: &[u8]) -> IResult<&[u8], &[u8]> {
-    alt_complete!(input, tag!("disadvantage") | tag!("dis"))
+pub fn disadvantage_p(input: &[u8]) -> IResult<&[u8], Arg> {
+    map!(input, alt_complete!(tag!("disadvantage") | tag!("dis")), |_| Arg::Roll(RollArg::Disadvantage))
 }
 
 /// Matches a macro name
@@ -174,10 +168,11 @@ pub fn name_p(input: &[u8]) -> IResult<&[u8], MacroOp> {
 }
 
 /// Match numbers to argument strings
-pub fn num_p(input: &[u8]) -> IResult<&[u8], String> {
+pub fn num_p(input: &[u8]) -> IResult<&[u8], Arg> {
     do_parse!(input,
-        number: ws!(digit) >>
-        (String::from_utf8(number.to_vec()).unwrap())
+        num: ws!(digit) >>
+        s: value!(String::from_utf8(num.to_vec()).unwrap()) >>
+        (Arg::Number(s.parse::<u32>().unwrap()))
     )
 }
 
@@ -240,71 +235,78 @@ pub fn quoted_p(input: &[u8]) -> IResult<&[u8], String> {
 }
 
 /// Matches roll flag "e"
-pub fn roll_flag_e_p(input: &[u8]) -> IResult<&[u8], String> {
+pub fn roll_flag_e_p(input: &[u8]) -> IResult<&[u8], Arg> {
     do_parse!(input,
         tag!("e") >>
         num: digit >>
-        (String::from_utf8(num.to_vec()).unwrap())
+        s: value!(String::from_utf8(num.to_vec()).unwrap()) >>
+        (Arg::Roll(RollArg::E((s.parse::<i16>().unwrap()))))
     )
 }
 
 /// Matches roll flag "h"
-pub fn roll_flag_h_p(input: &[u8]) -> IResult<&[u8], String> {
+pub fn roll_flag_h_p(input: &[u8]) -> IResult<&[u8], Arg> {
     do_parse!(input,
         tag!("h") >>
         num: digit >>
-        (String::from_utf8(num.to_vec()).unwrap())
+        s: value!(String::from_utf8(num.to_vec()).unwrap()) >>
+        (Arg::Roll(RollArg::H((s.parse::<i16>().unwrap()))))
     )
 }
 
 /// Matches roll flag "k"
-pub fn roll_flag_k_p(input: &[u8]) -> IResult<&[u8], String> {
+pub fn roll_flag_k_p(input: &[u8]) -> IResult<&[u8], Arg> {
     do_parse!(input,
         tag!("k") >>
-        (String::from(""))
+        (Arg::Roll(RollArg::K))
     )
 }
 
 /// matches roll flag "l"
-pub fn roll_flag_l_p(input: &[u8]) -> IResult<&[u8], String> {
+pub fn roll_flag_l_p(input: &[u8]) -> IResult<&[u8], Arg> {
     do_parse!(input,
         tag!("l") >>
         num: digit >>
-        (String::from_utf8(num.to_vec()).unwrap())
+        s: value!(String::from_utf8(num.to_vec()).unwrap()) >>
+        (Arg::Roll(RollArg::L((s.parse::<i16>().unwrap()))))
     )
 }
 
 /// matches roll flag "ro"
-pub fn roll_flag_ro_p(input: &[u8]) -> IResult<&[u8], String> {
+pub fn roll_flag_ro_p(input: &[u8]) -> IResult<&[u8], Arg> {
     do_parse!(input,
         tag!("ro") >>
         num: digit >>
-        (String::from_utf8(num.to_vec()).unwrap())
+        s: value!(String::from_utf8(num.to_vec()).unwrap()) >>
+        (Arg::Roll(RollArg::RO((s.parse::<i16>().unwrap()))))
     )
 }
 
 /// matches roll flag "rr"
-pub fn roll_flag_rr_p(input: &[u8]) -> IResult<&[u8], String> {
+pub fn roll_flag_rr_p(input: &[u8]) -> IResult<&[u8], Arg> {
     do_parse!(input,
         tag!("rr") >>
         num: digit >>
-        (String::from_utf8(num.to_vec()).unwrap())
+        s: value!(String::from_utf8(num.to_vec()).unwrap()) >>
+        (Arg::Roll(RollArg::RR((s.parse::<i16>().unwrap()))))
     )
 }
 
 /// Matches "N" in NdD
-pub fn roll_num_p(input: &[u8]) -> IResult<&[u8], String> {
+pub fn roll_num_p(input: &[u8]) -> IResult<&[u8], Arg> {
     do_parse!(input,
         num: ws!(digit) >>
-        (String::from_utf8(num.to_vec()).unwrap())
+        s: value!(String::from_utf8(num.to_vec()).unwrap()) >>
+        (Arg::Roll(RollArg::N(s.parse::<u8>().unwrap())))
     )
 }
 
 /// Matches "D" in NdD
-pub fn roll_die_p(input: &[u8]) -> IResult<&[u8], String> {
+pub fn roll_die_p(input: &[u8]) -> IResult<&[u8], Arg> {
     do_parse!(input,
         num: ws!(preceded!(tag!("d"), digit)) >>
-        (String::from_utf8(num.to_vec()).unwrap())
+        s: value!(String::from_utf8(num.to_vec()).unwrap()) >>
+        (Arg::Roll(RollArg::D(s.parse::<u8>().unwrap())))
     )
 }
 
@@ -351,28 +353,28 @@ pub fn error_to_string(e: Err) -> String {
 }
 
 // Define our macros
-named!(advantage <&[u8]>, call!(advantage_p));
-named!(arguments <&[u8], Argument>, call!(arguments_p));
-named!(arguments_roll <&[u8], Argument>, call!(arguments_roll_p));
-named!(arguments_say <&[u8], Argument>, call!(arguments_say_p));
-named!(arguments_whisper <&[u8], Argument>, call!(arguments_whisper_p));
+named!(advantage <&[u8], Arg>, call!(advantage_p));
+named!(arguments <&[u8], Arg>, call!(arguments_p));
+named!(arguments_roll <&[u8], Arg>, call!(arguments_roll_p));
+named!(arguments_say <&[u8], Arg>, call!(arguments_say_p));
+named!(arguments_whisper <&[u8], Arg>, call!(arguments_whisper_p));
 named!(command <&[u8], MacroOp>, call!(command_p));
-named!(disadvantage <&[u8]>, call!(disadvantage_p));
+named!(disadvantage <&[u8], Arg>, call!(disadvantage_p));
 named!(name <&[u8], MacroOp>, call!(name_p));
-named!(num <&[u8], String>, call!(num_p));
+named!(num <&[u8], Arg>, call!(num_p));
 named!(op <&[u8], MacroOp>, call!(op_p));
 named!(parse <&[u8], Program>, call!(parse_p));
 named!(parse_step <&[u8], Step>, call!(parse_step_p));
 named!(primitive <&[u8], MacroOp>, call!(primitive_p));
 named!(quoted <&[u8], String>, call!(quoted_p));
-named!(roll_flag_e <&[u8], String>, call!(roll_flag_e_p));
-named!(roll_flag_h <&[u8], String>, call!(roll_flag_h_p));
-named!(roll_flag_k <&[u8], String>, call!(roll_flag_k_p));
-named!(roll_flag_l <&[u8], String>, call!(roll_flag_l_p));
-named!(roll_flag_ro <&[u8], String>, call!(roll_flag_ro_p));
-named!(roll_flag_rr <&[u8], String>, call!(roll_flag_rr_p));
-named!(roll_num <&[u8], String>, call!(roll_num_p));
-named!(roll_die <&[u8], String>, call!(roll_die_p));
+named!(roll_flag_e <&[u8], Arg>, call!(roll_flag_e_p));
+named!(roll_flag_h <&[u8], Arg>, call!(roll_flag_h_p));
+named!(roll_flag_k <&[u8], Arg>, call!(roll_flag_k_p));
+named!(roll_flag_l <&[u8], Arg>, call!(roll_flag_l_p));
+named!(roll_flag_ro <&[u8], Arg>, call!(roll_flag_ro_p));
+named!(roll_flag_rr <&[u8], Arg>, call!(roll_flag_rr_p));
+named!(roll_num <&[u8], Arg>, call!(roll_num_p));
+named!(roll_die <&[u8], Arg>, call!(roll_die_p));
 named!(single_quoted <&[u8], String>, call!(single_quoted_p));
 named!(step_result <&[u8], StepResult>, call!(step_result_p));
 named!(string <&[u8], String>, call!(string_p));

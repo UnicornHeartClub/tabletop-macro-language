@@ -10,14 +10,8 @@ fn test_simple_parser() {
         name: MacroOp::Name(String::from("simple-macro-name")),
         steps: vec![Step {
             args: vec![
-                Argument {
-                    arg: Arg::Roll(RollArg::N),
-                    value: "1".to_string()
-                },
-                Argument {
-                    arg: Arg::Roll(RollArg::D),
-                    value: "20".to_string()
-                }
+                Arg::Roll(RollArg::N(1)),
+                Arg::Roll(RollArg::D(20))
             ],
             op: MacroOp::Roll,
             result: StepResult::Ignore,
@@ -29,10 +23,9 @@ fn test_simple_parser() {
     let program = Program {
         name: MacroOp::Name(String::from("simple-macro-name-2")),
         steps: vec![Step {
-            args: vec![Argument {
-                arg: Arg::Say(SayArg::Message),
-                value: "Hello, world!".to_string()
-            }],
+            args: vec![
+                Arg::Say(SayArg::Message("Hello, world!".to_string())),
+            ],
             op: MacroOp::Say,
             result: StepResult::Ignore,
         }],
@@ -48,27 +41,17 @@ fn test_complex_parser() {
         steps: vec![
             Step {
                 args: vec![
-                    Argument {
-                        arg: Arg::Roll(RollArg::N),
-                        value: "1".to_string()
-                    },
-                    Argument {
-                        arg: Arg::Roll(RollArg::D),
-                        value: "20".to_string()
-                    },
-                    Argument {
-                        arg: Arg::Roll(RollArg::Comment),
-                        value: "A cool roll comment".to_string()
-                    }
+                    Arg::Roll(RollArg::N(1)),
+                    Arg::Roll(RollArg::D(20)),
+                    Arg::Roll(RollArg::Comment("A cool roll comment".to_string())),
                 ],
                 op: MacroOp::Roll,
                 result: StepResult::Ignore,
             },
             Step {
-                args: vec![Argument {
-                    arg: Arg::Say(SayArg::Message),
-                    value: "Smite!".to_string()
-                }],
+                args: vec![
+                    Arg::Say(SayArg::Message("Smite!".to_string())),
+                ],
                 op: MacroOp::Say,
                 result: StepResult::Ignore,
             },
@@ -82,66 +65,40 @@ fn test_complex_parser() {
         steps: vec![
             Step {
                 args: vec![
-                    Argument {
-                        arg: Arg::Roll(RollArg::N),
-                        value: "3".to_string()
-                    },
-                    Argument {
-                        arg: Arg::Roll(RollArg::D),
-                        value: "8".to_string()
-                    }
+                    Arg::Roll(RollArg::N(3)),
+                    Arg::Roll(RollArg::D(8)),
                 ],
                 op: MacroOp::Roll,
                 result: StepResult::Ignore,
             },
             Step {
-                args: vec![Argument {
-                    arg: Arg::Number,
-                    value: "3".to_string()
-                }],
+                args: vec![
+                    Arg::Number(3),
+                ],
                 op: MacroOp::Add,
                 result: StepResult::Ignore,
             },
             Step {
-                args: vec![Argument {
-                    arg: Arg::Say(SayArg::Message),
-                    value: "Smite!".to_string()
-                }],
+                args: vec![
+                    Arg::Say(SayArg::Message("Smite!".to_string())),
+                ],
                 op: MacroOp::Say,
                 result: StepResult::Ignore,
             },
             Step {
                 args: vec![
-                    Argument {
-                        arg: Arg::Roll(RollArg::N),
-                        value: "2".to_string()
-                    },
-                    Argument {
-                        arg: Arg::Roll(RollArg::D),
-                        value: "20".to_string()
-                    },
-                    Argument {
-                        arg: Arg::Roll(RollArg::K),
-                        value: "".to_string()
-                    },
-                    Argument {
-                        arg: Arg::Roll(RollArg::H),
-                        value: "1".to_string()
-                    }
+                    Arg::Roll(RollArg::N(2)),
+                    Arg::Roll(RollArg::D(20)),
+                    Arg::Roll(RollArg::K),
+                    Arg::Roll(RollArg::H(1)),
                 ],
                 op: MacroOp::Roll,
                 result: StepResult::Pass,
             },
             Step {
                 args: vec![
-                    Argument {
-                        arg: Arg::Say(SayArg::Message),
-                        value: "I rolled a ".to_string()
-                    },
-                    Argument {
-                        arg: Arg::Variable,
-                        value: "1".to_string()
-                    }
+                    Arg::Say(SayArg::Message("I rolled a ".to_string())),
+                    Arg::Variable("1".to_string()),
                 ],
                 op: MacroOp::Say,
                 result: StepResult::Ignore,
@@ -204,11 +161,11 @@ fn test_op_parser() {
 #[test]
 fn test_arguments_parser() {
     let (_, result) = arguments_p(b"\"hello\"").unwrap();
-    assert_eq!(result, Argument { arg: Arg::Unrecognized, value: String::from("hello") });
+    assert_eq!(result, Arg::Unrecognized(String::from("hello")));
     let (_, result) = arguments_p(b"   Hello  ").unwrap();
-    assert_eq!(result, Argument { arg: Arg::Unrecognized, value: String::from("Hello") });
+    assert_eq!(result, Arg::Unrecognized(String::from("Hello")));
     let (_, result) = arguments_p(b"'   Single String Args'").unwrap();
-    assert_eq!(result, Argument { arg: Arg::Unrecognized, value: String::from("Single String Args") });
+    assert_eq!(result, Arg::Unrecognized(String::from("Single String Args")));
 }
 
 #[test]
@@ -240,62 +197,35 @@ fn test_step_result_parser() {
 fn test_arguments_roll_parser() {
     // Pass it through once should yield us the N and remove a "d"
     let (rest, result) = arguments_roll_p(b"1d20").unwrap();
-    assert_eq!(result, Argument {
-        arg: Arg::Roll(RollArg::N),
-        value: "1".to_string(),
-    });
+    assert_eq!(result, Arg::Roll(RollArg::N(1)));
     // Running through a second time will yield us the D
     let (_, result) = arguments_roll_p(rest).unwrap();
-    assert_eq!(result, Argument {
-        arg: Arg::Roll(RollArg::D),
-        value: "20".to_string(),
-    });
+    assert_eq!(result, Arg::Roll(RollArg::D(20)));
 
     // Advantage
     let (_, result) = arguments_roll_p(b"adv").unwrap();
-    assert_eq!(result, Argument {
-        arg: Arg::Roll(RollArg::Advantage),
-        value: "".to_string(),
-    });
+    assert_eq!(result, Arg::Roll(RollArg::Advantage));
     let (_, result) = arguments_roll_p(b"advantage").unwrap();
-    assert_eq!(result, Argument {
-        arg: Arg::Roll(RollArg::Advantage),
-        value: "".to_string(),
-    });
+    assert_eq!(result, Arg::Roll(RollArg::Advantage));
 
     // Disadvantage
     let (_, result) = arguments_roll_p(b"dis").unwrap();
-    assert_eq!(result, Argument {
-        arg: Arg::Roll(RollArg::Disadvantage),
-        value: "".to_string(),
-    });
+    assert_eq!(result, Arg::Roll(RollArg::Disadvantage));
     let (_, result) = arguments_roll_p(b"disadvantage").unwrap();
-    assert_eq!(result, Argument {
-        arg: Arg::Roll(RollArg::Disadvantage),
-        value: "".to_string(),
-    });
+    assert_eq!(result, Arg::Roll(RollArg::Disadvantage));
 
     // Comment
     let (_, result) = arguments_roll_p(b"\"I am a comment\"").unwrap();
-    assert_eq!(result, Argument {
-        arg: Arg::Roll(RollArg::Comment),
-        value: "I am a comment".to_string(),
-    });
+    assert_eq!(result, Arg::Roll(RollArg::Comment("I am a comment".to_string())));
 }
 
 #[test]
 fn test_arguments_whisper_parser() {
     let (_, result) = arguments_whisper_p(b"\"I am a message\"").unwrap();
-    assert_eq!(result, Argument {
-        arg: Arg::Say(SayArg::Message),
-        value: "I am a message".to_string(),
-    });
+    assert_eq!(result, Arg::Say(SayArg::Message("I am a message".to_string())));
 
     let (_, result) = arguments_whisper_p(b"$me").unwrap();
-    assert_eq!(result, Argument {
-        arg: Arg::Say(SayArg::To),
-        value: "me".to_string(),
-    });
+    assert_eq!(result, Arg::Say(SayArg::To("me".to_string())));
 }
 
 #[test]

@@ -8,25 +8,20 @@ pub fn execute_roll (step: &Step) -> Roll {
     let mut number_of_sides = 0;
     let mut die_type = DieType::Other;
     for arg in &step.args {
-        match arg.arg {
-            Arg::Roll(RollArg::N) => {
-                number_of_dice = arg.value.parse::<u8>().unwrap();
-            },
-            Arg::Roll(RollArg::D) => {
-                number_of_sides = arg.value.parse::<u8>().unwrap();
-                let value = arg.value.as_str();
-                die_type = match value {
-                    "100"   => DieType::D100,
-                    "20"    => DieType::D20,
-                    "12"    => DieType::D12,
-                    "10"    => DieType::D10,
-                    "8"     => DieType::D8,
-                    "6"     => DieType::D6,
-                    "4"     => DieType::D4,
-                    _       => DieType::Other,
-                };
-            },
-            _ => println!("Not implemented or valid")
+        if let &Arg::Roll(RollArg::N(num)) = arg {
+            number_of_dice = num;
+        } else if let &Arg::Roll(RollArg::D(num)) = arg {
+            number_of_sides = num;
+            die_type = match num {
+                100   => DieType::D100,
+                20    => DieType::D20,
+                12    => DieType::D12,
+                10    => DieType::D10,
+                8     => DieType::D8,
+                6     => DieType::D6,
+                4     => DieType::D4,
+                _     => DieType::Other,
+            };
         }
     }
 

@@ -26,14 +26,14 @@ pub fn execute_roll (step: &Step) -> Roll {
     }
 
     match die_type {
-        DieType::D100   => roll_d100(number_of_dice as i8),
-        DieType::D20    => roll_d20(number_of_dice as i8),
-        DieType::D12    => roll_d12(number_of_dice as i8),
-        DieType::D10    => roll_d10(number_of_dice as i8),
-        DieType::D10    => roll_d10(number_of_dice as i8),
-        DieType::D8     => roll_d8(number_of_dice as i8),
-        DieType::D6     => roll_d6(number_of_dice as i8),
-        DieType::D4     => roll_d4(number_of_dice as i8),
+        DieType::D100   => roll_d100(number_of_dice as u16),
+        DieType::D20    => roll_d20(number_of_dice as u16),
+        DieType::D12    => roll_d12(number_of_dice as u16),
+        DieType::D10    => roll_d10(number_of_dice as u16),
+        DieType::D10    => roll_d10(number_of_dice as u16),
+        DieType::D8     => roll_d8(number_of_dice as u16),
+        DieType::D6     => roll_d6(number_of_dice as u16),
+        DieType::D4     => roll_d4(number_of_dice as u16),
         _ => {
             // Build the custom sided die
             let mut dice = Vec::new();
@@ -41,7 +41,7 @@ pub fn execute_roll (step: &Step) -> Roll {
                 let mut die = Die::new(die_type);
                 die.set_sides(number_of_sides);
                 die.set_min(1);
-                die.set_max(number_of_sides as i8);
+                die.set_max(number_of_sides as i16);
                 dice.push(die);
             }
             Roll::new(dice)

@@ -185,15 +185,18 @@ fn it_can_reroll_dice_once_above_a_threshold() {
     assert_eq!(roll.dice.len(), 6);
 
     let mut rerolls = 0;
+    let mut total = 0;
     for d in roll.dice.iter() {
         if d.value >= 15 {
             rerolls += 1;
         }
+        total += d.value;
     }
 
     roll.reroll_dice_once_above(15);
 
     assert_eq!(roll.dice.len(), 6 + rerolls);
+    assert_eq!(roll.value, total);
 
     // count how many rerolls we actually made
     let mut actual_rerolls = 0;

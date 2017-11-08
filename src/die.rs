@@ -18,7 +18,7 @@ pub enum DieType {
 }
 
 /// Determine the minimum number to roll based on the die type
-fn get_die_min(die: &DieType) -> i8 {
+fn get_die_min(die: &DieType) -> i16 {
     match die {
         &DieType::D4 => 1,
         &DieType::D6 => 1,
@@ -33,7 +33,7 @@ fn get_die_min(die: &DieType) -> i8 {
 }
 
 /// Determine the minimum number to roll based on the die type
-fn get_die_max(die: &DieType) -> i8 {
+fn get_die_max(die: &DieType) -> i16 {
     match die {
         &DieType::D4 => 4,
         &DieType::D6 => 6,
@@ -80,10 +80,10 @@ pub struct Die {
     pub is_rerolled: bool,
 
     /// Maximum number to roll
-    pub max: i8,
+    pub max: i16,
 
     /// Minimum number to roll
-    pub min: i8,
+    pub min: i16,
 
     /// The number of faces the die has
     pub sides: u8,
@@ -92,7 +92,7 @@ pub struct Die {
     pub timestamp: DateTime<Utc>,
 
     /// The determined value of the dice roll
-    pub value: i8,
+    pub value: i16,
 }
 
 impl Die {
@@ -136,11 +136,11 @@ impl Die {
         self.sides = sides
     }
 
-    pub fn set_min(&mut self, min: i8) {
+    pub fn set_min(&mut self, min: i16) {
         self.min = min
     }
 
-    pub fn set_max(&mut self, max: i8) {
+    pub fn set_max(&mut self, max: i16) {
         self.max = max
     }
 

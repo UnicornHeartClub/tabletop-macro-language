@@ -11,7 +11,7 @@ pub struct Roll {
     pub dice: Vec<Die>,
 
     /// Modifiers to apply to the combined value
-    pub modifiers: Vec<i8>,
+    pub modifiers: Vec<i16>,
 
     /// The combined value of the die before modifiers
     pub raw_value: i16,
@@ -80,7 +80,7 @@ impl Roll {
     }
 
     /// Reroll dice one time that are above a certain threshold
-    pub fn reroll_dice_once_above(&mut self, threshold: i8) {
+    pub fn reroll_dice_once_above(&mut self, threshold: i16) {
         let mut new_dice = Vec::new();
         for die in &mut self.dice {
             if !die.is_rerolled && die.value >= threshold {
@@ -95,7 +95,7 @@ impl Roll {
     }
 
     /// Reroll dice one time that are below a certain threshold
-    pub fn reroll_dice_once_below(&mut self, threshold: i8) {
+    pub fn reroll_dice_once_below(&mut self, threshold: i16) {
         let mut new_dice = Vec::new();
         for die in &mut self.dice {
             if !die.is_rerolled && die.value <= threshold {
@@ -110,7 +110,7 @@ impl Roll {
     }
 
     /// Reroll dice forever that are above a certain threshold (e.g. Exploding Dice)
-    pub fn reroll_dice_forever_above(&mut self, threshold: i8) {
+    pub fn reroll_dice_forever_above(&mut self, threshold: i16) {
         // Reroll any dice that need to be rerolled
         self.reroll_dice_once_above(threshold);
 
@@ -126,7 +126,7 @@ impl Roll {
     }
 
     /// Reroll dice forever that are below a certain threshold
-    pub fn reroll_dice_forever_below(&mut self, threshold: i8) {
+    pub fn reroll_dice_forever_below(&mut self, threshold: i16) {
         // Reroll any dice that need to be rerolled
         self.reroll_dice_once_below(threshold);
 
@@ -142,47 +142,47 @@ impl Roll {
     }
 }
 
-pub fn roll_and_keep_high(count: i8, die: DieType, keep: u8) -> Roll {
+pub fn roll_and_keep_high(count: u16, die: DieType, keep: u8) -> Roll {
     let mut roll = roll_type(count, die);
     roll.keep_high(keep);
     roll
 }
 
-pub fn roll_and_keep_low(count: i8, die: DieType, keep: u8) -> Roll {
+pub fn roll_and_keep_low(count: u16, die: DieType, keep: u8) -> Roll {
     let mut roll = roll_type(count, die);
     roll.keep_low(keep);
     roll
 }
 
-pub fn roll_d4(count: i8) -> Roll {
+pub fn roll_d4(count: u16) -> Roll {
     roll_type(count, DieType::D4)
 }
 
-pub fn roll_d6(count: i8) -> Roll {
+pub fn roll_d6(count: u16) -> Roll {
     roll_type(count, DieType::D6)
 }
 
-pub fn roll_d8(count: i8) -> Roll {
+pub fn roll_d8(count: u16) -> Roll {
     roll_type(count, DieType::D8)
 }
 
-pub fn roll_d10(count: i8) -> Roll {
+pub fn roll_d10(count: u16) -> Roll {
     roll_type(count, DieType::D10)
 }
 
-pub fn roll_d12(count: i8) -> Roll {
+pub fn roll_d12(count: u16) -> Roll {
     roll_type(count, DieType::D12)
 }
 
-pub fn roll_d20(count: i8) -> Roll {
+pub fn roll_d20(count: u16) -> Roll {
     roll_type(count, DieType::D20)
 }
 
-pub fn roll_d100(count: i8) -> Roll {
+pub fn roll_d100(count: u16) -> Roll {
     roll_type(count, DieType::D100)
 }
 
-fn roll_type(count: i8, die: DieType) -> Roll {
+fn roll_type(count: u16, die: DieType) -> Roll {
     let mut dice = Vec::new();
     for _ in 0..count {
         dice.push(Die::new(die));

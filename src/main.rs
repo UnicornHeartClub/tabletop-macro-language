@@ -25,7 +25,7 @@ fn safe_string(input: *mut c_char) -> Vec<u8> {
         
 /// Run input and return a typed array for use in javascript
 #[no_mangle]
-pub fn run_macro(raw_input: *mut c_char) -> *mut c_char {
+pub fn run_macro(raw_input: *mut c_char, raw_tokens: *mut c_char) -> *mut c_char {
     // Start the timer
     let start = Instant::now();
     let executed = Utc::now();
@@ -38,8 +38,10 @@ pub fn run_macro(raw_input: *mut c_char) -> *mut c_char {
     let errors = Vec::new();
     let messages = Vec::new();
     let mut rolls = Vec::new();
-    let tokens = Vec::new();
     let version = String::from("0.1.0");
+
+    // Build our tokens
+    let tokens = Vec::new();
 
     // parse the macro into an executable program
     let prog = parse_p(input.as_slice());
@@ -57,13 +59,18 @@ pub fn run_macro(raw_input: *mut c_char) -> *mut c_char {
         for step in &mut program.steps {
             match step.op {
                 MacroOp::Roll => {
-                    // Check if we have a variable to replace
-                    // @todo
+                    // @todo check if we have a variable to replace
+
+                    // execute the roll and update the step value
                     let roll = execute_roll(&step);
+                    step.value = Some(StepValue::Int(roll.value));
+
+                    // pass the result if needed
                     if step.result == StepResult::Pass {
-                        step.value = Some(StepValue::Int(roll.value));
                         results.push(StepValue::Int(roll.value));
                     }
+
+                    // push to the tracked rolls
                     rolls.push(roll);
                 },
                 _ => println!("Not yet implemented {:?}", step.op)

@@ -45,6 +45,15 @@ fn test_complex_parser() {
                 args: vec![
                     Arg::Roll(RollArg::N(ArgValue::Number(1))),
                     Arg::Roll(RollArg::D(ArgValue::Number(20))),
+                ],
+                op: MacroOp::Roll,
+                result: StepResult::Pass,
+                value: None,
+            },
+            Step {
+                args: vec![
+                    Arg::Roll(RollArg::N(ArgValue::Variable("1".to_string()))),
+                    Arg::Roll(RollArg::D(ArgValue::Number(8))),
                     Arg::Roll(RollArg::Comment(ArgValue::Text("A cool roll comment".to_string()))),
                 ],
                 op: MacroOp::Roll,
@@ -61,7 +70,7 @@ fn test_complex_parser() {
             },
         ],
     };
-    let (_, result) = parse_p(b"#complex-macro-name !roll 1d20 \"A cool roll comment\" !say \"Smite!\"").unwrap();
+    let (_, result) = parse_p(b"#complex-macro-name !r 1d20 >> !roll $1d8 \"A cool roll comment\" !say \"Smite!\"").unwrap();
     assert_eq!(result, program);
 
     let program = Program {
@@ -96,7 +105,6 @@ fn test_complex_parser() {
                 args: vec![
                     Arg::Roll(RollArg::N(ArgValue::Number(2))),
                     Arg::Roll(RollArg::D(ArgValue::Number(20))),
-                    Arg::Roll(RollArg::K),
                     Arg::Roll(RollArg::H(ArgValue::Number(1))),
                 ],
                 op: MacroOp::Roll,
@@ -228,12 +236,29 @@ fn test_arguments_roll_parser() {
     assert_eq!(result, Arg::Roll(RollArg::Comment(ArgValue::Text("I am a comment".to_string()))));
 
     // Variables
+
+    // N
     let (_, result) = arguments_roll_p(b"$1d20").unwrap();
     assert_eq!(result, Arg::Roll(RollArg::N(ArgValue::Variable("1".to_string()))));
-
+    // D
     let (rest, _) = arguments_roll_p(b"1d$1").unwrap();
     let (_, result) = arguments_roll_p(rest).unwrap();
     assert_eq!(result, Arg::Roll(RollArg::D(ArgValue::Variable("1".to_string()))));
+    // E
+    let (_, result) = roll_flag_e_p(b"e$1").unwrap();
+    assert_eq!(result, Arg::Roll(RollArg::E(ArgValue::Variable("1".to_string()))));
+    // H
+    let (_, result) = roll_flag_h_p(b"kh$1").unwrap();
+    assert_eq!(result, Arg::Roll(RollArg::H(ArgValue::Variable("1".to_string()))));
+    // L
+    let (_, result) = roll_flag_l_p(b"kl$1").unwrap();
+    assert_eq!(result, Arg::Roll(RollArg::L(ArgValue::Variable("1".to_string()))));
+    // RO
+    let (_, result) = roll_flag_ro_p(b"ro$1").unwrap();
+    assert_eq!(result, Arg::Roll(RollArg::RO(ArgValue::Variable("1".to_string()))));
+    // RR
+    let (_, result) = roll_flag_rr_p(b"rr$1").unwrap();
+    assert_eq!(result, Arg::Roll(RollArg::RR(ArgValue::Variable("1".to_string()))));
 }
 
 #[test]
@@ -252,6 +277,15 @@ fn test_error_handling() {
 
     let result = command_p(b"invalid input").unwrap_err();
     assert_eq!(error_to_string(result), "Invalid or unrecognized command".to_string());
+}
+
+#[test]
+fn test_token_parser() {
+    let (_, result) = token_p(b"@foo").unwrap();
+    assert_eq!(result, "foo".to_string());
+
+    let (_, result) = token_p(b"@foo123bar").unwrap();
+    assert_eq!(result, "foo123bar".to_string());
 }
 
 #[test]

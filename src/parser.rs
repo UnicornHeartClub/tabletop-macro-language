@@ -39,8 +39,8 @@ pub enum Arg {
 pub enum ArgValue {
     Number(i16),
     Text(String),
-    Variable(String),
     Token(String),
+    Variable(String),
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -79,7 +79,6 @@ pub enum RollArg {
     D(ArgValue), // e.g. d20
     E(ArgValue),
     H(ArgValue),
-    K,
     L(ArgValue),
     N(ArgValue), // e.g. 1 (part of 1d20)
     RO(ArgValue),
@@ -131,7 +130,6 @@ pub fn arguments_roll_p(input: &[u8]) -> IResult<&[u8], Arg> {
         roll_die |
         roll_flag_e |
         roll_flag_h |
-        roll_flag_k |
         roll_flag_l |
         roll_flag_ro |
         roll_flag_rr |
@@ -270,37 +268,35 @@ pub fn roll_digit_p(input: &[u8]) -> IResult<&[u8], i16> {
 pub fn roll_flag_e_p(input: &[u8]) -> IResult<&[u8], Arg> {
     do_parse!(input,
         tag!("e") >>
-        num: digit >>
-        s: value!(String::from_utf8(num.to_vec()).unwrap()) >>
-        (Arg::Roll(RollArg::E(ArgValue::Number(s.parse::<i16>().unwrap()))))
+        var: ws!(alt_complete!(
+            map!(variable_reserved, |n| ArgValue::Variable(n)) |
+            map!(roll_digit, |n| ArgValue::Number(n))
+        )) >>
+        (Arg::Roll(RollArg::E(var)))
     )
 }
 
 /// Matches roll flag "h"
 pub fn roll_flag_h_p(input: &[u8]) -> IResult<&[u8], Arg> {
     do_parse!(input,
-        tag!("h") >>
-        num: digit >>
-        s: value!(String::from_utf8(num.to_vec()).unwrap()) >>
-        (Arg::Roll(RollArg::H(ArgValue::Number(s.parse::<i16>().unwrap()))))
-    )
-}
-
-/// Matches roll flag "k"
-pub fn roll_flag_k_p(input: &[u8]) -> IResult<&[u8], Arg> {
-    do_parse!(input,
-        tag!("k") >>
-        (Arg::Roll(RollArg::K))
+        tag!("kh") >>
+        var: ws!(alt_complete!(
+            map!(variable_reserved, |n| ArgValue::Variable(n)) |
+            map!(roll_digit, |n| ArgValue::Number(n))
+        )) >>
+        (Arg::Roll(RollArg::H(var)))
     )
 }
 
 /// matches roll flag "l"
 pub fn roll_flag_l_p(input: &[u8]) -> IResult<&[u8], Arg> {
     do_parse!(input,
-        tag!("l") >>
-        num: digit >>
-        s: value!(String::from_utf8(num.to_vec()).unwrap()) >>
-        (Arg::Roll(RollArg::L(ArgValue::Number(s.parse::<i16>().unwrap()))))
+        tag!("kl") >>
+        var: ws!(alt_complete!(
+            map!(variable_reserved, |n| ArgValue::Variable(n)) |
+            map!(roll_digit, |n| ArgValue::Number(n))
+        )) >>
+        (Arg::Roll(RollArg::L(var)))
     )
 }
 
@@ -308,9 +304,11 @@ pub fn roll_flag_l_p(input: &[u8]) -> IResult<&[u8], Arg> {
 pub fn roll_flag_ro_p(input: &[u8]) -> IResult<&[u8], Arg> {
     do_parse!(input,
         tag!("ro") >>
-        num: digit >>
-        s: value!(String::from_utf8(num.to_vec()).unwrap()) >>
-        (Arg::Roll(RollArg::RO(ArgValue::Number(s.parse::<i16>().unwrap()))))
+        var: ws!(alt_complete!(
+            map!(variable_reserved, |n| ArgValue::Variable(n)) |
+            map!(roll_digit, |n| ArgValue::Number(n))
+        )) >>
+        (Arg::Roll(RollArg::RO(var)))
     )
 }
 
@@ -318,9 +316,11 @@ pub fn roll_flag_ro_p(input: &[u8]) -> IResult<&[u8], Arg> {
 pub fn roll_flag_rr_p(input: &[u8]) -> IResult<&[u8], Arg> {
     do_parse!(input,
         tag!("rr") >>
-        num: digit >>
-        s: value!(String::from_utf8(num.to_vec()).unwrap()) >>
-        (Arg::Roll(RollArg::RR(ArgValue::Number(s.parse::<i16>().unwrap()))))
+        var: ws!(alt_complete!(
+            map!(variable_reserved, |n| ArgValue::Variable(n)) |
+            map!(roll_digit, |n| ArgValue::Number(n))
+        )) >>
+        (Arg::Roll(RollArg::RR(var)))
     )
 }
 
@@ -372,6 +372,15 @@ pub fn string_p(input: &[u8]) -> IResult<&[u8], String> {
     )
 }
 
+/// Matches tokens
+pub fn token_p(input: &[u8]) -> IResult<&[u8], String> {
+    // @todo match that we cannot start with a digit
+    do_parse!(input,
+        var: ws!(preceded!(tag!("@"), alphanumeric)) >>
+        (String::from_utf8(var.to_vec()).unwrap())
+    )
+}
+
 /// Matches variables
 pub fn variable_p(input: &[u8]) -> IResult<&[u8], String> {
     // @todo match that we cannot start with a digit
@@ -417,7 +426,6 @@ named!(quoted <&[u8], String>, call!(quoted_p));
 named!(roll_digit <&[u8], i16>, call!(roll_digit_p));
 named!(roll_flag_e <&[u8], Arg>, call!(roll_flag_e_p));
 named!(roll_flag_h <&[u8], Arg>, call!(roll_flag_h_p));
-named!(roll_flag_k <&[u8], Arg>, call!(roll_flag_k_p));
 named!(roll_flag_l <&[u8], Arg>, call!(roll_flag_l_p));
 named!(roll_flag_ro <&[u8], Arg>, call!(roll_flag_ro_p));
 named!(roll_flag_rr <&[u8], Arg>, call!(roll_flag_rr_p));
@@ -426,5 +434,6 @@ named!(roll_die <&[u8], Arg>, call!(roll_die_p));
 named!(single_quoted <&[u8], String>, call!(single_quoted_p));
 named!(step_result <&[u8], StepResult>, call!(step_result_p));
 named!(string <&[u8], String>, call!(string_p));
+named!(token <&[u8], String>, call!(token_p));
 named!(variable <&[u8], String>, call!(variable_p));
 named!(variable_reserved <&[u8], String>, call!(variable_reserved_p));

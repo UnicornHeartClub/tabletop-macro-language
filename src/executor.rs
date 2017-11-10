@@ -1,5 +1,5 @@
 use die::{Die, DieType};
-use parser::{Arg, MacroOp, Step, RollArg, Variable};
+use parser::{Arg, ArgValue, MacroOp, Step, RollArg};
 use roll::*;
 
 pub fn execute_roll (step: &Step) -> Roll {
@@ -13,9 +13,9 @@ pub fn execute_roll (step: &Step) -> Roll {
     let mut number_of_sides = 0;
     let mut die_type = DieType::Other;
     for arg in &step.args {
-        if let &Arg::Roll(RollArg::N(Variable::Number(num))) = arg {
+        if let &Arg::Roll(RollArg::N(ArgValue::Number(num))) = arg {
             number_of_dice = num;
-        } else if let &Arg::Roll(RollArg::D(Variable::Number(num))) = arg {
+        } else if let &Arg::Roll(RollArg::D(ArgValue::Number(num))) = arg {
             number_of_sides = num;
             die_type = match num {
                 100   => DieType::D100,
@@ -27,13 +27,13 @@ pub fn execute_roll (step: &Step) -> Roll {
                 4     => DieType::D4,
                 _     => DieType::Other,
             };
-        } else if let &Arg::Roll(RollArg::RR(Variable::Number(num))) = arg {
+        } else if let &Arg::Roll(RollArg::RR(ArgValue::Number(num))) = arg {
             rr = num;
-        } else if let &Arg::Roll(RollArg::RO(Variable::Number(num))) = arg {
+        } else if let &Arg::Roll(RollArg::RO(ArgValue::Number(num))) = arg {
             ro = num;
-        } else if let &Arg::Roll(RollArg::H(Variable::Number(num))) = arg {
+        } else if let &Arg::Roll(RollArg::H(ArgValue::Number(num))) = arg {
             kh = num;
-        } else if let &Arg::Roll(RollArg::L(Variable::Number(num))) = arg {
+        } else if let &Arg::Roll(RollArg::L(ArgValue::Number(num))) = arg {
             kl = num;
         }
     }

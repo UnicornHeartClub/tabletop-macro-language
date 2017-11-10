@@ -36,6 +36,14 @@ pub enum Arg {
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ArgValue {
+    Number(i16),
+    Text(String),
+    Variable(String),
+    Token(String),
+}
+
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum MacroOp {
     /// Addition (+)
     Add,
@@ -66,16 +74,16 @@ pub enum ProgramResult {
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum RollArg {
     Advantage,
-    Comment(Variable),
+    Comment(ArgValue),
     Disadvantage,
-    D(Variable), // e.g. d20
-    E(Variable),
-    H(Variable),
+    D(ArgValue), // e.g. d20
+    E(ArgValue),
+    H(ArgValue),
     K,
-    L(Variable),
-    N(Variable), // e.g. 1 (part of 1d20)
-    RO(Variable),
-    RR(Variable),
+    L(ArgValue),
+    N(ArgValue), // e.g. 1 (part of 1d20)
+    RO(ArgValue),
+    RR(ArgValue),
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -96,13 +104,6 @@ pub enum StepResult {
 pub enum StepValue {
     Number(i16),
     Text(String),
-}
-
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub enum Variable {
-    Number(i16),
-    Text(String),
-    Replace(String),
 }
 
 /// Matches advantage roll argument
@@ -134,8 +135,8 @@ pub fn arguments_roll_p(input: &[u8]) -> IResult<&[u8], Arg> {
         roll_flag_l |
         roll_flag_ro |
         roll_flag_rr |
-        map!(quoted,        | a | Arg::Roll(RollArg::Comment(Variable::Text(a)))) |
-        map!(single_quoted, | a | Arg::Roll(RollArg::Comment(Variable::Text(a)))) |
+        map!(quoted,        | a | Arg::Roll(RollArg::Comment(ArgValue::Text(a)))) |
+        map!(single_quoted, | a | Arg::Roll(RollArg::Comment(ArgValue::Text(a)))) |
         map!(variable,      | a | Arg::Variable(a))
     )
 }
@@ -271,7 +272,7 @@ pub fn roll_flag_e_p(input: &[u8]) -> IResult<&[u8], Arg> {
         tag!("e") >>
         num: digit >>
         s: value!(String::from_utf8(num.to_vec()).unwrap()) >>
-        (Arg::Roll(RollArg::E(Variable::Number(s.parse::<i16>().unwrap()))))
+        (Arg::Roll(RollArg::E(ArgValue::Number(s.parse::<i16>().unwrap()))))
     )
 }
 
@@ -281,7 +282,7 @@ pub fn roll_flag_h_p(input: &[u8]) -> IResult<&[u8], Arg> {
         tag!("h") >>
         num: digit >>
         s: value!(String::from_utf8(num.to_vec()).unwrap()) >>
-        (Arg::Roll(RollArg::H(Variable::Number(s.parse::<i16>().unwrap()))))
+        (Arg::Roll(RollArg::H(ArgValue::Number(s.parse::<i16>().unwrap()))))
     )
 }
 
@@ -299,7 +300,7 @@ pub fn roll_flag_l_p(input: &[u8]) -> IResult<&[u8], Arg> {
         tag!("l") >>
         num: digit >>
         s: value!(String::from_utf8(num.to_vec()).unwrap()) >>
-        (Arg::Roll(RollArg::L(Variable::Number(s.parse::<i16>().unwrap()))))
+        (Arg::Roll(RollArg::L(ArgValue::Number(s.parse::<i16>().unwrap()))))
     )
 }
 
@@ -309,7 +310,7 @@ pub fn roll_flag_ro_p(input: &[u8]) -> IResult<&[u8], Arg> {
         tag!("ro") >>
         num: digit >>
         s: value!(String::from_utf8(num.to_vec()).unwrap()) >>
-        (Arg::Roll(RollArg::RO(Variable::Number(s.parse::<i16>().unwrap()))))
+        (Arg::Roll(RollArg::RO(ArgValue::Number(s.parse::<i16>().unwrap()))))
     )
 }
 
@@ -319,7 +320,7 @@ pub fn roll_flag_rr_p(input: &[u8]) -> IResult<&[u8], Arg> {
         tag!("rr") >>
         num: digit >>
         s: value!(String::from_utf8(num.to_vec()).unwrap()) >>
-        (Arg::Roll(RollArg::RR(Variable::Number(s.parse::<i16>().unwrap()))))
+        (Arg::Roll(RollArg::RR(ArgValue::Number(s.parse::<i16>().unwrap()))))
     )
 }
 
@@ -328,8 +329,8 @@ pub fn roll_num_p(input: &[u8]) -> IResult<&[u8], Arg> {
     // @todo @error if string/invalid throw error
     do_parse!(input,
         var: ws!(alt_complete!(
-            map!(variable_reserved, |n| Variable::Replace(n)) |
-            map!(roll_digit, |n| Variable::Number(n))
+            map!(variable_reserved, |n| ArgValue::Variable(n)) |
+            map!(roll_digit, |n| ArgValue::Number(n))
         )) >>
         (Arg::Roll(RollArg::N(var)))
     )
@@ -340,8 +341,8 @@ pub fn roll_die_p(input: &[u8]) -> IResult<&[u8], Arg> {
     // @todo @error if string/invalid throw error
     do_parse!(input,
         var: ws!(preceded!(tag!("d"), alt_complete!(
-            map!(variable_reserved, |n| Variable::Replace(n)) |
-            map!(roll_digit, |n| Variable::Number(n))
+            map!(variable_reserved, |n| ArgValue::Variable(n)) |
+            map!(roll_digit, |n| ArgValue::Number(n))
         ))) >>
         (Arg::Roll(RollArg::D(var)))
     )

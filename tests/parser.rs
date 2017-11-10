@@ -10,8 +10,8 @@ fn test_simple_parser() {
         name: MacroOp::Name(String::from("simple-macro-name")),
         steps: vec![Step {
             args: vec![
-                Arg::Roll(RollArg::N(Variable::Number(1))),
-                Arg::Roll(RollArg::D(Variable::Number(20)))
+                Arg::Roll(RollArg::N(ArgValue::Number(1))),
+                Arg::Roll(RollArg::D(ArgValue::Number(20)))
             ],
             op: MacroOp::Roll,
             result: StepResult::Ignore,
@@ -43,9 +43,9 @@ fn test_complex_parser() {
         steps: vec![
             Step {
                 args: vec![
-                    Arg::Roll(RollArg::N(Variable::Number(1))),
-                    Arg::Roll(RollArg::D(Variable::Number(20))),
-                    Arg::Roll(RollArg::Comment(Variable::Text("A cool roll comment".to_string()))),
+                    Arg::Roll(RollArg::N(ArgValue::Number(1))),
+                    Arg::Roll(RollArg::D(ArgValue::Number(20))),
+                    Arg::Roll(RollArg::Comment(ArgValue::Text("A cool roll comment".to_string()))),
                 ],
                 op: MacroOp::Roll,
                 result: StepResult::Ignore,
@@ -69,8 +69,8 @@ fn test_complex_parser() {
         steps: vec![
             Step {
                 args: vec![
-                    Arg::Roll(RollArg::N(Variable::Number(3))),
-                    Arg::Roll(RollArg::D(Variable::Number(8))),
+                    Arg::Roll(RollArg::N(ArgValue::Number(3))),
+                    Arg::Roll(RollArg::D(ArgValue::Number(8))),
                 ],
                 op: MacroOp::Roll,
                 result: StepResult::Ignore,
@@ -94,10 +94,10 @@ fn test_complex_parser() {
             },
             Step {
                 args: vec![
-                    Arg::Roll(RollArg::N(Variable::Number(2))),
-                    Arg::Roll(RollArg::D(Variable::Number(20))),
+                    Arg::Roll(RollArg::N(ArgValue::Number(2))),
+                    Arg::Roll(RollArg::D(ArgValue::Number(20))),
                     Arg::Roll(RollArg::K),
-                    Arg::Roll(RollArg::H(Variable::Number(1))),
+                    Arg::Roll(RollArg::H(ArgValue::Number(1))),
                 ],
                 op: MacroOp::Roll,
                 result: StepResult::Pass,
@@ -206,10 +206,10 @@ fn test_step_result_parser() {
 fn test_arguments_roll_parser() {
     // Pass it through once should yield us the N and remove a "d"
     let (rest, result) = arguments_roll_p(b"1d20").unwrap();
-    assert_eq!(result, Arg::Roll(RollArg::N(Variable::Number(1))));
+    assert_eq!(result, Arg::Roll(RollArg::N(ArgValue::Number(1))));
     // Running through a second time will yield us the D
     let (_, result) = arguments_roll_p(rest).unwrap();
-    assert_eq!(result, Arg::Roll(RollArg::D(Variable::Number(20))));
+    assert_eq!(result, Arg::Roll(RollArg::D(ArgValue::Number(20))));
 
     // Advantage
     let (_, result) = arguments_roll_p(b"adv").unwrap();
@@ -225,15 +225,15 @@ fn test_arguments_roll_parser() {
 
     // Comment
     let (_, result) = arguments_roll_p(b"\"I am a comment\"").unwrap();
-    assert_eq!(result, Arg::Roll(RollArg::Comment(Variable::Text("I am a comment".to_string()))));
+    assert_eq!(result, Arg::Roll(RollArg::Comment(ArgValue::Text("I am a comment".to_string()))));
 
     // Variables
     let (_, result) = arguments_roll_p(b"$1d20").unwrap();
-    assert_eq!(result, Arg::Roll(RollArg::N(Variable::Replace("1".to_string()))));
+    assert_eq!(result, Arg::Roll(RollArg::N(ArgValue::Variable("1".to_string()))));
 
     let (rest, _) = arguments_roll_p(b"1d$1").unwrap();
     let (_, result) = arguments_roll_p(rest).unwrap();
-    assert_eq!(result, Arg::Roll(RollArg::D(Variable::Replace("1".to_string()))));
+    assert_eq!(result, Arg::Roll(RollArg::D(ArgValue::Variable("1".to_string()))));
 }
 
 #[test]
@@ -263,11 +263,11 @@ fn test_variable_parser() {
     assert_eq!(result, "foo123bar".to_string());
 }
 
-// #[test]
-// fn test_variable_reserved_parser() {
-    // let (_, result) = variable_reserved_p(b"$1").unwrap();
-    // assert_eq!(result, "1".to_string());
+#[test]
+fn test_variable_reserved_parser() {
+    let (_, result) = variable_reserved_p(b"$1").unwrap();
+    assert_eq!(result, "1".to_string());
 
-    // let (_, result) = variable_p(b"$12").unwrap();
-    // assert_eq!(result, "12".to_string());
-// }
+    let (_, result) = variable_p(b"$12").unwrap();
+    assert_eq!(result, "12".to_string());
+}

@@ -162,7 +162,7 @@
         ttml.init().then(function (t) {
           const defaultMacro = '#test-macro !say "Hello world!" !roll 1d20e20'
           updateTextarea(defaultMacro)
-          const prog = t.parseInput(defaultMacro)
+          const prog = t.runMacro(defaultMacro)
           updateProg(JSON.stringify(prog, null, 2))
 
           // Listen for the form
@@ -170,7 +170,7 @@
             e.preventDefault()
             const input = getTextarea()
             console.log(input)
-            const prog = t.parseInput(input)
+            const prog = t.runMacro(input)
             console.log(prog)
             updateProg(JSON.stringify(prog, null, 2))
           })

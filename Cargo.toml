@@ -14,6 +14,7 @@ path = "src/main.rs"
 [dependencies]
 chrono = { version = "0.4.0", features = [ "serde" ] }
 log = "*"
+libc = "0.2"
 nom = "^3.2"
 rand = "0.3"
 serde = "1.0.16"

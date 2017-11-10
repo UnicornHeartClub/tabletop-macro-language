@@ -2,10 +2,34 @@
 
 This serves as a reference to how the program operates under-the-hood.
 
-## Table of Contents
+:warning: **This is under active development.** :warning:
 
+# Table of Contents
+
+1. [Usage](#usage)
+1. [API](#api)
 1. [Output](#output)
 
+# Usage
+
+```javascript
+import { init } from 'tabletop-macro-language'
+
+try {
+  const { setup, runMacro } = await init()
+} catch (err) {
+  console.error(err)
+}
+```
+
+# API
+
+## init: Promise<TTML>
+
+Initializes the module and returns useful functions for you to use to run macros.
+
+## setup;
+ 
 ## Output
 
 The output of the program is useful for interpretting how your game or software will handle actions.

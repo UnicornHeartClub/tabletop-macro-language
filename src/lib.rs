@@ -3,8 +3,10 @@
 extern crate chrono;
 extern crate rand;
 extern crate uuid;
+extern crate libc;
 
 pub mod die;
+pub mod dom;
 pub mod errors;
 pub mod executor;
 pub mod output;

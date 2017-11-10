@@ -1,6 +1,3 @@
-// setup limit for error-chain
-#![recursion_limit = "1024"]
-
 // #[macro_use] extern crate error_chain;
 extern crate chrono;
 extern crate serde;
@@ -25,16 +22,16 @@ fn safe_string(input: *mut c_char) -> Vec<u8> {
         CStr::from_ptr(input).to_bytes().to_owned()
     }
 }
-
+        
 /// Run input and return a typed array for use in javascript
 #[no_mangle]
-pub fn parse(raw_input: *mut c_char) -> *mut c_char {
+pub fn run_macro(raw_input: *mut c_char) -> *mut c_char {
     // Start the timer
     let start = Instant::now();
     let executed = Utc::now();
     // Take the input and safely covert it to a String
     let input = safe_string(raw_input);
-    // keep a copy of the raw input to displau in our output
+    // keep a copy of the raw input to display in our output
     let output_input = input.clone();
 
     // @todo build our vectors

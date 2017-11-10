@@ -1,5 +1,5 @@
 use die::{Die, DieType};
-use parser::{Arg, MacroOp, Step, RollArg};
+use parser::{Arg, MacroOp, Step, RollArg, Variable};
 use roll::*;
 
 pub fn execute_roll (step: &Step) -> Roll {
@@ -13,9 +13,9 @@ pub fn execute_roll (step: &Step) -> Roll {
     let mut number_of_sides = 0;
     let mut die_type = DieType::Other;
     for arg in &step.args {
-        if let &Arg::Roll(RollArg::N(num)) = arg {
+        if let &Arg::Roll(RollArg::N(Variable::Number(num))) = arg {
             number_of_dice = num;
-        } else if let &Arg::Roll(RollArg::D(num)) = arg {
+        } else if let &Arg::Roll(RollArg::D(Variable::Number(num))) = arg {
             number_of_sides = num;
             die_type = match num {
                 100   => DieType::D100,
@@ -27,13 +27,13 @@ pub fn execute_roll (step: &Step) -> Roll {
                 4     => DieType::D4,
                 _     => DieType::Other,
             };
-        } else if let &Arg::Roll(RollArg::RR(num)) = arg {
+        } else if let &Arg::Roll(RollArg::RR(Variable::Number(num))) = arg {
             rr = num;
-        } else if let &Arg::Roll(RollArg::RO(num)) = arg {
+        } else if let &Arg::Roll(RollArg::RO(Variable::Number(num))) = arg {
             ro = num;
-        } else if let &Arg::Roll(RollArg::H(num)) = arg {
+        } else if let &Arg::Roll(RollArg::H(Variable::Number(num))) = arg {
             kh = num;
-        } else if let &Arg::Roll(RollArg::L(num)) = arg {
+        } else if let &Arg::Roll(RollArg::L(Variable::Number(num))) = arg {
             kl = num;
         }
     }
@@ -52,7 +52,7 @@ pub fn execute_roll (step: &Step) -> Roll {
             let mut dice = Vec::new();
             for _ in 0..number_of_dice {
                 let mut die = Die::new(die_type);
-                die.set_sides(number_of_sides);
+                die.set_sides(number_of_sides as u8);
                 die.set_min(1);
                 die.set_max(number_of_sides as i16);
                 dice.push(die);
@@ -76,9 +76,9 @@ pub fn execute_roll (step: &Step) -> Roll {
     }
 
     if kh != 0 {
-        roll.keep_high(kh);
+        roll.keep_high(kh as u16);
     } else if kl != 0 {
-        roll.keep_low(kl);
+        roll.keep_low(kl as u16);
     }
 
     roll

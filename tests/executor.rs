@@ -7,8 +7,8 @@ use ttml::executor::execute_roll;
 fn it_returns_a_roll() {
     let step = Step {
         args: vec![
-            Arg::Roll(RollArg::N(1)),
-            Arg::Roll(RollArg::D(20)),
+            Arg::Roll(RollArg::N(Variable::Number(1))),
+            Arg::Roll(RollArg::D(Variable::Number(20))),
         ],
         op: MacroOp::Roll,
         result: StepResult::Ignore,

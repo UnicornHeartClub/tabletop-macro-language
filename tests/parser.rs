@@ -10,8 +10,8 @@ fn test_simple_parser() {
         name: MacroOp::Name(String::from("simple-macro-name")),
         steps: vec![Step {
             args: vec![
-                Arg::Roll(RollArg::N(1)),
-                Arg::Roll(RollArg::D(20))
+                Arg::Roll(RollArg::N(Variable::Number(1))),
+                Arg::Roll(RollArg::D(Variable::Number(20)))
             ],
             op: MacroOp::Roll,
             result: StepResult::Ignore,
@@ -43,9 +43,9 @@ fn test_complex_parser() {
         steps: vec![
             Step {
                 args: vec![
-                    Arg::Roll(RollArg::N(1)),
-                    Arg::Roll(RollArg::D(20)),
-                    Arg::Roll(RollArg::Comment("A cool roll comment".to_string())),
+                    Arg::Roll(RollArg::N(Variable::Number(1))),
+                    Arg::Roll(RollArg::D(Variable::Number(20))),
+                    Arg::Roll(RollArg::Comment(Variable::Text("A cool roll comment".to_string()))),
                 ],
                 op: MacroOp::Roll,
                 result: StepResult::Ignore,
@@ -69,8 +69,8 @@ fn test_complex_parser() {
         steps: vec![
             Step {
                 args: vec![
-                    Arg::Roll(RollArg::N(3)),
-                    Arg::Roll(RollArg::D(8)),
+                    Arg::Roll(RollArg::N(Variable::Number(3))),
+                    Arg::Roll(RollArg::D(Variable::Number(8))),
                 ],
                 op: MacroOp::Roll,
                 result: StepResult::Ignore,
@@ -94,10 +94,10 @@ fn test_complex_parser() {
             },
             Step {
                 args: vec![
-                    Arg::Roll(RollArg::N(2)),
-                    Arg::Roll(RollArg::D(20)),
+                    Arg::Roll(RollArg::N(Variable::Number(2))),
+                    Arg::Roll(RollArg::D(Variable::Number(20))),
                     Arg::Roll(RollArg::K),
-                    Arg::Roll(RollArg::H(1)),
+                    Arg::Roll(RollArg::H(Variable::Number(1))),
                 ],
                 op: MacroOp::Roll,
                 result: StepResult::Pass,
@@ -206,10 +206,10 @@ fn test_step_result_parser() {
 fn test_arguments_roll_parser() {
     // Pass it through once should yield us the N and remove a "d"
     let (rest, result) = arguments_roll_p(b"1d20").unwrap();
-    assert_eq!(result, Arg::Roll(RollArg::N(1)));
+    assert_eq!(result, Arg::Roll(RollArg::N(Variable::Number(1))));
     // Running through a second time will yield us the D
     let (_, result) = arguments_roll_p(rest).unwrap();
-    assert_eq!(result, Arg::Roll(RollArg::D(20)));
+    assert_eq!(result, Arg::Roll(RollArg::D(Variable::Number(20))));
 
     // Advantage
     let (_, result) = arguments_roll_p(b"adv").unwrap();
@@ -225,7 +225,12 @@ fn test_arguments_roll_parser() {
 
     // Comment
     let (_, result) = arguments_roll_p(b"\"I am a comment\"").unwrap();
-    assert_eq!(result, Arg::Roll(RollArg::Comment("I am a comment".to_string())));
+    assert_eq!(result, Arg::Roll(RollArg::Comment(Variable::Text("I am a comment".to_string()))));
+
+    // Variables
+    // let (_, result) = arguments_roll_p(b"$1d20").unwrap();
+    // assert_eq!(result, Arg::Roll(RollArg::N(Arg::Variable("1".to_string()))));
+    // Running through a second time will yield us the D
 }
 
 #[test]

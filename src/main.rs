@@ -63,11 +63,11 @@ pub fn run_macro(raw_input: *mut c_char, raw_tokens: *mut c_char) -> *mut c_char
 
                     // execute the roll and update the step value
                     let roll = execute_roll(&step);
-                    step.value = Some(StepValue::Int(roll.value));
+                    step.value = Some(StepValue::Number(roll.value));
 
                     // pass the result if needed
                     if step.result == StepResult::Pass {
-                        results.push(StepValue::Int(roll.value));
+                        results.push(StepValue::Number(roll.value));
                     }
 
                     // push to the tracked rolls

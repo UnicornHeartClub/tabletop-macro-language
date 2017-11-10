@@ -14,17 +14,25 @@ pub struct Program {
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub enum StepValue {
-    Int(i16),
-    Text(String),
-}
-
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Step {
     pub args: Vec<Arg>,
     pub op: MacroOp,
     pub result: StepResult,
     pub value: Option<StepValue>,
+}
+
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Arg {
+    /// Number (Float, Integer)
+    Number(u32),
+    /// Unrecognized argument
+    Unrecognized(String),
+    /// Roll arguments
+    Roll(RollArg),
+    /// Say arguments
+    Say(SayArg),
+    /// Static variable ($)
+    Variable(String), // @deprecate Use instead lower-level Variable declarations for each command
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -54,6 +62,28 @@ pub enum ProgramResult {
     Roll,
 }
 
+// Arguments for the roll command, used by the parser
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum RollArg {
+    Advantage,
+    Comment(Variable),
+    Disadvantage,
+    D(Variable), // e.g. d20
+    E(Variable),
+    H(Variable),
+    K,
+    L(Variable),
+    N(Variable), // e.g. 1 (part of 1d20)
+    RO(Variable),
+    RR(Variable),
+}
+
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum SayArg {
+    Message(String),
+    To(String),
+}
+
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum StepResult {
     /// Ignore Result (default)
@@ -63,39 +93,16 @@ pub enum StepResult {
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub enum Arg {
-    /// Number (Float, Integer)
-    Number(u32),
-    /// Unrecognized argument
-    Unrecognized(String),
-    /// Roll arguments
-    Roll(RollArg),
-    /// Say arguments
-    Say(SayArg),
-    /// Static variable ($)
-    Variable(String),
-}
-
-// Arguments for the roll command, used by the parser
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub enum RollArg {
-    Advantage,
-    Comment(String),
-    Disadvantage,
-    D(u8), // e.g. d20
-    E(i16),
-    H(u16),
-    K,
-    L(u16),
-    N(u8), // e.g. 1 (part of 1d20)
-    RO(i16),
-    RR(i16),
+pub enum StepValue {
+    Number(i16),
+    Text(String),
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub enum SayArg {
-    Message(String),
-    To(String),
+pub enum Variable {
+    Number(i16),
+    Text(String),
+    Replace(String),
 }
 
 /// Matches advantage roll argument
@@ -127,8 +134,8 @@ pub fn arguments_roll_p(input: &[u8]) -> IResult<&[u8], Arg> {
         roll_flag_l |
         roll_flag_ro |
         roll_flag_rr |
-        map!(quoted,        | a | Arg::Roll(RollArg::Comment(a))) |
-        map!(single_quoted, | a | Arg::Roll(RollArg::Comment(a))) |
+        map!(quoted,        | a | Arg::Roll(RollArg::Comment(Variable::Text(a)))) |
+        map!(single_quoted, | a | Arg::Roll(RollArg::Comment(Variable::Text(a)))) |
         map!(variable,      | a | Arg::Variable(a))
     )
 }
@@ -255,7 +262,7 @@ pub fn roll_flag_e_p(input: &[u8]) -> IResult<&[u8], Arg> {
         tag!("e") >>
         num: digit >>
         s: value!(String::from_utf8(num.to_vec()).unwrap()) >>
-        (Arg::Roll(RollArg::E((s.parse::<i16>().unwrap()))))
+        (Arg::Roll(RollArg::E(Variable::Number(s.parse::<i16>().unwrap()))))
     )
 }
 
@@ -265,7 +272,7 @@ pub fn roll_flag_h_p(input: &[u8]) -> IResult<&[u8], Arg> {
         tag!("h") >>
         num: digit >>
         s: value!(String::from_utf8(num.to_vec()).unwrap()) >>
-        (Arg::Roll(RollArg::H((s.parse::<u16>().unwrap()))))
+        (Arg::Roll(RollArg::H(Variable::Number(s.parse::<i16>().unwrap()))))
     )
 }
 
@@ -283,7 +290,7 @@ pub fn roll_flag_l_p(input: &[u8]) -> IResult<&[u8], Arg> {
         tag!("l") >>
         num: digit >>
         s: value!(String::from_utf8(num.to_vec()).unwrap()) >>
-        (Arg::Roll(RollArg::L((s.parse::<u16>().unwrap()))))
+        (Arg::Roll(RollArg::L(Variable::Number(s.parse::<i16>().unwrap()))))
     )
 }
 
@@ -293,7 +300,7 @@ pub fn roll_flag_ro_p(input: &[u8]) -> IResult<&[u8], Arg> {
         tag!("ro") >>
         num: digit >>
         s: value!(String::from_utf8(num.to_vec()).unwrap()) >>
-        (Arg::Roll(RollArg::RO((s.parse::<i16>().unwrap()))))
+        (Arg::Roll(RollArg::RO(Variable::Number(s.parse::<i16>().unwrap()))))
     )
 }
 
@@ -303,7 +310,7 @@ pub fn roll_flag_rr_p(input: &[u8]) -> IResult<&[u8], Arg> {
         tag!("rr") >>
         num: digit >>
         s: value!(String::from_utf8(num.to_vec()).unwrap()) >>
-        (Arg::Roll(RollArg::RR((s.parse::<i16>().unwrap()))))
+        (Arg::Roll(RollArg::RR(Variable::Number(s.parse::<i16>().unwrap()))))
     )
 }
 
@@ -312,7 +319,7 @@ pub fn roll_num_p(input: &[u8]) -> IResult<&[u8], Arg> {
     do_parse!(input,
         num: ws!(digit) >>
         s: value!(String::from_utf8(num.to_vec()).unwrap()) >>
-        (Arg::Roll(RollArg::N(s.parse::<u8>().unwrap())))
+        (Arg::Roll(RollArg::N(Variable::Number(s.parse::<i16>().unwrap()))))
     )
 }
 
@@ -321,7 +328,7 @@ pub fn roll_die_p(input: &[u8]) -> IResult<&[u8], Arg> {
     do_parse!(input,
         num: ws!(preceded!(tag!("d"), digit)) >>
         s: value!(String::from_utf8(num.to_vec()).unwrap()) >>
-        (Arg::Roll(RollArg::D(s.parse::<u8>().unwrap())))
+        (Arg::Roll(RollArg::D(Variable::Number(s.parse::<i16>().unwrap()))))
     )
 }
 

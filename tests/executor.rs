@@ -15,9 +15,32 @@ fn it_returns_a_roll() {
         value: None,
     };
 
-    let roll = execute_roll(&step);
+    let results = vec![];
+    let roll = execute_roll(&step, &results);
 
     assert!(roll.value >= 1);
     assert!(roll.value <= 20);
     assert_eq!(roll.dice.len(), 1);
+}
+
+#[test]
+fn it_uses_variables() {
+    let step = Step {
+        args: vec![
+            Arg::Roll(RollArg::N(ArgValue::VariableReserved(1))),
+            Arg::Roll(RollArg::D(ArgValue::Number(20))),
+        ],
+        op: MacroOp::Roll,
+        result: StepResult::Ignore,
+        value: None,
+    };
+
+    let results = vec![
+        StepValue::Number(5),
+    ];
+    let roll = execute_roll(&step, &results);
+
+    assert!(roll.value >= 5);
+    assert!(roll.value <= 100);
+    assert_eq!(roll.dice.len(), 5);
 }

@@ -41,6 +41,7 @@ pub enum ArgValue {
     Text(String),
     Token(String),
     Variable(String),
+    VariableReserved(i16),
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -269,7 +270,8 @@ pub fn roll_flag_e_p(input: &[u8]) -> IResult<&[u8], Arg> {
     do_parse!(input,
         tag!("e") >>
         var: ws!(alt_complete!(
-            map!(variable_reserved, |n| ArgValue::Variable(n)) |
+            map!(variable_reserved, |n| ArgValue::VariableReserved(n)) |
+            map!(variable, |n| ArgValue::Variable(n)) |
             map!(roll_digit, |n| ArgValue::Number(n))
         )) >>
         (Arg::Roll(RollArg::E(var)))
@@ -281,7 +283,8 @@ pub fn roll_flag_h_p(input: &[u8]) -> IResult<&[u8], Arg> {
     do_parse!(input,
         tag!("kh") >>
         var: ws!(alt_complete!(
-            map!(variable_reserved, |n| ArgValue::Variable(n)) |
+            map!(variable_reserved, |n| ArgValue::VariableReserved(n)) |
+            map!(variable, |n| ArgValue::Variable(n)) |
             map!(roll_digit, |n| ArgValue::Number(n))
         )) >>
         (Arg::Roll(RollArg::H(var)))
@@ -293,7 +296,8 @@ pub fn roll_flag_l_p(input: &[u8]) -> IResult<&[u8], Arg> {
     do_parse!(input,
         tag!("kl") >>
         var: ws!(alt_complete!(
-            map!(variable_reserved, |n| ArgValue::Variable(n)) |
+            map!(variable_reserved, |n| ArgValue::VariableReserved(n)) |
+            map!(variable, |n| ArgValue::Variable(n)) |
             map!(roll_digit, |n| ArgValue::Number(n))
         )) >>
         (Arg::Roll(RollArg::L(var)))
@@ -305,7 +309,8 @@ pub fn roll_flag_ro_p(input: &[u8]) -> IResult<&[u8], Arg> {
     do_parse!(input,
         tag!("ro") >>
         var: ws!(alt_complete!(
-            map!(variable_reserved, |n| ArgValue::Variable(n)) |
+            map!(variable_reserved, |n| ArgValue::VariableReserved(n)) |
+            map!(variable, |n| ArgValue::Variable(n)) |
             map!(roll_digit, |n| ArgValue::Number(n))
         )) >>
         (Arg::Roll(RollArg::RO(var)))
@@ -317,7 +322,8 @@ pub fn roll_flag_rr_p(input: &[u8]) -> IResult<&[u8], Arg> {
     do_parse!(input,
         tag!("rr") >>
         var: ws!(alt_complete!(
-            map!(variable_reserved, |n| ArgValue::Variable(n)) |
+            map!(variable_reserved, |n| ArgValue::VariableReserved(n)) |
+            map!(variable, |n| ArgValue::Variable(n)) |
             map!(roll_digit, |n| ArgValue::Number(n))
         )) >>
         (Arg::Roll(RollArg::RR(var)))
@@ -329,7 +335,8 @@ pub fn roll_num_p(input: &[u8]) -> IResult<&[u8], Arg> {
     // @todo @error if string/invalid throw error
     do_parse!(input,
         var: ws!(alt_complete!(
-            map!(variable_reserved, |n| ArgValue::Variable(n)) |
+            map!(variable_reserved, |n| ArgValue::VariableReserved(n)) |
+            map!(variable, |n| ArgValue::Variable(n)) |
             map!(roll_digit, |n| ArgValue::Number(n))
         )) >>
         (Arg::Roll(RollArg::N(var)))
@@ -341,7 +348,8 @@ pub fn roll_die_p(input: &[u8]) -> IResult<&[u8], Arg> {
     // @todo @error if string/invalid throw error
     do_parse!(input,
         var: ws!(preceded!(tag!("d"), alt_complete!(
-            map!(variable_reserved, |n| ArgValue::Variable(n)) |
+            map!(variable_reserved, |n| ArgValue::VariableReserved(n)) |
+            map!(variable, |n| ArgValue::Variable(n)) |
             map!(roll_digit, |n| ArgValue::Number(n))
         ))) >>
         (Arg::Roll(RollArg::D(var)))
@@ -391,10 +399,11 @@ pub fn variable_p(input: &[u8]) -> IResult<&[u8], String> {
 }
 
 /// Matches reserved variables (digits only)
-pub fn variable_reserved_p(input: &[u8]) -> IResult<&[u8], String> {
+pub fn variable_reserved_p(input: &[u8]) -> IResult<&[u8], i16> {
     do_parse!(input,
         var: ws!(preceded!(tag!("$"), digit)) >>
-        (String::from_utf8(var.to_vec()).unwrap())
+        num: value!(String::from_utf8(var.to_vec()).unwrap()) >>
+        (num.parse::<i16>().unwrap())
     )
 }
 
@@ -436,4 +445,4 @@ named!(step_result <&[u8], StepResult>, call!(step_result_p));
 named!(string <&[u8], String>, call!(string_p));
 named!(token <&[u8], String>, call!(token_p));
 named!(variable <&[u8], String>, call!(variable_p));
-named!(variable_reserved <&[u8], String>, call!(variable_reserved_p));
+named!(variable_reserved <&[u8], i16>, call!(variable_reserved_p));

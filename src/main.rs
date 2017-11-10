@@ -62,7 +62,7 @@ pub fn run_macro(raw_input: *mut c_char, raw_tokens: *mut c_char) -> *mut c_char
                     // @todo check if we have a variable to replace
 
                     // execute the roll and update the step value
-                    let roll = execute_roll(&step);
+                    let roll = execute_roll(&step, &results);
                     step.value = Some(StepValue::Number(roll.value));
 
                     // pass the result if needed

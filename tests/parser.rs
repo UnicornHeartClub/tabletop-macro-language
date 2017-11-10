@@ -52,7 +52,7 @@ fn test_complex_parser() {
             },
             Step {
                 args: vec![
-                    Arg::Roll(RollArg::N(ArgValue::Variable("1".to_string()))),
+                    Arg::Roll(RollArg::N(ArgValue::VariableReserved(1))),
                     Arg::Roll(RollArg::D(ArgValue::Number(8))),
                     Arg::Roll(RollArg::Comment(ArgValue::Text("A cool roll comment".to_string()))),
                 ],
@@ -239,26 +239,26 @@ fn test_arguments_roll_parser() {
 
     // N
     let (_, result) = arguments_roll_p(b"$1d20").unwrap();
-    assert_eq!(result, Arg::Roll(RollArg::N(ArgValue::Variable("1".to_string()))));
+    assert_eq!(result, Arg::Roll(RollArg::N(ArgValue::VariableReserved(1))));
     // D
     let (rest, _) = arguments_roll_p(b"1d$1").unwrap();
     let (_, result) = arguments_roll_p(rest).unwrap();
-    assert_eq!(result, Arg::Roll(RollArg::D(ArgValue::Variable("1".to_string()))));
+    assert_eq!(result, Arg::Roll(RollArg::D(ArgValue::VariableReserved(1))));
     // E
     let (_, result) = roll_flag_e_p(b"e$1").unwrap();
-    assert_eq!(result, Arg::Roll(RollArg::E(ArgValue::Variable("1".to_string()))));
+    assert_eq!(result, Arg::Roll(RollArg::E(ArgValue::VariableReserved(1))));
     // H
     let (_, result) = roll_flag_h_p(b"kh$1").unwrap();
-    assert_eq!(result, Arg::Roll(RollArg::H(ArgValue::Variable("1".to_string()))));
+    assert_eq!(result, Arg::Roll(RollArg::H(ArgValue::VariableReserved(1))));
     // L
     let (_, result) = roll_flag_l_p(b"kl$1").unwrap();
-    assert_eq!(result, Arg::Roll(RollArg::L(ArgValue::Variable("1".to_string()))));
+    assert_eq!(result, Arg::Roll(RollArg::L(ArgValue::VariableReserved(1))));
     // RO
     let (_, result) = roll_flag_ro_p(b"ro$1").unwrap();
-    assert_eq!(result, Arg::Roll(RollArg::RO(ArgValue::Variable("1".to_string()))));
+    assert_eq!(result, Arg::Roll(RollArg::RO(ArgValue::VariableReserved(1))));
     // RR
     let (_, result) = roll_flag_rr_p(b"rr$1").unwrap();
-    assert_eq!(result, Arg::Roll(RollArg::RR(ArgValue::Variable("1".to_string()))));
+    assert_eq!(result, Arg::Roll(RollArg::RR(ArgValue::VariableReserved(1))));
 }
 
 #[test]
@@ -300,8 +300,8 @@ fn test_variable_parser() {
 #[test]
 fn test_variable_reserved_parser() {
     let (_, result) = variable_reserved_p(b"$1").unwrap();
-    assert_eq!(result, "1".to_string());
+    assert_eq!(result, 1);
 
-    let (_, result) = variable_p(b"$12").unwrap();
-    assert_eq!(result, "12".to_string());
+    let (_, result) = variable_reserved_p(b"$12").unwrap();
+    assert_eq!(result, 12);
 }

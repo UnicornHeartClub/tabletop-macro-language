@@ -32,7 +32,7 @@ pub enum Arg {
     /// Say arguments
     Say(SayArg),
     /// Static variable ($)
-    Variable(String), // @deprecate Use instead lower-level Variable declarations for each command
+    Variable(String),
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -256,6 +256,15 @@ pub fn quoted_p(input: &[u8]) -> IResult<&[u8], String> {
     )
 }
 
+/// Matches digits for "D" and parses to i16
+pub fn roll_digit_p(input: &[u8]) -> IResult<&[u8], i16> {
+    do_parse!(input,
+        var: digit >>
+        num: value!(String::from_utf8(var.to_vec()).unwrap()) >>
+        (num.parse::<i16>().unwrap())
+    )
+}
+
 /// Matches roll flag "e"
 pub fn roll_flag_e_p(input: &[u8]) -> IResult<&[u8], Arg> {
     do_parse!(input,
@@ -316,19 +325,25 @@ pub fn roll_flag_rr_p(input: &[u8]) -> IResult<&[u8], Arg> {
 
 /// Matches "N" in NdD
 pub fn roll_num_p(input: &[u8]) -> IResult<&[u8], Arg> {
+    // @todo @error if string/invalid throw error
     do_parse!(input,
-        num: ws!(digit) >>
-        s: value!(String::from_utf8(num.to_vec()).unwrap()) >>
-        (Arg::Roll(RollArg::N(Variable::Number(s.parse::<i16>().unwrap()))))
+        var: ws!(alt_complete!(
+            map!(variable_reserved, |n| Variable::Replace(n)) |
+            map!(roll_digit, |n| Variable::Number(n))
+        )) >>
+        (Arg::Roll(RollArg::N(var)))
     )
 }
 
 /// Matches "D" in NdD
 pub fn roll_die_p(input: &[u8]) -> IResult<&[u8], Arg> {
+    // @todo @error if string/invalid throw error
     do_parse!(input,
-        num: ws!(preceded!(tag!("d"), digit)) >>
-        s: value!(String::from_utf8(num.to_vec()).unwrap()) >>
-        (Arg::Roll(RollArg::D(Variable::Number(s.parse::<i16>().unwrap()))))
+        var: ws!(preceded!(tag!("d"), alt_complete!(
+            map!(variable_reserved, |n| Variable::Replace(n)) |
+            map!(roll_digit, |n| Variable::Number(n))
+        ))) >>
+        (Arg::Roll(RollArg::D(var)))
     )
 }
 
@@ -358,8 +373,17 @@ pub fn string_p(input: &[u8]) -> IResult<&[u8], String> {
 
 /// Matches variables
 pub fn variable_p(input: &[u8]) -> IResult<&[u8], String> {
+    // @todo match that we cannot start with a digit
     do_parse!(input,
         var: ws!(preceded!(tag!("$"), alphanumeric)) >>
+        (String::from_utf8(var.to_vec()).unwrap())
+    )
+}
+
+/// Matches reserved variables (digits only)
+pub fn variable_reserved_p(input: &[u8]) -> IResult<&[u8], String> {
+    do_parse!(input,
+        var: ws!(preceded!(tag!("$"), digit)) >>
         (String::from_utf8(var.to_vec()).unwrap())
     )
 }
@@ -389,6 +413,7 @@ named!(parse <&[u8], Program>, call!(parse_p));
 named!(parse_step <&[u8], Step>, call!(parse_step_p));
 named!(primitive <&[u8], MacroOp>, call!(primitive_p));
 named!(quoted <&[u8], String>, call!(quoted_p));
+named!(roll_digit <&[u8], i16>, call!(roll_digit_p));
 named!(roll_flag_e <&[u8], Arg>, call!(roll_flag_e_p));
 named!(roll_flag_h <&[u8], Arg>, call!(roll_flag_h_p));
 named!(roll_flag_k <&[u8], Arg>, call!(roll_flag_k_p));
@@ -401,3 +426,4 @@ named!(single_quoted <&[u8], String>, call!(single_quoted_p));
 named!(step_result <&[u8], StepResult>, call!(step_result_p));
 named!(string <&[u8], String>, call!(string_p));
 named!(variable <&[u8], String>, call!(variable_p));
+named!(variable_reserved <&[u8], String>, call!(variable_reserved_p));

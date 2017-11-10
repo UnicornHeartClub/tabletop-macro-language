@@ -228,9 +228,12 @@ fn test_arguments_roll_parser() {
     assert_eq!(result, Arg::Roll(RollArg::Comment(Variable::Text("I am a comment".to_string()))));
 
     // Variables
-    // let (_, result) = arguments_roll_p(b"$1d20").unwrap();
-    // assert_eq!(result, Arg::Roll(RollArg::N(Arg::Variable("1".to_string()))));
-    // Running through a second time will yield us the D
+    let (_, result) = arguments_roll_p(b"$1d20").unwrap();
+    assert_eq!(result, Arg::Roll(RollArg::N(Variable::Replace("1".to_string()))));
+
+    let (rest, _) = arguments_roll_p(b"1d$1").unwrap();
+    let (_, result) = arguments_roll_p(rest).unwrap();
+    assert_eq!(result, Arg::Roll(RollArg::D(Variable::Replace("1".to_string()))));
 }
 
 #[test]
@@ -250,3 +253,21 @@ fn test_error_handling() {
     let result = command_p(b"invalid input").unwrap_err();
     assert_eq!(error_to_string(result), "Invalid or unrecognized command".to_string());
 }
+
+#[test]
+fn test_variable_parser() {
+    let (_, result) = variable_p(b"$foo").unwrap();
+    assert_eq!(result, "foo".to_string());
+
+    let (_, result) = variable_p(b"$foo123bar").unwrap();
+    assert_eq!(result, "foo123bar".to_string());
+}
+
+// #[test]
+// fn test_variable_reserved_parser() {
+    // let (_, result) = variable_reserved_p(b"$1").unwrap();
+    // assert_eq!(result, "1".to_string());
+
+    // let (_, result) = variable_p(b"$12").unwrap();
+    // assert_eq!(result, "12".to_string());
+// }

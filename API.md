@@ -2,18 +2,6 @@
 
 The official macro reference guide for the TableTop Macro Language.
 
-# Table of Contents
-
-1. [Language Basics](#language-basics)
-2. [Commands](#commands)
-
-# Language Basics
-
-1. [Example Macro](#example)
-2. [Passing Results](#passing-results)
-3. [Prompts](#prompts)
-4. [Reserved Variables](#reserved-variables)
-
 ## What's a Macro?
 
 Macros allow users to define custom actions in tabletop role-playing games to issue chat commands,
@@ -26,7 +14,15 @@ games.
 By open-sourcing the language and parser, we hope more users and non-users will be open to using our
 macro language, whether inside of Power VTT or in other software.
 
-### Example
+# Table of Contents
+
+1. [Example](#example)
+1. [Results](#results)
+1. [Variables](#reserved-variables)
+1. [Tokens](#tokens)
+1. [Commands](#commands)
+
+# Example
 
 For more examples, see [Examples](https://github.com/UnicornHeartClub/tabletop-macro-language/tree/master/examples).
 
@@ -35,7 +31,7 @@ subtracts 1 from the token's health.
 
 ```bash
 #heal
-!say "I cast a bad healing spell on myself" >> !roll 1d20 >= 15 ? !hp $me 1 : !hp $me -1
+!say "I cast a bad healing spell on myself" !roll 1d20 >= 15 ? @me.hp + 1 : @me.hp - 1
 ```
 
 Let's break down that example:
@@ -55,16 +51,10 @@ There are many commands you can run in TTML, one of them is the `!say` command w
 message to everyone.
 
 ```bash
->>
-```
-
-An arrow denotes a next step in the process. Multiple commands can be chained together for more
-complex equations and functionality.
-
-```bash
 !roll 1d20 >= 15
 ```
 
+Here we define our next step. Notice how there was nothing for us to do but simply write it.
 The `!roll` command is very similar to that of [Avrae](http://avrae.io/commands#dice). Here we are
 rolling a single d20 die and checking if the output is greater than or equal to 15.
 
@@ -72,56 +62,139 @@ rolling a single d20 die and checking if the output is greater than or equal to 
 ?
 ```
 
-The `?` at the begining here denotes that we have a true/false statement to make. Similar to an
-arrow (`>>`), `?` denote a new statement to make but give you two options based on the outcome.
+The `?` at the begining here denotes that we have a true/false statement to make. Based on the outcome
+of the true/false statement we setup, we can define two different results to run.
 
 If the roll we just made is greater than or equal to 15, we will execute the next statement that is
 between the `?` and before the `:`. Otherwise, if the roll is less than 15, we will execute only the
 section beyond the `:`.
 
 ```bash
-!hp $me 1
+@me.hp + 1
 ```
-When we are successful, we are going to modify HP using the `!hp` command. We tell the command to use
-our token using the reserved keyword `$me` and finally give the command a number (1) to add to our
-health.
+When we are successful, we are going to modify HP by [updating our token attribute](#assign-token).
+We tell the command to use our token using the [reserved token variable](#reserved-token-variables) `@me` and add 
+one (1) to our `hp` by using `@me.hp + 1`.
 
 ```bash
-: !hp $me -1
+@me.hp - 1
 ```
 
 In the case that the roll was below 15, we would run the same command but subtract one from our
 health instead.
 
-## Passing Results
+# Results
 
-Sometimes you want to pass the result of a command to the input of another command. You can easily
-accomplish this in TTML with the `>>` operator.
+Results from commands run in TTML can be "Saved" or "Ignored".
 
-By default, each command outputs an array of data. A previous command's output can be referenced
-from the current command via `${n}` where `n` is a number >= 1 that references the index of the
-result array.
+| Syntax | Description |
+| ------ | ----------- |
+| `>>`   | Save the result. Can be referenced by calling `$#` |
+| -      | Ignore the result of the command (default) |
+
+### Save vs. Ignore
+
+Sometimes you want to save the result of a command to the input of another
+command. You can easily accomplish this in TTML with the `>>` operator. Saving
+a result means you can then reference that result from any consecutive command
+by referencing `$#` (where `#` is a number that represents the index of the
+saved result we can to fetch.)
 
 Sounds complicated, but it's very easy. Take the below example to roll initiative:
 
 ```bash
 #initiative
-!roll 1d20+$me.dexterity >> $me.initiative = $1
+!roll 1d20+@me.dexterity >> @me.initiative = $1
 ```
 
-Here, we roll a d20 die and add our dexterity modifier to it. We then pass that result to the next
-command and set our token's initiative equal to our roll result using `$1`.
+Here, we roll a d20 die and add our dexterity modifier to it. We then pass that
+result to the next command and set our token's initiative equal to our roll
+result using `$1`. We use `$1` because we want to use the result of the _first_
+command we ran.
 
-## Reserved Variables
+Let's look at a slightly more complicated example. In the below example, we roll a 1d8
+to determine how many d10s we should roll which we then use to determine how many d20s to roll.
 
-TTML defines a few reserved variables for you to use in your macros.
+```bash
+#initiative
+!roll 1d8 >> !roll $1d10 >> !roll $2d20
+```
+
+In the above code, we save each result and use it in the next command by reference `$1`, `$2` where
+`$1` is the result of `!roll 1d8` and `$2` is the result of `!roll $1d10`.
+
+In this example scenario, we might see something like this happen:
+
+| Step | Result |
+| ---- | ------ |
+| `!roll 1d8` | 6 |
+| `!roll 6d10` | 27 |
+| `!roll 27d20` | 122 |
+
+# Variables
+
+Variables can be assigned and referenced using a `$` followed by any
+alphanumeric sequence.
+
+When assigning custom variable names, names cannot be strict numbers as the
+results of commands are referenced using numbers.
+
+## Assign Variable
+
+Example:
+
+```bash
+$dex = @me.dexterity
+```
+
+## Use Variable
+
+Example:
+
+```bash
+!roll 1d20+$dex
+```
+
+# Tokens
+
+Similar to variables, tokens can be assigned and referenced using the `@`
+operator followed by any alphanumeric sequence. Unlike variables however,
+tokens are considered **static**, meaning you cannot create new tokens once the
+macro has started running.
+
+## Reserved Token Variables
+
+If you use Power Virtual TableTop, there are already several reserved tokens for you
+to use.
+
+These tokens can be accessed (assuming they are available) from any macro within Power VTT.
 
 | Name | Description |
 | ---- | ----------- |
-| `$me` | A reference to your token, if available |
-| `$players` | A list of all players, can be iterated over |
-| `$selected` | A reference to the selected token, if available |
-| `$tokens` | A list of all tokens, can be iterated over |
+| `@me` | A reference to your token, if available |
+| `@selected` | A reference to the selected token, if available |
+
+## Assign Token
+
+Tokens cannot be directly assigned by rather attributes of the token can be updated.
+
+Example:
+
+```bash
+# Not allowed
+@me = 1
+
+# Allowed
+@me.strength_mod = 5
+```
+
+## Reference Token
+
+Example:
+
+```bash
+!roll 1d20+@me.dexterity
+```
 
 # Commands
 

@@ -196,7 +196,6 @@ fn it_can_reroll_dice_once_above_a_threshold() {
     roll.reroll_dice_once_above(15);
 
     assert_eq!(roll.dice.len(), 6 + rerolls);
-    assert_eq!(roll.value, total);
 
     // count how many rerolls we actually made
     let mut actual_rerolls = 0;

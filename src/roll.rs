@@ -11,6 +11,7 @@ pub struct ComposedRoll {
     pub h: i16,
     pub d: i16,
     pub l: i16,
+    pub modifiers: Vec<i16>,
     pub n: i16,
     pub ro: i16,
     pub rr: i16,
@@ -59,6 +60,12 @@ impl Roll {
     /// Associate this roll with a token
     pub fn add_token(&mut self, token: String) {
         self.token = Some(token)
+    }
+
+    /// Add a modifier to the roll
+    pub fn apply_modifier(&mut self, modifier: i16) {
+        self.modifiers.push(modifier);
+        self.value += modifier;
     }
 
     /// Keep the highest rolled dice

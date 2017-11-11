@@ -7,7 +7,7 @@ use serde_json;
 use std::collections::HashMap;
 use std::str;
 use std::time::Instant;
-use token::Token;
+use token::{Token, TokenAttributeValue};
 
 pub fn execute_macro(input: Vec<u8>, input_tokens: Vec<u8>) -> Output {
     // Start the timer
@@ -55,7 +55,7 @@ pub fn execute_macro(input: Vec<u8>, input_tokens: Vec<u8>) -> Output {
             match step.op {
                 MacroOp::Roll => {
                     // execute the roll and update the step value
-                    let roll = execute_roll(&step, &results);
+                    let roll = execute_roll(&step, &results, &tokens);
                     step.value = Some(StepValue::Number(roll.value));
 
                     // pass the result if needed
@@ -87,7 +87,7 @@ pub fn execute_macro(input: Vec<u8>, input_tokens: Vec<u8>) -> Output {
     }
 }
 
-pub fn execute_roll (step: &Step, results: &Vec<StepValue>) -> Roll {
+pub fn execute_roll (step: &Step, results: &Vec<StepValue>, tokens: &HashMap<String, Token>) -> Roll {
     // Compose the roll
     let mut composed_roll = ComposedRoll {
         advantage: false,
@@ -97,6 +97,7 @@ pub fn execute_roll (step: &Step, results: &Vec<StepValue>) -> Roll {
         h: 0,
         d: 0,
         l: 0,
+        modifiers: vec![],
         n: 0,
         ro: 0,
         rr: 0,
@@ -184,6 +185,29 @@ pub fn execute_roll (step: &Step, results: &Vec<StepValue>) -> Roll {
                 },
                 _ => {}
             }
+        } else if let &Arg::Roll(RollArg::ModifierPos(ArgValue::Number(n))) = arg {
+            composed_roll.modifiers.push(n);
+        } else if let &Arg::Roll(RollArg::ModifierPos(ArgValue::Token(ref t))) = arg {
+            let token_result = tokens.get(&t.name);
+            let token_attr = t.attribute.clone();
+            match token_result {
+                Some(token) => {
+                    match token_attr {
+                        Some(a) => {
+                            let attr = token.attributes.get(&a);
+                            match attr {
+                                Some(&TokenAttributeValue::Number(n)) => { composed_roll.modifiers.push(n) }
+                                _ => {}
+                            }
+
+                        }
+                        _ => {}
+                    }
+                },
+                _ => {
+                    println!("No token found");
+                }
+            }
         }
     }
 
@@ -209,6 +233,12 @@ pub fn execute_roll (step: &Step, results: &Vec<StepValue>) -> Roll {
             Roll::new(dice)
         }
     };
+
+    if composed_roll.modifiers.len() > 0 {
+        for i in composed_roll.modifiers.into_iter() {
+            roll.apply_modifier(i);
+        }
+    }
 
     if composed_roll.e > 0 {
         // todo

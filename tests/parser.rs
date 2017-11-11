@@ -303,10 +303,10 @@ fn test_error_handling() {
 #[test]
 fn test_token_parser() {
     let (_, result) = token_p(b"@foo").unwrap();
-    assert_eq!(result, ArgValue::Token(TokenArg { name: "foo".to_string(), attribute: None }));
+    assert_eq!(result, TokenArg { name: "foo".to_string(), attribute: None });
 
     let (_, result) = token_p(b"@foo123bar.baz").unwrap();
-    assert_eq!(result, ArgValue::Token(TokenArg { name: "foo123bar".to_string(), attribute: Some("baz".to_string()) }));
+    assert_eq!(result, TokenArg { name: "foo123bar".to_string(), attribute: Some("baz".to_string()) });
 }
 
 #[test]
@@ -325,4 +325,42 @@ fn test_variable_reserved_parser() {
 
     let (_, result) = variable_reserved_p(b"$12").unwrap();
     assert_eq!(result, 12);
+}
+
+#[test]
+fn test_assign_parser() {
+    // assign strings
+    let (_, result) = arguments_p(b"@me.test = 'foo'").unwrap();
+    let assign = Arg::Assign(Assign {
+        left: ArgValue::Token(TokenArg {
+            name: "me".to_string(),
+            attribute: Some("test".to_string()),
+        }),
+        right: ArgValue::Text("foo".to_string()),
+    });
+
+    assert_eq!(result, assign);
+
+    let (_, result) = arguments_p(b" @me.test  =   \"foo\"   ").unwrap();
+    let assign = Arg::Assign(Assign {
+        left: ArgValue::Token(TokenArg {
+            name: "me".to_string(),
+            attribute: Some("test".to_string()),
+        }),
+        right: ArgValue::Text("foo".to_string()),
+    });
+
+    assert_eq!(result, assign);
+
+    // assign numbers
+    let (_, result) = arguments_p(b"@me.test  =  42").unwrap();
+    let assign = Arg::Assign(Assign {
+        left: ArgValue::Token(TokenArg {
+            name: "me".to_string(),
+            attribute: Some("test".to_string()),
+        }),
+        right: ArgValue::Number(42),
+    });
+
+    assert_eq!(result, assign);
 }

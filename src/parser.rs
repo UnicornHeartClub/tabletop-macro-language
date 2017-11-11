@@ -428,6 +428,7 @@ pub fn single_quoted_p(input: &[u8]) -> IResult<&[u8], String> {
 pub fn step_result_p(input: &[u8]) -> IResult<&[u8], StepResult> {
     alt_complete!(input,
         map!(ws!(tag!(">>")), |_| StepResult::Save) |
+        map!(ws!(tag!("|")), |_| StepResult::Ignore) |
         value!(StepResult::Ignore)
     )
 }

@@ -17,7 +17,7 @@ fn it_returns_a_roll() {
         value: None,
     };
 
-    let results = vec![];
+    let results = HashMap::new();
     let tokens = HashMap::new();
     let roll = execute_roll(&step, &results, &tokens);
 
@@ -38,9 +38,9 @@ fn it_uses_variables() {
         value: None,
     };
 
-    let results = vec![
-        StepValue::Number(5),
-    ];
+    let mut results = HashMap::new();
+    results.insert("1".to_string(), StepValue::Number(5));
+
     let tokens = HashMap::new();
     let roll = execute_roll(&step, &results, &tokens);
 
@@ -69,6 +69,20 @@ fn it_executes_simple_input() {
     assert_eq!(rolls[0].modifiers.len(), 1);
     assert_eq!(rolls[0].modifiers[0], 5);
     assert_eq!(rolls[0].value - rolls[0].raw_value, 5);
+}
+
+#[test]
+fn it_executes_positive_modifier() {
+    let input = "#test $foo = 10 !r 1d20+$foo".to_string().into_bytes();
+    let token_input = r#"{}"#.to_string().into_bytes();
+
+    let output = execute_macro(input, token_input);
+    let rolls = output.rolls;
+    assert_eq!(rolls[0].dice.len(), 1);
+    assert_eq!(rolls[0].dice[0].die, DieType::D20);
+    assert_eq!(rolls[0].modifiers.len(), 1);
+    assert_eq!(rolls[0].modifiers[0], 10);
+    assert_eq!(rolls[0].value - rolls[0].raw_value, 10);
 }
 
 #[test]

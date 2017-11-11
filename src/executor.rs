@@ -16,7 +16,7 @@ pub fn execute_macro(input: Vec<u8>, input_tokens: Vec<u8>) -> Output {
 
     let mut errors = Vec::new(); // error messages, points to the col/row that error happened
     let mut messages = Vec::new(); // messages to send to chat
-    let mut results = Vec::new(); // a list of variables that we can use (e.g. $1, $2)
+    let mut results = HashMap::new(); // a list of variables that we can use (e.g. $1, $2)
     let mut rolls = Vec::new(); // rolls
     let version = String::from(env!("CARGO_PKG_VERSION"));
 
@@ -53,6 +53,26 @@ pub fn execute_macro(input: Vec<u8>, input_tokens: Vec<u8>) -> Output {
 
         for step in &mut program.steps {
             match step.op {
+                MacroOp::Assign => {
+                    for arg in &step.args {
+                        if let &Arg::Assign(ref assign) = arg {
+                            match assign.left {
+                                ArgValue::Variable(ref k) => {
+                                    match assign.right {
+                                        ArgValue::Number(ref v) => {
+                                            results.insert(k.to_owned(), StepValue::Number(v.to_owned()));
+                                        },
+                                        ArgValue::Text(ref v) => {
+                                            results.insert(k.to_owned(), StepValue::Text(v.to_owned()));
+                                        },
+                                        _ => {}
+                                    }
+                                },
+                                _ => {}
+                            }
+                        }
+                    }
+                },
                 MacroOp::Roll => {
                     // execute the roll and update the step value
                     let roll = execute_roll(&step, &results, &tokens);
@@ -60,7 +80,8 @@ pub fn execute_macro(input: Vec<u8>, input_tokens: Vec<u8>) -> Output {
 
                     // pass the result if needed
                     if step.result == StepResult::Save {
-                        results.push(StepValue::Number(roll.value));
+                        let index = results.len() + 1;
+                        results.insert(index.to_string(), StepValue::Number(roll.value));
                     }
 
                     // push to the tracked rolls
@@ -87,7 +108,7 @@ pub fn execute_macro(input: Vec<u8>, input_tokens: Vec<u8>) -> Output {
     }
 }
 
-pub fn execute_roll (step: &Step, results: &Vec<StepValue>, tokens: &HashMap<String, Token>) -> Roll {
+pub fn execute_roll (step: &Step, results: &HashMap<String, StepValue>, tokens: &HashMap<String, Token>) -> Roll {
     // Compose the roll
     let mut composed_roll = ComposedRoll {
         advantage: false,
@@ -109,7 +130,7 @@ pub fn execute_roll (step: &Step, results: &Vec<StepValue>, tokens: &HashMap<Str
             composed_roll.n = n;
         } else if let &Arg::Roll(RollArg::N(ArgValue::VariableReserved(n))) = arg {
             // Lookup the variable in the index
-            match results.get(n as usize - 1) {
+            match results.get(&n.to_string()) {
                 Some(&StepValue::Number(n)) => {
                     composed_roll.n = n;
                 },
@@ -129,7 +150,7 @@ pub fn execute_roll (step: &Step, results: &Vec<StepValue>, tokens: &HashMap<Str
             };
         } else if let &Arg::Roll(RollArg::D(ArgValue::VariableReserved(n))) = arg {
             // Lookup the variable in the index
-            match results.get(n as usize - 1) {
+            match results.get(&n.to_string()) {
                 Some(&StepValue::Number(n)) => {
                     composed_roll.d = n;
                     composed_roll.die = match n {
@@ -149,7 +170,7 @@ pub fn execute_roll (step: &Step, results: &Vec<StepValue>, tokens: &HashMap<Str
             composed_roll.h = n;
         } else if let &Arg::Roll(RollArg::H(ArgValue::VariableReserved(n))) = arg {
             // Lookup the variable in the index
-            match results.get(n as usize - 1) {
+            match results.get(&n.to_string()) {
                 Some(&StepValue::Number(n)) => {
                     composed_roll.h = n;
                 },
@@ -159,7 +180,7 @@ pub fn execute_roll (step: &Step, results: &Vec<StepValue>, tokens: &HashMap<Str
             composed_roll.l = n;
         } else if let &Arg::Roll(RollArg::L(ArgValue::VariableReserved(n))) = arg {
             // Lookup the variable in the index
-            match results.get(n as usize - 1) {
+            match results.get(&n.to_string()) {
                 Some(&StepValue::Number(n)) => {
                     composed_roll.l = n;
                 },
@@ -169,7 +190,7 @@ pub fn execute_roll (step: &Step, results: &Vec<StepValue>, tokens: &HashMap<Str
             composed_roll.rr = n;
         } else if let &Arg::Roll(RollArg::RR(ArgValue::VariableReserved(n))) = arg {
             // Lookup the variable in the index
-            match results.get(n as usize - 1) {
+            match results.get(&n.to_string()) {
                 Some(&StepValue::Number(n)) => {
                     composed_roll.rr = n;
                 },
@@ -179,7 +200,7 @@ pub fn execute_roll (step: &Step, results: &Vec<StepValue>, tokens: &HashMap<Str
             composed_roll.ro = n;
         } else if let &Arg::Roll(RollArg::RO(ArgValue::VariableReserved(n))) = arg {
             // Lookup the variable in the index
-            match results.get(n as usize - 1) {
+            match results.get(&n.to_string()) {
                 Some(&StepValue::Number(n)) => {
                     composed_roll.ro = n;
                 },
@@ -187,6 +208,13 @@ pub fn execute_roll (step: &Step, results: &Vec<StepValue>, tokens: &HashMap<Str
             }
         } else if let &Arg::Roll(RollArg::ModifierPos(ArgValue::Number(n))) = arg {
             composed_roll.modifiers.push(n);
+        } else if let &Arg::Roll(RollArg::ModifierPos(ArgValue::Variable(ref n))) = arg {
+            match results.get(&n.to_string()) {
+                Some(&StepValue::Number(n)) => {
+                    composed_roll.modifiers.push(n);
+                },
+                _ => {}
+            }
         } else if let &Arg::Roll(RollArg::ModifierPos(ArgValue::Token(ref t))) = arg {
             let token_result = tokens.get(&t.name);
             let token_attr = t.attribute.clone();
@@ -210,6 +238,13 @@ pub fn execute_roll (step: &Step, results: &Vec<StepValue>, tokens: &HashMap<Str
             }
         } else if let &Arg::Roll(RollArg::ModifierNeg(ArgValue::Number(n))) = arg {
             composed_roll.modifiers.push(n * -1);
+        } else if let &Arg::Roll(RollArg::ModifierNeg(ArgValue::Variable(ref n))) = arg {
+            match results.get(&n.to_string()) {
+                Some(&StepValue::Number(n)) => {
+                    composed_roll.modifiers.push(n * -1);
+                },
+                _ => {}
+            }
         } else if let &Arg::Roll(RollArg::ModifierNeg(ArgValue::Token(ref t))) = arg {
             let token_result = tokens.get(&t.name);
             let token_attr = t.attribute.clone();

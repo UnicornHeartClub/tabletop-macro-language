@@ -125,7 +125,7 @@ impl Die {
     /// Roll the die, generating a random number and calculating any modifiers
     pub fn roll(&mut self) -> &Die {
         // generate a random number
-        let between = Range::new(self.min, self.max);
+        let between = Range::new(self.min, self.max + 1);
         let mut rng = rand::thread_rng();
         let roll = between.ind_sample(&mut rng);
         self.value = roll;

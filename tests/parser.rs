@@ -80,16 +80,9 @@ fn test_complex_parser() {
                 args: vec![
                     Arg::Roll(RollArg::N(ArgValue::Number(3))),
                     Arg::Roll(RollArg::D(ArgValue::Number(8))),
+                    Arg::Roll(RollArg::Modifier(ArgValue::Number(3))),
                 ],
                 op: MacroOp::Roll,
-                result: StepResult::Ignore,
-                value: None,
-            },
-            Step {
-                args: vec![
-                    Arg::Number(3),
-                ],
-                op: MacroOp::Add,
                 result: StepResult::Ignore,
                 value: None,
             },
@@ -105,6 +98,7 @@ fn test_complex_parser() {
                 args: vec![
                     Arg::Roll(RollArg::N(ArgValue::Number(2))),
                     Arg::Roll(RollArg::D(ArgValue::Number(20))),
+                    Arg::Roll(RollArg::Modifier(ArgValue::Number(-5))),
                     Arg::Roll(RollArg::H(ArgValue::Number(1))),
                 ],
                 op: MacroOp::Roll,
@@ -122,7 +116,7 @@ fn test_complex_parser() {
             },
         ],
     };
-    let (_, result) = parse_p(b"#complex-macro-name-2 !roll 3d8+3 !say \"Smite!\" !roll 2d20kh1 >> !say \"I rolled a \" $1").unwrap();
+    let (_, result) = parse_p(b"#complex-macro-name-2 !roll 3d8+3 !say \"Smite!\" !roll 2d20-5kh1 >> !say \"I rolled a \" $1").unwrap();
     assert_eq!(result, program);
 }
 
@@ -232,6 +226,10 @@ fn test_arguments_roll_parser() {
     assert_eq!(result, Arg::Roll(RollArg::Disadvantage));
 
     // Comment
+    let (_, result) = arguments_roll_p(b"\"I am a comment\"").unwrap();
+    assert_eq!(result, Arg::Roll(RollArg::Comment(ArgValue::Text("I am a comment".to_string()))));
+
+    // Modifier
     let (_, result) = arguments_roll_p(b"\"I am a comment\"").unwrap();
     assert_eq!(result, Arg::Roll(RollArg::Comment(ArgValue::Text("I am a comment".to_string()))));
 

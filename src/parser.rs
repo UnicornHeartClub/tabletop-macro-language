@@ -81,6 +81,7 @@ pub enum RollArg {
     E(ArgValue),
     H(ArgValue),
     L(ArgValue),
+    Modifier(ArgValue),
     N(ArgValue), // e.g. 1 (part of 1d20)
     RO(ArgValue),
     RR(ArgValue),
@@ -134,6 +135,8 @@ pub fn arguments_roll_p(input: &[u8]) -> IResult<&[u8], Arg> {
         roll_flag_l |
         roll_flag_ro |
         roll_flag_rr |
+        roll_modifier_pos |
+        roll_modifier_neg |
         map!(quoted,        | a | Arg::Roll(RollArg::Comment(ArgValue::Text(a)))) |
         map!(single_quoted, | a | Arg::Roll(RollArg::Comment(ArgValue::Text(a)))) |
         map!(variable,      | a | Arg::Variable(a))
@@ -330,6 +333,22 @@ pub fn roll_flag_rr_p(input: &[u8]) -> IResult<&[u8], Arg> {
     )
 }
 
+/// Matches + modifiers
+pub fn roll_modifier_neg_p(input: &[u8]) -> IResult<&[u8], Arg> {
+    do_parse!(input,
+        n: ws!(preceded!(tag!("-"), roll_digit)) >>
+        (Arg::Roll(RollArg::Modifier(ArgValue::Number(n * -1))))
+    )
+}
+
+/// Matches - modifiers
+pub fn roll_modifier_pos_p(input: &[u8]) -> IResult<&[u8], Arg> {
+    do_parse!(input,
+        n: ws!(preceded!(tag!("+"), roll_digit)) >>
+        (Arg::Roll(RollArg::Modifier(ArgValue::Number(n))))
+    )
+}
+
 /// Matches "N" in NdD
 pub fn roll_num_p(input: &[u8]) -> IResult<&[u8], Arg> {
     // @todo @error if string/invalid throw error
@@ -438,6 +457,8 @@ named!(roll_flag_h <&[u8], Arg>, call!(roll_flag_h_p));
 named!(roll_flag_l <&[u8], Arg>, call!(roll_flag_l_p));
 named!(roll_flag_ro <&[u8], Arg>, call!(roll_flag_ro_p));
 named!(roll_flag_rr <&[u8], Arg>, call!(roll_flag_rr_p));
+named!(roll_modifier_neg <&[u8], Arg>, call!(roll_modifier_neg_p));
+named!(roll_modifier_pos <&[u8], Arg>, call!(roll_modifier_pos_p));
 named!(roll_num <&[u8], Arg>, call!(roll_num_p));
 named!(roll_die <&[u8], Arg>, call!(roll_die_p));
 named!(single_quoted <&[u8], String>, call!(single_quoted_p));

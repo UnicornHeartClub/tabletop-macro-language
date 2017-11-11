@@ -61,17 +61,29 @@ We have a lot to get done but are looking to get it done quick!
 - [ ] JavaScript Library _(In Progress)_
 - [ ] Macro Parser _(In Progress)_
   - [x] ~~Primitives~~
-  - [x] ~~Commands~~
   - [x] ~~Pass Results~~
-  - [x] ~~Roll Parser~~
-  - [x] ~~Say/Whisper Parser~~
-  - [ ] Prompt Parser
-  - [ ] Set Equals
+  - [x] ~~Ignore Results~~
+  - [x] ~~Roll Command~~
+  - [x] ~~Assign Tokens~~
+  - [x] ~~Assign Variables~~
+  - [x] ~~Use Variables~~
+  - [x] ~~Use Tokens~~
+  - [ ] Prompt Command _(In Progress)_
+  - [ ] Assign Tokens _(In Progress)_
+  - [ ] Say Command _(In Progress)_
+  - [ ] Whisper Command _(In Progress)_
+- [ ] Executor _(In Progress)_
+  - [x] ~~Pass Results~~
+  - [x] ~~Ignore Results~~
+  - [x] Variables _(In Progress)_
+  - [ ] Tokens _(In Progress)_
+  - [ ] Roll _(In Progress)_
+  - [ ] Say
+  - [ ] Whisper
+  - [ ] Prompt
 - [ ] Examples _(In Progress, Needs Updating)_
 - [ ] Documentation _(In Progress)_
 - [ ] Error Handling _(In Progress)_
-- [ ] Static/Reserved Variables
-- [ ] Macro Executor
 
 # License
 

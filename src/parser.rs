@@ -22,6 +22,12 @@ pub struct Step {
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TokenArg {
+    pub name: String,
+    pub attribute: Option<String>
+}
+
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Arg {
     /// Number (Float, Integer)
     Number(u32),
@@ -39,7 +45,7 @@ pub enum Arg {
 pub enum ArgValue {
     Number(i16),
     Text(String),
-    Token(String),
+    Token(TokenArg),
     Variable(String),
     VariableReserved(i16),
 }
@@ -352,7 +358,8 @@ pub fn roll_modifier_pos_p(input: &[u8]) -> IResult<&[u8], Arg> {
         var: ws!(preceded!(tag!("+"), alt!(
             map!(variable_reserved, |n| ArgValue::VariableReserved(n)) |
             map!(variable, |n| ArgValue::Variable(n)) |
-            map!(roll_digit, |n| ArgValue::Number(n))
+            map!(roll_digit, |n| ArgValue::Number(n)) |
+            token
         ))) >>
         (Arg::Roll(RollArg::ModifierPos(var)))
     )
@@ -409,11 +416,16 @@ pub fn string_p(input: &[u8]) -> IResult<&[u8], String> {
 }
 
 /// Matches tokens
-pub fn token_p(input: &[u8]) -> IResult<&[u8], String> {
+pub fn token_p(input: &[u8]) -> IResult<&[u8], ArgValue> {
     // @todo match that we cannot start with a digit
     do_parse!(input,
-        var: ws!(preceded!(tag!("@"), alphanumeric)) >>
-        (String::from_utf8(var.to_vec()).unwrap())
+        name_raw: ws!(preceded!(tag!("@"), alphanumeric)) >>
+        name: value!(String::from_utf8(name_raw.to_vec()).unwrap()) >>
+        attribute: switch!(opt!(complete!(preceded!(tag!("."), alphanumeric))),
+            Some(a) => value!(Some(String::from_utf8(a.to_vec()).unwrap())) |
+            _ => value!(None)
+        ) >>
+        (ArgValue::Token(TokenArg { name, attribute }))
     )
 }
 
@@ -473,6 +485,6 @@ named!(roll_die <&[u8], Arg>, call!(roll_die_p));
 named!(single_quoted <&[u8], String>, call!(single_quoted_p));
 named!(step_result <&[u8], StepResult>, call!(step_result_p));
 named!(string <&[u8], String>, call!(string_p));
-named!(token <&[u8], String>, call!(token_p));
+named!(token <&[u8], ArgValue>, call!(token_p));
 named!(variable <&[u8], String>, call!(variable_p));
 named!(variable_reserved <&[u8], i16>, call!(variable_reserved_p));

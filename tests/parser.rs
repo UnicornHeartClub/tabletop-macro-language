@@ -236,6 +236,14 @@ fn test_arguments_roll_parser() {
     let (_, result) = arguments_roll_p(b"+$1").unwrap();
     assert_eq!(result, Arg::Roll(RollArg::ModifierPos(ArgValue::VariableReserved(1))));
 
+    // Token Modifier
+
+    let (_, result) = arguments_roll_p(b"+@me.dexterity").unwrap();
+    assert_eq!(result, Arg::Roll(RollArg::ModifierPos(ArgValue::Token(TokenArg {
+        name: "me".to_string(),
+        attribute: Some("dexterity".to_string()),
+    }))));
+
     // Variables
 
     // N
@@ -263,6 +271,18 @@ fn test_arguments_roll_parser() {
 }
 
 #[test]
+fn test_arguments_roll_parses_token_attributes() {
+    let (_, result) = roll_modifier_pos_p(b"+@me.dexterity").unwrap();
+    assert_eq!(
+        result,
+        Arg::Roll(RollArg::ModifierPos(ArgValue::Token(TokenArg {
+            name: "me".to_string(),
+            attribute: Some("dexterity".to_string()),
+        })))
+    );
+}
+
+#[test]
 fn test_arguments_whisper_parser() {
     let (_, result) = arguments_whisper_p(b"\"I am a message\"").unwrap();
     assert_eq!(result, Arg::Say(SayArg::Message("I am a message".to_string())));
@@ -283,10 +303,10 @@ fn test_error_handling() {
 #[test]
 fn test_token_parser() {
     let (_, result) = token_p(b"@foo").unwrap();
-    assert_eq!(result, "foo".to_string());
+    assert_eq!(result, ArgValue::Token(TokenArg { name: "foo".to_string(), attribute: None }));
 
-    let (_, result) = token_p(b"@foo123bar").unwrap();
-    assert_eq!(result, "foo123bar".to_string());
+    let (_, result) = token_p(b"@foo123bar.baz").unwrap();
+    assert_eq!(result, ArgValue::Token(TokenArg { name: "foo123bar".to_string(), attribute: Some("baz".to_string()) }));
 }
 
 #[test]

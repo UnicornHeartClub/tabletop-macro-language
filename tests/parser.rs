@@ -118,6 +118,35 @@ fn test_complex_parser() {
     };
     let (_, result) = parse_p(b"#complex-macro-name-2 !roll 3d8+3 !say \"Smite!\" !roll 2d20-5kh1 >> !say \"I rolled a \" $1").unwrap();
     assert_eq!(result, program);
+
+
+    let program = Program {
+        name: MacroOp::Name(String::from("test-assignment")),
+        steps: vec![
+            Step {
+                args: vec![
+                    Arg::Assign(Assign {
+                        left: ArgValue::Variable("foo".to_string()),
+                        right: ArgValue::Text("bar".to_string()),
+                    }),
+                ],
+                op: MacroOp::Assign,
+                result: StepResult::Ignore,
+                value: None,
+            },
+            Step {
+                args: vec![
+                    Arg::Roll(RollArg::N(ArgValue::Number(1))),
+                    Arg::Roll(RollArg::D(ArgValue::Number(20))),
+                ],
+                op: MacroOp::Roll,
+                result: StepResult::Ignore,
+                value: None,
+            },
+        ],
+    };
+    let (_, result) = parse_p(b"#test-assignment $foo = 'bar' !r 1d20").unwrap();
+    assert_eq!(result, program);
 }
 
 #[test]
@@ -328,7 +357,7 @@ fn test_variable_reserved_parser() {
 }
 
 #[test]
-fn test_assign_parser() {
+fn test_assign_token_parser() {
     // assign strings
     let (_, result) = arguments_p(b"@me.test = 'foo'").unwrap();
     let assign = Arg::Assign(Assign {
@@ -359,6 +388,35 @@ fn test_assign_parser() {
             name: "me".to_string(),
             attribute: Some("test".to_string()),
         }),
+        right: ArgValue::Number(42),
+    });
+
+    assert_eq!(result, assign);
+}
+
+#[test]
+fn test_assign_variable_parser() {
+    // assign strings
+    let (_, result) = arguments_p(b"$foo = 'baz'").unwrap();
+    let assign = Arg::Assign(Assign {
+        left: ArgValue::Variable("foo".to_string()),
+        right: ArgValue::Text("baz".to_string()),
+    });
+
+    assert_eq!(result, assign);
+
+    let (_, result) = arguments_p(b" $foo  =   \"foo\"   ").unwrap();
+    let assign = Arg::Assign(Assign {
+        left: ArgValue::Variable("foo".to_string()),
+        right: ArgValue::Text("foo".to_string()),
+    });
+
+    assert_eq!(result, assign);
+
+    // assign numbers
+    let (_, result) = arguments_p(b"$foo  =  42").unwrap();
+    let assign = Arg::Assign(Assign {
+        left: ArgValue::Variable("foo".to_string()),
         right: ArgValue::Number(42),
     });
 

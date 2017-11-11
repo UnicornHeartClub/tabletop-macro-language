@@ -56,6 +56,8 @@ pub enum ArgValue {
 pub enum MacroOp {
     /// Addition (+)
     Add,
+    /// Assign (=)
+    Assign,
     /// Division (/)
     Divide,
     /// Multiplication (*)
@@ -230,10 +232,11 @@ pub fn num_p(input: &[u8]) -> IResult<&[u8], i16> {
 
 /// Matches any type of operation
 pub fn op_p(input: &[u8]) -> IResult<&[u8], MacroOp> {
-    alt!(input,
+    alt_complete!(input,
         name |
         command |
-        ws!(primitive)
+        ws!(primitive) |
+        value!(MacroOp::Assign)
     )
 }
 

@@ -1,17 +1,12 @@
 // #[macro_use] extern crate error_chain;
-extern crate chrono;
 extern crate serde;
 extern crate serde_json;
 extern crate ttml;
 
-use chrono::prelude::Utc;
 use std::ffi::CStr;
 use std::ffi::CString;
 use std::os::raw::c_char;
-use std::time::Instant;
-use ttml::executor::execute_roll;
-use ttml::output::Output;
-use ttml::parser::{MacroOp, StepResult, StepValue, parse_p};
+use ttml::executor::execute_macro;
 
 fn main() {
     // IGNORE ME!
@@ -25,78 +20,40 @@ fn safe_string(input: *mut c_char) -> Vec<u8> {
         
 /// Run input and return a typed array for use in javascript
 #[no_mangle]
-pub fn run_macro(raw_input: *mut c_char) -> *mut c_char {
-    // Start the timer
-    let start = Instant::now();
-    let executed = Utc::now();
-    // Take the input and safely covert it to a String
+pub fn run_macro(raw_input: *mut c_char, raw_tokens: *mut c_char) -> *mut c_char {
+    // Parse the input
     let input = safe_string(raw_input);
-    // keep a copy of the raw input to display in our output
-    let output_input = input.clone();
 
-    // @todo build our vectors
-    let errors = Vec::new();
-    let messages = Vec::new();
-    let mut rolls = Vec::new();
-    let tokens = Vec::new();
-    let version = String::from("0.1.0");
+    // Parse the token input
+    let input_tokens = safe_string(raw_tokens);
 
-    // parse the macro into an executable program
-    let prog = parse_p(input.as_slice());
-    if prog.is_err() {
-        // @todo actually handle the error
-        CString::new("{}").unwrap().into_raw()
-    } else {
-        let (_, mut program) = prog.unwrap();
-        // Anything we marked as "Pass" will be stored in the variable vector
-        // We can reference any result by calling $# where # = the index of the vec
-        // this is so we can use results in any subsequent macro function
-        // e.g. $2 would resolve to the second passed result
-        let mut results = Vec::new();
+    // Run the macro
+    let output = execute_macro(input, input_tokens);
 
-        for step in &mut program.steps {
-            match step.op {
-                MacroOp::Roll => {
-                    // Check if we have a variable to replace
-                    // @todo
-                    let roll = execute_roll(&step);
-                    if step.result == StepResult::Pass {
-                        step.value = Some(StepValue::Int(roll.value));
-                        results.push(StepValue::Int(roll.value));
-                    }
-                    rolls.push(roll);
-                },
-                _ => println!("Not yet implemented {:?}", step.op)
-            }
-        };
-
-        let elapsed = start.elapsed();
-        let execution_time = (elapsed.as_secs() * 1000) + (elapsed.subsec_nanos() / 1000000) as u64;
-
-        let output = Output {
-            input: String::from_utf8(output_input).unwrap(),
-            executed,
-            execution_time,
-            errors,
-            messages,
-            program,
-            rolls,
-            tokens,
-            version,
-        };
-
-        let json = serde_json::to_string(&output).unwrap();
-        CString::new(json).unwrap().into_raw()
-    }
+    // Return as JSON
+    let json = serde_json::to_string(&output).unwrap();
+    CString::new(json).unwrap().into_raw()
 }
 
-// #[test]
-// fn it_parses_simple_input() {
-    // let chars = CString::new("#test!say \"Hello\"").unwrap().into_raw();
-    // let raw_output = parse(chars);
-    // let json = safe_string(raw_output);
-    // let output: Output = serde_json::from_str(&json).unwrap();
+#[test]
+pub fn test_run_macro() {
+    use std::str;
+    use ttml::output::Output;
 
-    // assert_eq!(output.input, "#test!say \"Hello\"");
-    // assert_eq!(output.version, "0.1.0");
-// }
+    let tokens_str = r#"{
+        "me": {
+            "attributes": {
+                "foo": {
+                    "Number": 42
+                }
+            }
+        }
+    }"#;
+
+    let chars = CString::new("#test!say \"Hello\"").unwrap().into_raw();
+    let tokens = CString::new(tokens_str).unwrap().into_raw();
+    let raw_output = run_macro(chars, tokens);
+    let json = safe_string(raw_output);
+    let json_str = str::from_utf8(&json).unwrap();
+    let output: Output = serde_json::from_str(&json_str).unwrap();
+}

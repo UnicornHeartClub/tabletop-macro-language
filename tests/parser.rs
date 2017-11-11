@@ -10,8 +10,8 @@ fn test_simple_parser() {
         name: MacroOp::Name(String::from("simple-macro-name")),
         steps: vec![Step {
             args: vec![
-                Arg::Roll(RollArg::N(1)),
-                Arg::Roll(RollArg::D(20))
+                Arg::Roll(RollArg::N(ArgValue::Number(1))),
+                Arg::Roll(RollArg::D(ArgValue::Number(20)))
             ],
             op: MacroOp::Roll,
             result: StepResult::Ignore,
@@ -43,9 +43,18 @@ fn test_complex_parser() {
         steps: vec![
             Step {
                 args: vec![
-                    Arg::Roll(RollArg::N(1)),
-                    Arg::Roll(RollArg::D(20)),
-                    Arg::Roll(RollArg::Comment("A cool roll comment".to_string())),
+                    Arg::Roll(RollArg::N(ArgValue::Number(1))),
+                    Arg::Roll(RollArg::D(ArgValue::Number(20))),
+                ],
+                op: MacroOp::Roll,
+                result: StepResult::Save,
+                value: None,
+            },
+            Step {
+                args: vec![
+                    Arg::Roll(RollArg::N(ArgValue::VariableReserved(1))),
+                    Arg::Roll(RollArg::D(ArgValue::Number(8))),
+                    Arg::Roll(RollArg::Comment(ArgValue::Text("A cool roll comment".to_string()))),
                 ],
                 op: MacroOp::Roll,
                 result: StepResult::Ignore,
@@ -61,7 +70,7 @@ fn test_complex_parser() {
             },
         ],
     };
-    let (_, result) = parse_p(b"#complex-macro-name !roll 1d20 \"A cool roll comment\" !say \"Smite!\"").unwrap();
+    let (_, result) = parse_p(b"#complex-macro-name !r 1d20 >> !roll $1d8 \"A cool roll comment\" !say \"Smite!\"").unwrap();
     assert_eq!(result, program);
 
     let program = Program {
@@ -69,18 +78,11 @@ fn test_complex_parser() {
         steps: vec![
             Step {
                 args: vec![
-                    Arg::Roll(RollArg::N(3)),
-                    Arg::Roll(RollArg::D(8)),
+                    Arg::Roll(RollArg::N(ArgValue::Number(3))),
+                    Arg::Roll(RollArg::D(ArgValue::Number(8))),
+                    Arg::Roll(RollArg::ModifierPos(ArgValue::Number(3))),
                 ],
                 op: MacroOp::Roll,
-                result: StepResult::Ignore,
-                value: None,
-            },
-            Step {
-                args: vec![
-                    Arg::Number(3),
-                ],
-                op: MacroOp::Add,
                 result: StepResult::Ignore,
                 value: None,
             },
@@ -94,13 +96,13 @@ fn test_complex_parser() {
             },
             Step {
                 args: vec![
-                    Arg::Roll(RollArg::N(2)),
-                    Arg::Roll(RollArg::D(20)),
-                    Arg::Roll(RollArg::K),
-                    Arg::Roll(RollArg::H(1)),
+                    Arg::Roll(RollArg::N(ArgValue::Number(2))),
+                    Arg::Roll(RollArg::D(ArgValue::Number(20))),
+                    Arg::Roll(RollArg::ModifierNeg(ArgValue::Number(5))),
+                    Arg::Roll(RollArg::H(ArgValue::Number(1))),
                 ],
                 op: MacroOp::Roll,
-                result: StepResult::Pass,
+                result: StepResult::Save,
                 value: None,
             },
             Step {
@@ -114,7 +116,7 @@ fn test_complex_parser() {
             },
         ],
     };
-    let (_, result) = parse_p(b"#complex-macro-name-2 !roll 3d8+3 !say \"Smite!\" !roll 2d20kh1 >> !say \"I rolled a \" $1").unwrap();
+    let (_, result) = parse_p(b"#complex-macro-name-2 !roll 3d8+3 !say \"Smite!\" !roll 2d20-5kh1 >> !say \"I rolled a \" $1").unwrap();
     assert_eq!(result, program);
 }
 
@@ -196,7 +198,7 @@ fn test_single_quoted_parser() {
 #[test]
 fn test_step_result_parser() {
     let (_, result) = step_result_p(b">>").unwrap();
-    assert_eq!(result, StepResult::Pass);
+    assert_eq!(result, StepResult::Save);
 
     let (_, result) = step_result_p(b" ").unwrap();
     assert_eq!(result, StepResult::Ignore);
@@ -206,10 +208,10 @@ fn test_step_result_parser() {
 fn test_arguments_roll_parser() {
     // Pass it through once should yield us the N and remove a "d"
     let (rest, result) = arguments_roll_p(b"1d20").unwrap();
-    assert_eq!(result, Arg::Roll(RollArg::N(1)));
+    assert_eq!(result, Arg::Roll(RollArg::N(ArgValue::Number(1))));
     // Running through a second time will yield us the D
     let (_, result) = arguments_roll_p(rest).unwrap();
-    assert_eq!(result, Arg::Roll(RollArg::D(20)));
+    assert_eq!(result, Arg::Roll(RollArg::D(ArgValue::Number(20))));
 
     // Advantage
     let (_, result) = arguments_roll_p(b"adv").unwrap();
@@ -225,7 +227,59 @@ fn test_arguments_roll_parser() {
 
     // Comment
     let (_, result) = arguments_roll_p(b"\"I am a comment\"").unwrap();
-    assert_eq!(result, Arg::Roll(RollArg::Comment("I am a comment".to_string())));
+    assert_eq!(result, Arg::Roll(RollArg::Comment(ArgValue::Text("I am a comment".to_string()))));
+
+    // Modifier
+    let (_, result) = arguments_roll_p(b"+5").unwrap();
+    assert_eq!(result, Arg::Roll(RollArg::ModifierPos(ArgValue::Number(5))));
+
+    let (_, result) = arguments_roll_p(b"+$1").unwrap();
+    assert_eq!(result, Arg::Roll(RollArg::ModifierPos(ArgValue::VariableReserved(1))));
+
+    // Token Modifier
+
+    let (_, result) = arguments_roll_p(b"+@me.dexterity").unwrap();
+    assert_eq!(result, Arg::Roll(RollArg::ModifierPos(ArgValue::Token(TokenArg {
+        name: "me".to_string(),
+        attribute: Some("dexterity".to_string()),
+    }))));
+
+    // Variables
+
+    // N
+    let (_, result) = arguments_roll_p(b"$1d20").unwrap();
+    assert_eq!(result, Arg::Roll(RollArg::N(ArgValue::VariableReserved(1))));
+    // D
+    let (rest, _) = arguments_roll_p(b"1d$1").unwrap();
+    let (_, result) = arguments_roll_p(rest).unwrap();
+    assert_eq!(result, Arg::Roll(RollArg::D(ArgValue::VariableReserved(1))));
+    // E
+    let (_, result) = roll_flag_e_p(b"e$1").unwrap();
+    assert_eq!(result, Arg::Roll(RollArg::E(ArgValue::VariableReserved(1))));
+    // H
+    let (_, result) = roll_flag_h_p(b"kh$1").unwrap();
+    assert_eq!(result, Arg::Roll(RollArg::H(ArgValue::VariableReserved(1))));
+    // L
+    let (_, result) = roll_flag_l_p(b"kl$1").unwrap();
+    assert_eq!(result, Arg::Roll(RollArg::L(ArgValue::VariableReserved(1))));
+    // RO
+    let (_, result) = roll_flag_ro_p(b"ro$1").unwrap();
+    assert_eq!(result, Arg::Roll(RollArg::RO(ArgValue::VariableReserved(1))));
+    // RR
+    let (_, result) = roll_flag_rr_p(b"rr$1").unwrap();
+    assert_eq!(result, Arg::Roll(RollArg::RR(ArgValue::VariableReserved(1))));
+}
+
+#[test]
+fn test_arguments_roll_parses_token_attributes() {
+    let (_, result) = roll_modifier_pos_p(b"+@me.dexterity").unwrap();
+    assert_eq!(
+        result,
+        Arg::Roll(RollArg::ModifierPos(ArgValue::Token(TokenArg {
+            name: "me".to_string(),
+            attribute: Some("dexterity".to_string()),
+        })))
+    );
 }
 
 #[test]
@@ -244,4 +298,31 @@ fn test_error_handling() {
 
     let result = command_p(b"invalid input").unwrap_err();
     assert_eq!(error_to_string(result), "Invalid or unrecognized command".to_string());
+}
+
+#[test]
+fn test_token_parser() {
+    let (_, result) = token_p(b"@foo").unwrap();
+    assert_eq!(result, ArgValue::Token(TokenArg { name: "foo".to_string(), attribute: None }));
+
+    let (_, result) = token_p(b"@foo123bar.baz").unwrap();
+    assert_eq!(result, ArgValue::Token(TokenArg { name: "foo123bar".to_string(), attribute: Some("baz".to_string()) }));
+}
+
+#[test]
+fn test_variable_parser() {
+    let (_, result) = variable_p(b"$foo").unwrap();
+    assert_eq!(result, "foo".to_string());
+
+    let (_, result) = variable_p(b"$foo123bar").unwrap();
+    assert_eq!(result, "foo123bar".to_string());
+}
+
+#[test]
+fn test_variable_reserved_parser() {
+    let (_, result) = variable_reserved_p(b"$1").unwrap();
+    assert_eq!(result, 1);
+
+    let (_, result) = variable_reserved_p(b"$12").unwrap();
+    assert_eq!(result, 12);
 }

@@ -290,16 +290,16 @@ fn it_can_roll_with_advantage() {
 
     let smallest_die = roll.dice.iter().min_by(|a, b| a.value.cmp(&b.value)).unwrap();
     let largest_die = roll.dice.iter().max_by(|a, b| a.value.cmp(&b.value)).unwrap();
+    let mut dropped = 0;
     for die in roll.dice.iter() {
         if die.is_dropped {
-            assert_eq!(die._id, smallest_die._id);
-        } else {
-            assert_eq!(die._id, largest_die._id);
+            dropped += 1;
         }
     }
 
     assert_eq!((largest_die.value + smallest_die.value) as i16, roll.raw_value);
     assert_eq!(largest_die.value as i16, roll.value);
+    assert_eq!(dropped, 1);
 }
 
 #[test]

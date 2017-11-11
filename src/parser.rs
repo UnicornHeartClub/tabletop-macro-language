@@ -5,8 +5,6 @@ use nom::{alphanumeric, digit, ErrorKind, IResult};
 use nom::simple_errors::Err;
 use std::str;
 
-use roll::Roll;
-
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Program {
     pub name: MacroOp,

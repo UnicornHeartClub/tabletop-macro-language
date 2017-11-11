@@ -239,7 +239,6 @@ pub fn execute_roll (step: &Step, results: &Vec<StepValue>, tokens: &HashMap<Str
         DieType::D20    => roll_d20(composed_roll.n as u16),
         DieType::D12    => roll_d12(composed_roll.n as u16),
         DieType::D10    => roll_d10(composed_roll.n as u16),
-        DieType::D10    => roll_d10(composed_roll.n as u16),
         DieType::D8     => roll_d8(composed_roll.n as u16),
         DieType::D6     => roll_d6(composed_roll.n as u16),
         DieType::D4     => roll_d4(composed_roll.n as u16),

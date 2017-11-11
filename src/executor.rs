@@ -1,5 +1,8 @@
+use chrono::prelude::Utc;
 use die::{Die, DieType};
-use parser::{Arg, ArgValue, MacroOp, Step, StepValue, RollArg};
+use std::time::Instant;
+use parser::{Arg, ArgValue, MacroOp, Step, StepResult, StepValue, RollArg, error_to_string, parse_p};
+use output::Output;
 use roll::*;
 
 // Rolls all the arguments into a single struct
@@ -14,6 +17,82 @@ struct ComposedRoll {
     RO: i16,
     RR: i16,
     Type: DieType,
+}
+
+pub fn execute_macro(input: Vec<u8>) -> Output {
+    // Start the timer
+    let start = Instant::now();
+    let executed = Utc::now();
+
+    let mut errors = Vec::new();
+    let mut messages = Vec::new();
+    let mut results = Vec::new();
+    let mut rolls = Vec::new();
+    let mut tokens = Vec::new();
+    let version = String::from(env!("CARGO_PKG_VERSION"));
+
+    // Parse the input
+    let input_clone = input.clone();
+    let prog = parse_p(input_clone.as_slice());
+
+    if prog.is_err() {
+        // Push the error
+        let error = prog.unwrap_err();
+        errors.push(error_to_string(error));
+
+        let elapsed = start.elapsed();
+        let execution_time = (elapsed.as_secs() * 1000) + (elapsed.subsec_nanos() / 1000000) as u64;
+
+        Output {
+            input: String::from_utf8(input).unwrap(),
+            executed,
+            execution_time,
+            errors,
+            messages,
+            program: None,
+            rolls,
+            tokens,
+            version,
+        }
+    } else {
+        let (_, mut program) = prog.unwrap();
+
+        for step in &mut program.steps {
+            match step.op {
+                MacroOp::Roll => {
+                    // @todo check if we have a variable to replace
+
+                    // execute the roll and update the step value
+                    let roll = execute_roll(&step, &results);
+                    step.value = Some(StepValue::Number(roll.value));
+
+                    // pass the result if needed
+                    if step.result == StepResult::Pass {
+                        results.push(StepValue::Number(roll.value));
+                    }
+
+                    // push to the tracked rolls
+                    rolls.push(roll);
+                },
+                _ => println!("Not yet implemented {:?}", step.op)
+            }
+        };
+
+        let elapsed = start.elapsed();
+        let execution_time = (elapsed.as_secs() * 1000) + (elapsed.subsec_nanos() / 1000000) as u64;
+
+        Output {
+            input: String::from_utf8(input).unwrap(),
+            executed,
+            execution_time,
+            errors,
+            messages,
+            program: Some(program),
+            rolls,
+            tokens,
+            version,
+        }
+    }
 }
 
 pub fn execute_roll (step: &Step, results: &Vec<StepValue>) -> Roll {

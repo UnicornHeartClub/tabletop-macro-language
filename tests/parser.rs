@@ -47,7 +47,7 @@ fn test_complex_parser() {
                     Arg::Roll(RollArg::D(ArgValue::Number(20))),
                 ],
                 op: MacroOp::Roll,
-                result: StepResult::Pass,
+                result: StepResult::Save,
                 value: None,
             },
             Step {
@@ -108,7 +108,7 @@ fn test_complex_parser() {
                     Arg::Roll(RollArg::H(ArgValue::Number(1))),
                 ],
                 op: MacroOp::Roll,
-                result: StepResult::Pass,
+                result: StepResult::Save,
                 value: None,
             },
             Step {
@@ -204,7 +204,7 @@ fn test_single_quoted_parser() {
 #[test]
 fn test_step_result_parser() {
     let (_, result) = step_result_p(b">>").unwrap();
-    assert_eq!(result, StepResult::Pass);
+    assert_eq!(result, StepResult::Save);
 
     let (_, result) = step_result_p(b" ").unwrap();
     assert_eq!(result, StepResult::Ignore);

@@ -1,9 +1,10 @@
-#[macro_use] extern crate serde_derive;
 #[macro_use] extern crate nom;
+#[macro_use] extern crate serde_derive;
 extern crate chrono;
-extern crate rand;
-extern crate uuid;
 extern crate libc;
+extern crate rand;
+extern crate serde_json;
+extern crate uuid;
 
 pub mod die;
 // pub mod dom;

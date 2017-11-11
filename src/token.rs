@@ -1,5 +1,12 @@
-#[derive(Debug, Deserialize, Serialize)]
+use std::collections::HashMap;
+
+#[derive(Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct Token {
-    /// Unique identifier of the token
-    pub _id: String,
+    pub attributes: HashMap<String, TokenAttributeValue>,
+}
+
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum TokenAttributeValue {
+    Number(i16),
+    Text(String),
 }

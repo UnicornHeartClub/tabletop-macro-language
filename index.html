@@ -171,7 +171,7 @@
 
           t.setStaticToken('me', token)
 
-          const defaultMacro = '#test-macro !say "Hello world!" !roll 1d20e20'
+          const defaultMacro = '#test-macro !roll 2d20kh1 >> !roll $1d8'
           updateTextarea(defaultMacro)
           const prog = t.runMacro(defaultMacro)
           updateProg(JSON.stringify(prog, null, 2))

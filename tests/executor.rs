@@ -44,3 +44,14 @@ fn it_uses_variables() {
     assert!(roll.value <= 100);
     assert_eq!(roll.dice.len(), 5);
 }
+
+// #[test]
+// fn it_executes_simple_input() {
+    // let chars = CString::new("#test!say \"Hello\"").unwrap().into_raw();
+    // let raw_output = parse(chars);
+    // let json = safe_string(raw_output);
+    // let output: Output = serde_json::from_str(&json).unwrap();
+
+    // assert_eq!(output.input, "#test!say \"Hello\"");
+    // assert_eq!(output.version, "0.1.0");
+// }

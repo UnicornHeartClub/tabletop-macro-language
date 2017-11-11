@@ -21,20 +21,39 @@ fn safe_string(input: *mut c_char) -> Vec<u8> {
 /// Run input and return a typed array for use in javascript
 #[no_mangle]
 pub fn run_macro(raw_input: *mut c_char, raw_tokens: *mut c_char) -> *mut c_char {
+    // Parse the input
     let input = safe_string(raw_input);
-    let output = execute_macro(input);
 
+    // Parse the token input
+    let input_tokens = safe_string(raw_tokens);
+
+    // Run the macro
+    let output = execute_macro(input, input_tokens);
+
+    // Return as JSON
     let json = serde_json::to_string(&output).unwrap();
     CString::new(json).unwrap().into_raw()
 }
 
-// #[test]
-// fn it_parses_simple_input() {
-    // let chars = CString::new("#test!say \"Hello\"").unwrap().into_raw();
-    // let raw_output = parse(chars);
-    // let json = safe_string(raw_output);
-    // let output: Output = serde_json::from_str(&json).unwrap();
+#[test]
+pub fn test_run_macro() {
+    use std::str;
+    use ttml::output::Output;
 
-    // assert_eq!(output.input, "#test!say \"Hello\"");
-    // assert_eq!(output.version, "0.1.0");
-// }
+    let tokens_str = r#"{
+        "me": {
+            "attributes": {
+                "foo": {
+                    "Number": 42
+                }
+            }
+        }
+    }"#;
+
+    let chars = CString::new("#test!say \"Hello\"").unwrap().into_raw();
+    let tokens = CString::new(tokens_str).unwrap().into_raw();
+    let raw_output = run_macro(chars, tokens);
+    let json = safe_string(raw_output);
+    let json_str = str::from_utf8(&json).unwrap();
+    let output: Output = serde_json::from_str(&json_str).unwrap();
+}

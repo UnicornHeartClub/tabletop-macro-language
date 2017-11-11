@@ -96,8 +96,8 @@ pub enum SayArg {
 pub enum StepResult {
     /// Ignore Result (default)
     Ignore,
-    /// Pass Result (>>)
-    Pass,
+    /// Save Result (>>)
+    Save,
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -367,7 +367,7 @@ pub fn single_quoted_p(input: &[u8]) -> IResult<&[u8], String> {
 /// Matches a passed or ignored result
 pub fn step_result_p(input: &[u8]) -> IResult<&[u8], StepResult> {
     alt_complete!(input,
-        map!(ws!(tag!(">>")), |_| StepResult::Pass) |
+        map!(ws!(tag!(">>")), |_| StepResult::Save) |
         value!(StepResult::Ignore)
     )
 }

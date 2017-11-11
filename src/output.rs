@@ -1,8 +1,9 @@
 use chrono::DateTime;
 use chrono::prelude::Utc;
-use token::Token;
-use roll::Roll;
 use parser::Program;
+use roll::Roll;
+use std::collections::HashMap;
+use token::Token;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Output {
@@ -28,7 +29,7 @@ pub struct Output {
     pub rolls: Vec<Roll>,
 
     /// Tokens
-    pub tokens: Vec<Token>,
+    pub tokens: HashMap<String, Token>,
  
     /// API Version
     pub version: String,

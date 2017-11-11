@@ -70,3 +70,25 @@ fn it_executes_simple_input() {
     assert_eq!(rolls[0].modifiers[0], 5);
     assert_eq!(rolls[0].value - rolls[0].raw_value, 5);
 }
+
+#[test]
+fn it_executes_negative_modifier() {
+    let input = "#test !r 1d20-@me.dexterity".to_string().into_bytes();
+    let token_input = r#"{
+        "me": {
+            "attributes": {
+                "dexterity": {
+                    "Number": 5
+                }
+            }
+        }
+    }"#.to_string().into_bytes();
+
+    let output = execute_macro(input, token_input);
+    let rolls = output.rolls;
+    assert_eq!(rolls[0].dice.len(), 1);
+    assert_eq!(rolls[0].dice[0].die, DieType::D20);
+    assert_eq!(rolls[0].modifiers.len(), 1);
+    assert_eq!(rolls[0].modifiers[0], -5);
+    assert_eq!(rolls[0].value - rolls[0].raw_value, -5);
+}

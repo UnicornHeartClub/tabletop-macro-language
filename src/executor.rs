@@ -208,6 +208,29 @@ pub fn execute_roll (step: &Step, results: &Vec<StepValue>, tokens: &HashMap<Str
                     println!("No token found");
                 }
             }
+        } else if let &Arg::Roll(RollArg::ModifierNeg(ArgValue::Number(n))) = arg {
+            composed_roll.modifiers.push(n * -1);
+        } else if let &Arg::Roll(RollArg::ModifierNeg(ArgValue::Token(ref t))) = arg {
+            let token_result = tokens.get(&t.name);
+            let token_attr = t.attribute.clone();
+            match token_result {
+                Some(token) => {
+                    match token_attr {
+                        Some(a) => {
+                            let attr = token.attributes.get(&a);
+                            match attr {
+                                Some(&TokenAttributeValue::Number(n)) => { composed_roll.modifiers.push(n * -1) }
+                                _ => {}
+                            }
+
+                        }
+                        _ => {}
+                    }
+                },
+                _ => {
+                    println!("No token found");
+                }
+            }
         }
     }
 

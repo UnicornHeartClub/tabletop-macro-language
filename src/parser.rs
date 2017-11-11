@@ -346,7 +346,8 @@ pub fn roll_modifier_neg_p(input: &[u8]) -> IResult<&[u8], Arg> {
         var: ws!(preceded!(tag!("-"), alt!(
             map!(variable_reserved, |n| ArgValue::VariableReserved(n)) |
             map!(variable, |n| ArgValue::Variable(n)) |
-            map!(roll_digit, |n| ArgValue::Number(n))
+            map!(roll_digit, |n| ArgValue::Number(n)) |
+            token
         ))) >>
         (Arg::Roll(RollArg::ModifierNeg(var)))
     )

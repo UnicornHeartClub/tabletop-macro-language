@@ -1,5 +1,7 @@
 # TableTop Macro Language
 
+[![Build Status](https://travis-ci.org/UnicornHeartClub/tabletop-macro-language.svg?branch=master)](https://travis-ci.org/UnicornHeartClub/tabletop-macro-language)
+
 :warning: **This is under active development. The API is subject to change without notice.** :warning:
 
 A language and parser to add advanced functionality to tabletop role-playing games.

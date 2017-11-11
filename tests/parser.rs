@@ -80,7 +80,7 @@ fn test_complex_parser() {
                 args: vec![
                     Arg::Roll(RollArg::N(ArgValue::Number(3))),
                     Arg::Roll(RollArg::D(ArgValue::Number(8))),
-                    Arg::Roll(RollArg::Modifier(ArgValue::Number(3))),
+                    Arg::Roll(RollArg::ModifierPos(ArgValue::Number(3))),
                 ],
                 op: MacroOp::Roll,
                 result: StepResult::Ignore,
@@ -98,7 +98,7 @@ fn test_complex_parser() {
                 args: vec![
                     Arg::Roll(RollArg::N(ArgValue::Number(2))),
                     Arg::Roll(RollArg::D(ArgValue::Number(20))),
-                    Arg::Roll(RollArg::Modifier(ArgValue::Number(-5))),
+                    Arg::Roll(RollArg::ModifierNeg(ArgValue::Number(5))),
                     Arg::Roll(RollArg::H(ArgValue::Number(1))),
                 ],
                 op: MacroOp::Roll,
@@ -230,8 +230,11 @@ fn test_arguments_roll_parser() {
     assert_eq!(result, Arg::Roll(RollArg::Comment(ArgValue::Text("I am a comment".to_string()))));
 
     // Modifier
-    let (_, result) = arguments_roll_p(b"\"I am a comment\"").unwrap();
-    assert_eq!(result, Arg::Roll(RollArg::Comment(ArgValue::Text("I am a comment".to_string()))));
+    let (_, result) = arguments_roll_p(b"+5").unwrap();
+    assert_eq!(result, Arg::Roll(RollArg::ModifierPos(ArgValue::Number(5))));
+
+    let (_, result) = arguments_roll_p(b"+$1").unwrap();
+    assert_eq!(result, Arg::Roll(RollArg::ModifierPos(ArgValue::VariableReserved(1))));
 
     // Variables
 

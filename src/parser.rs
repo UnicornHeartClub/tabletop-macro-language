@@ -81,7 +81,8 @@ pub enum RollArg {
     E(ArgValue),
     H(ArgValue),
     L(ArgValue),
-    Modifier(ArgValue),
+    ModifierPos(ArgValue),
+    ModifierNeg(ArgValue),
     N(ArgValue), // e.g. 1 (part of 1d20)
     RO(ArgValue),
     RR(ArgValue),
@@ -336,16 +337,24 @@ pub fn roll_flag_rr_p(input: &[u8]) -> IResult<&[u8], Arg> {
 /// Matches + modifiers
 pub fn roll_modifier_neg_p(input: &[u8]) -> IResult<&[u8], Arg> {
     do_parse!(input,
-        n: ws!(preceded!(tag!("-"), roll_digit)) >>
-        (Arg::Roll(RollArg::Modifier(ArgValue::Number(n * -1))))
+        var: ws!(preceded!(tag!("-"), alt!(
+            map!(variable_reserved, |n| ArgValue::VariableReserved(n)) |
+            map!(variable, |n| ArgValue::Variable(n)) |
+            map!(roll_digit, |n| ArgValue::Number(n))
+        ))) >>
+        (Arg::Roll(RollArg::ModifierNeg(var)))
     )
 }
 
 /// Matches - modifiers
 pub fn roll_modifier_pos_p(input: &[u8]) -> IResult<&[u8], Arg> {
     do_parse!(input,
-        n: ws!(preceded!(tag!("+"), roll_digit)) >>
-        (Arg::Roll(RollArg::Modifier(ArgValue::Number(n))))
+        var: ws!(preceded!(tag!("+"), alt!(
+            map!(variable_reserved, |n| ArgValue::VariableReserved(n)) |
+            map!(variable, |n| ArgValue::Variable(n)) |
+            map!(roll_digit, |n| ArgValue::Number(n))
+        ))) >>
+        (Arg::Roll(RollArg::ModifierPos(var)))
     )
 }
 

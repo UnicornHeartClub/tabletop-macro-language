@@ -158,21 +158,8 @@ Example:
 # Tokens
 
 Similar to variables, tokens can be assigned and referenced using the `@`
-operator followed by any alphanumeric sequence. Unlike variables however,
-tokens are considered **static**, meaning you cannot create new tokens once the
-macro has started running.
-
-## Reserved Token Variables
-
-If you use Power Virtual TableTop, there are already several reserved tokens for you
-to use.
-
-These tokens can be accessed (assuming they are available) from any macro within Power VTT.
-
-| Name | Description |
-| ---- | ----------- |
-| `@me` | A reference to your token, if available |
-| `@selected` | A reference to the selected token, if available |
+operator followed by any alphanumeric sequence. Like variables, token attributes can be
+created and updated on-the-fly but tokens can not be directly assigned.
 
 ## Assign Token
 
@@ -195,6 +182,18 @@ Example:
 ```bash
 !roll 1d20+@me.dexterity
 ```
+
+## Reserved Token Variables
+
+If you use Power Virtual TableTop, there are already several reserved tokens for you
+to use.
+
+These tokens can be accessed (assuming they are available) from any macro within Power VTT.
+
+| Name | Description |
+| ---- | ----------- |
+| `@me` | A reference to your token, if available |
+| `@selected` | A reference to the selected token, if available |
 
 # Commands
 

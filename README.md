@@ -57,6 +57,7 @@ yarn serve
 
 We have a lot to get done but are looking to get it done quick!
 
+- [ ] Clean up
 - [x] ~~Die/Roll Models~~
 - [ ] JavaScript Library _(In Progress)_
 - [ ] Macro Parser _(In Progress)_
@@ -69,14 +70,14 @@ We have a lot to get done but are looking to get it done quick!
   - [x] ~~Use Variables~~
   - [x] ~~Use Tokens~~
   - [ ] Prompt Command _(In Progress)_
-  - [ ] Assign Tokens _(In Progress)_
+  - [x] ~~Assign Tokens~~
   - [ ] Say Command _(In Progress)_
   - [ ] Whisper Command _(In Progress)_
 - [ ] Executor _(In Progress)_
   - [x] ~~Pass Results~~
   - [x] ~~Ignore Results~~
   - [x] Variables _(In Progress)_
-  - [ ] Tokens _(In Progress)_
+  - [x] ~~Tokens~~
   - [ ] Roll _(In Progress)_
   - [ ] Say
   - [ ] Whisper

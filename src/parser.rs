@@ -135,7 +135,9 @@ pub fn assignment_p(input: &[u8]) -> IResult<&[u8], Assign> {
             map!(num, | a | ArgValue::Number(a)) |
             map!(string, | a | ArgValue::Text(a)) |
             map!(quoted, | a | ArgValue::Text(a)) |
-            map!(single_quoted, | a | ArgValue::Text(a))
+            map!(single_quoted, | a | ArgValue::Text(a)) |
+            map!(variable_reserved, | a | ArgValue::VariableReserved(a)) |
+            map!(variable, | a | ArgValue::Variable(a))
         )) >>
         (Assign {
             left,

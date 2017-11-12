@@ -27,7 +27,7 @@ pub fn execute_macro(input: Vec<u8>, input_tokens: Vec<u8>) -> Output {
 
     // Parse tokens
     let input_tokens_str = str::from_utf8(&input_tokens).unwrap();
-    let tokens: HashMap<String, Token> = serde_json::from_str(input_tokens_str).unwrap();
+    let mut tokens: HashMap<String, Token> = serde_json::from_str(input_tokens_str).unwrap();
 
     if prog.is_err() {
         // Push the error
@@ -64,6 +64,39 @@ pub fn execute_macro(input: Vec<u8>, input_tokens: Vec<u8>) -> Output {
                                         },
                                         ArgValue::Text(ref v) => {
                                             results.insert(k.to_owned(), StepValue::Text(v.to_owned()));
+                                        },
+                                        _ => {}
+                                    }
+                                },
+                                ArgValue::Token(ref t) => {
+                                    let attr = t.attribute.clone();
+                                    let name = t.name.clone();
+                                    let mut token = tokens.entry(name).or_insert(Token {
+                                        attributes: HashMap::new(),
+                                    });
+                                    match attr {
+                                        Some(a) => {
+                                            match assign.right {
+                                                ArgValue::Number(ref v) => {
+                                                    &token.attributes.insert(a, TokenAttributeValue::Number(v.to_owned()));
+                                                },
+                                                ArgValue::Text(ref v) => {
+                                                    &token.attributes.insert(a, TokenAttributeValue::Text(v.to_owned()));
+                                                },
+                                                ArgValue::VariableReserved(ref v) => {
+                                                    // Lookup the variable in the index
+                                                    match results.get(&v.to_string()) {
+                                                        Some(&StepValue::Number(ref n)) => {
+                                                            &token.attributes.insert(a, TokenAttributeValue::Number(n.to_owned()));
+                                                        },
+                                                        Some(&StepValue::Text(ref n)) => {
+                                                            &token.attributes.insert(a, TokenAttributeValue::Text(n.to_owned()));
+                                                        },
+                                                        _ => {}
+                                                    }
+                                                },
+                                                _ => {}
+                                            }
                                         },
                                         _ => {}
                                     }
@@ -232,9 +265,7 @@ pub fn execute_roll (step: &Step, results: &HashMap<String, StepValue>, tokens: 
                         _ => {}
                     }
                 },
-                _ => {
-                    println!("No token found");
-                }
+                _ => {}
             }
         } else if let &Arg::Roll(RollArg::ModifierNeg(ArgValue::Number(n))) = arg {
             composed_roll.modifiers.push(n * -1);
@@ -262,9 +293,7 @@ pub fn execute_roll (step: &Step, results: &HashMap<String, StepValue>, tokens: 
                         _ => {}
                     }
                 },
-                _ => {
-                    println!("No token found");
-                }
+                _ => {}
             }
         }
     }

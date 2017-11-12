@@ -3,6 +3,7 @@ extern crate ttml;
 use std::collections::HashMap;
 use ttml::parser::*;
 use ttml::die::DieType;
+use ttml::token::TokenAttributeValue;
 use ttml::executor::{execute_macro, execute_roll};
 
 #[test]
@@ -105,4 +106,40 @@ fn it_executes_negative_modifier() {
     assert_eq!(rolls[0].modifiers.len(), 1);
     assert_eq!(rolls[0].modifiers[0], -5);
     assert_eq!(rolls[0].value - rolls[0].raw_value, -5);
+}
+
+#[test]
+fn it_assigns_and_updates_token_attributes() {
+    let input = "#test @me.dexterity = 25".to_string().into_bytes();
+    let token_input = r#"{
+        "me": {
+            "attributes": {
+                "dexterity": {
+                    "Number": 21 
+                }
+            }
+        }
+    }"#.to_string().into_bytes();
+    let output = execute_macro(input, token_input);
+    let tokens = output.tokens;
+    let token = tokens.get("me").unwrap();
+    let attr = token.attributes.get("dexterity").unwrap();
+    assert_eq!(attr, &TokenAttributeValue::Number(25));
+
+    // test assigning a variable
+    let input = "#test !roll 1d20 >> @me.dexterity = $1".to_string().into_bytes();
+    let token_input = r#"{
+        "me": {
+            "attributes": {
+                "dexterity": {
+                    "Number": 21 
+                }
+            }
+        }
+    }"#.to_string().into_bytes();
+    let output = execute_macro(input, token_input);
+    let tokens = output.tokens;
+    let token = tokens.get("me").unwrap();
+    let attr = token.attributes.get("dexterity").unwrap();
+    assert_ne!(attr, &TokenAttributeValue::Number(21));
 }

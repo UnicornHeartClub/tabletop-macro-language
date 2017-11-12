@@ -118,7 +118,6 @@ fn it_can_roll_and_keep_multiple_high() {
     let largest_die = roll.dice.iter().max_by(|a, b| a.value.cmp(&b.value)).unwrap();
     for die in roll.dice.iter() {
         if die.is_dropped {
-            assert_ne!(die._id, largest_die._id);
             assert!(die.value <= largest_die.value);
 
             dropped += 1;

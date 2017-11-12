@@ -79,6 +79,9 @@ pub struct Die {
     /// If the die is dropped in the final roll
     pub is_rerolled: bool,
 
+    /// If the die is successful when we have a comparison
+    pub is_successful: bool,
+
     /// Maximum number to roll
     pub max: i16,
 
@@ -103,6 +106,7 @@ impl Die {
             die,
             is_dropped: false,
             is_rerolled: false,
+            is_successful: false,
             max: get_die_max(&die),
             min: get_die_min(&die),
             sides: get_die_sides(&die),
@@ -129,6 +133,7 @@ impl Die {
         let mut rng = rand::thread_rng();
         let roll = between.ind_sample(&mut rng);
         self.value = roll;
+        self.is_successful = true;
         self
     }
 

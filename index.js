@@ -1,1 +1,5 @@
-require('./dist/bundle')
+import init from './lib'
+
+export default {
+  init,
+}

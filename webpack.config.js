@@ -2,9 +2,10 @@ const path = require('path');
 const webpack = require('webpack');
 
  module.exports = {
-   entry: `${__dirname}/lib/index.js`,
+   entry: `${__dirname}/index.js`,
    output: {
      filename: 'bundle.js',
+     libraryTarget: 'commonjs2',
      path: __dirname + '/dist',
    },
 
@@ -38,5 +39,6 @@ const webpack = require('webpack');
      'path': true,
    },
 
-   devtool: 'source-map',
+   // devtool: 'source-map',
+   target: 'node',
  };

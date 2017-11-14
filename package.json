@@ -2,13 +2,9 @@
   "name": "tabletop-macro-language",
   "version": "0.1.0",
   "description": "A language and parser to add advanced functionality to tabletop role-playing games.",
-  "main": "index.js",
-  "directories": {
-    "example": "examples",
-    "test": "tests"
-  },
+  "main": "dist/bundle.js",
   "scripts": {
-    "compile": "webpack --profile --colors",
+    "build": "webpack --profile --colors",
     "test": "echo \"Error: no test specified\" && exit 1",
     "serve": "http-server"
   },

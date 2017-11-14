@@ -7,6 +7,6 @@ pub struct Token {
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TokenAttributeValue {
-    Number(i16),
+    Number(i32),
     Text(String),
 }

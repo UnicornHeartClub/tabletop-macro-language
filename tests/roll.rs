@@ -128,8 +128,8 @@ fn it_can_roll_and_keep_multiple_high() {
         raw_value += die.value as i16;
     }
 
-    assert_eq!(raw_value, roll.raw_value);
-    assert_eq!(value, roll.value);
+    assert_eq!(raw_value as i32, roll.raw_value);
+    assert_eq!(value as i32, roll.value);
     assert_eq!(dropped, 7);
 }
 
@@ -172,8 +172,8 @@ fn it_can_roll_and_keep_multiple_low() {
         raw_value += die.value as i16;
     }
 
-    assert_eq!(raw_value, roll.raw_value);
-    assert_eq!(value, roll.value);
+    assert_eq!(raw_value as i32, roll.raw_value);
+    assert_eq!(value as i32, roll.value);
     assert_eq!(dropped, 15);
 }
 
@@ -296,8 +296,8 @@ fn it_can_roll_with_advantage() {
         }
     }
 
-    assert_eq!((largest_die.value + smallest_die.value) as i16, roll.raw_value);
-    assert_eq!(largest_die.value as i16, roll.value);
+    assert_eq!((largest_die.value + smallest_die.value) as i32, roll.raw_value);
+    assert_eq!(largest_die.value as i32, roll.value);
     assert_eq!(dropped, 1);
 }
 
@@ -317,6 +317,6 @@ fn it_can_roll_with_disadvantage() {
         }
     }
 
-    assert_eq!((largest_die.value + smallest_die.value) as i16, roll.raw_value);
-    assert_eq!(smallest_die.value as i16, roll.value);
+    assert_eq!((largest_die.value + smallest_die.value) as i32, roll.raw_value);
+    assert_eq!(smallest_die.value as i32, roll.value);
 }

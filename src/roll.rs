@@ -29,13 +29,13 @@ pub struct Roll {
     pub modifiers: Vec<i16>,
 
     /// The combined value of the die before modifiers
-    pub raw_value: i16,
+    pub raw_value: i32,
 
     /// The associated token (optional)
     pub token: Option<String>,
 
     /// The final combined value of the die after modifiers
-    pub value: i16,
+    pub value: i32,
 }
 
 impl Roll {
@@ -45,7 +45,7 @@ impl Roll {
             die.roll();
         }
 
-        let value = dice.iter().fold(0, |sum, d| sum + d.value as i16);
+        let value = dice.iter().fold(0, |sum, d| sum + d.value as i32);
 
         Roll {
             _id: Uuid::new_v4().to_string(),
@@ -65,7 +65,7 @@ impl Roll {
     /// Add a modifier to the roll
     pub fn apply_modifier(&mut self, modifier: i16) {
         self.modifiers.push(modifier);
-        self.value += modifier;
+        self.value += modifier as i32;
     }
 
     /// Keep the highest rolled dice
@@ -76,7 +76,7 @@ impl Roll {
         for die in &mut self.dice {
             if count >= keep {
                 die.drop();
-                self.value -= die.value as i16;
+                self.value -= die.value as i32;
             }
             count += 1;
         }
@@ -92,7 +92,7 @@ impl Roll {
         for die in &mut self.dice {
             if count >= keep {
                 die.drop();
-                self.value -= die.value as i16;
+                self.value -= die.value as i32;
             }
             count += 1;
         }
@@ -108,7 +108,7 @@ impl Roll {
                 let mut d = Die::new(die.die);
                 d.roll();
                 let value = d.value;
-                self.value += value;
+                self.value += value as i32;
                 &die.rerolled(&d);
                 new_dice.push(d);
             }
@@ -125,7 +125,7 @@ impl Roll {
                 let mut d = Die::new(die.die);
                 d.roll();
                 let value = d.value;
-                self.value += value;
+                self.value += value as i32;
                 &die.rerolled(&d);
                 new_dice.push(d);
 

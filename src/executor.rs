@@ -160,17 +160,17 @@ pub fn execute_roll (step: &Step, results: &HashMap<String, StepValue>, tokens: 
     // @todo I am not a huge fan of how this looks, there must be an easier way ...
     for arg in &step.args {
         if let &Arg::Roll(RollArg::N(ArgValue::Number(n))) = arg {
-            composed_roll.n = n;
+            composed_roll.n = n as i16;
         } else if let &Arg::Roll(RollArg::N(ArgValue::VariableReserved(n))) = arg {
             // Lookup the variable in the index
             match results.get(&n.to_string()) {
                 Some(&StepValue::Number(n)) => {
-                    composed_roll.n = n;
+                    composed_roll.n = n as i16;
                 },
                 _ => {}
             }
         } else if let &Arg::Roll(RollArg::D(ArgValue::Number(n))) = arg {
-            composed_roll.d = n;
+            composed_roll.d = n as i16;
             composed_roll.die = match n {
                 100   => DieType::D100,
                 20    => DieType::D20,
@@ -185,7 +185,7 @@ pub fn execute_roll (step: &Step, results: &HashMap<String, StepValue>, tokens: 
             // Lookup the variable in the index
             match results.get(&n.to_string()) {
                 Some(&StepValue::Number(n)) => {
-                    composed_roll.d = n;
+                    composed_roll.d = n as i16;
                     composed_roll.die = match n {
                         100   => DieType::D100,
                         20    => DieType::D20,
@@ -200,51 +200,51 @@ pub fn execute_roll (step: &Step, results: &HashMap<String, StepValue>, tokens: 
                 _ => {}
             }
         } else if let &Arg::Roll(RollArg::H(ArgValue::Number(n))) = arg {
-            composed_roll.h = n;
+            composed_roll.h = n as i16;
         } else if let &Arg::Roll(RollArg::H(ArgValue::VariableReserved(n))) = arg {
             // Lookup the variable in the index
             match results.get(&n.to_string()) {
                 Some(&StepValue::Number(n)) => {
-                    composed_roll.h = n;
+                    composed_roll.h = n as i16;
                 },
                 _ => {}
             }
         } else if let &Arg::Roll(RollArg::L(ArgValue::Number(n))) = arg {
-            composed_roll.l = n;
+            composed_roll.l = n as i16;
         } else if let &Arg::Roll(RollArg::L(ArgValue::VariableReserved(n))) = arg {
             // Lookup the variable in the index
             match results.get(&n.to_string()) {
                 Some(&StepValue::Number(n)) => {
-                    composed_roll.l = n;
+                    composed_roll.l = n as i16;
                 },
                 _ => {}
             }
         } else if let &Arg::Roll(RollArg::RR(ArgValue::Number(n))) = arg {
-            composed_roll.rr = n;
+            composed_roll.rr = n as i16;
         } else if let &Arg::Roll(RollArg::RR(ArgValue::VariableReserved(n))) = arg {
             // Lookup the variable in the index
             match results.get(&n.to_string()) {
                 Some(&StepValue::Number(n)) => {
-                    composed_roll.rr = n;
+                    composed_roll.rr = n as i16;
                 },
                 _ => {}
             }
         } else if let &Arg::Roll(RollArg::RO(ArgValue::Number(n))) = arg {
-            composed_roll.ro = n;
+            composed_roll.ro = n as i16;
         } else if let &Arg::Roll(RollArg::RO(ArgValue::VariableReserved(n))) = arg {
             // Lookup the variable in the index
             match results.get(&n.to_string()) {
                 Some(&StepValue::Number(n)) => {
-                    composed_roll.ro = n;
+                    composed_roll.ro = n as i16;
                 },
                 _ => {}
             }
         } else if let &Arg::Roll(RollArg::ModifierPos(ArgValue::Number(n))) = arg {
-            composed_roll.modifiers.push(n);
+            composed_roll.modifiers.push(n as i16);
         } else if let &Arg::Roll(RollArg::ModifierPos(ArgValue::Variable(ref n))) = arg {
             match results.get(&n.to_string()) {
                 Some(&StepValue::Number(n)) => {
-                    composed_roll.modifiers.push(n);
+                    composed_roll.modifiers.push(n as i16);
                 },
                 _ => {}
             }
@@ -257,7 +257,7 @@ pub fn execute_roll (step: &Step, results: &HashMap<String, StepValue>, tokens: 
                         Some(a) => {
                             let attr = token.attributes.get(&a);
                             match attr {
-                                Some(&TokenAttributeValue::Number(n)) => { composed_roll.modifiers.push(n) }
+                                Some(&TokenAttributeValue::Number(n)) => { composed_roll.modifiers.push(n as i16) }
                                 _ => {}
                             }
 
@@ -268,11 +268,11 @@ pub fn execute_roll (step: &Step, results: &HashMap<String, StepValue>, tokens: 
                 _ => {}
             }
         } else if let &Arg::Roll(RollArg::ModifierNeg(ArgValue::Number(n))) = arg {
-            composed_roll.modifiers.push(n * -1);
+            composed_roll.modifiers.push(n as i16 * -1);
         } else if let &Arg::Roll(RollArg::ModifierNeg(ArgValue::Variable(ref n))) = arg {
             match results.get(&n.to_string()) {
                 Some(&StepValue::Number(n)) => {
-                    composed_roll.modifiers.push(n * -1);
+                    composed_roll.modifiers.push(n as i16 * -1);
                 },
                 _ => {}
             }
@@ -285,7 +285,7 @@ pub fn execute_roll (step: &Step, results: &HashMap<String, StepValue>, tokens: 
                         Some(a) => {
                             let attr = token.attributes.get(&a);
                             match attr {
-                                Some(&TokenAttributeValue::Number(n)) => { composed_roll.modifiers.push(n * -1) }
+                                Some(&TokenAttributeValue::Number(n)) => { composed_roll.modifiers.push(n as i16 * -1) }
                                 _ => {}
                             }
 

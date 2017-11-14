@@ -45,7 +45,7 @@ pub enum Arg {
 // Command-level arguments
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ArgValue {
-    Number(i16),
+    Number(i32),
     Text(String),
     Token(TokenArg),
     Variable(String),
@@ -114,7 +114,7 @@ pub enum StepResult {
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum StepValue {
-    Number(i16),
+    Number(i32),
     Text(String),
 }
 
@@ -224,11 +224,11 @@ pub fn name_p(input: &[u8]) -> IResult<&[u8], MacroOp> {
 }
 
 /// Match numbers to argument strings
-pub fn num_p(input: &[u8]) -> IResult<&[u8], i16> {
+pub fn num_p(input: &[u8]) -> IResult<&[u8], i32> {
     do_parse!(input,
         num: ws!(digit) >>
         s: value!(String::from_utf8(num.to_vec()).unwrap()) >>
-        (s.parse::<i16>().unwrap())
+        (s.parse::<i32>().unwrap())
     )
 }
 
@@ -292,12 +292,12 @@ pub fn quoted_p(input: &[u8]) -> IResult<&[u8], String> {
     )
 }
 
-/// Matches digits for "D" and parses to i16
-pub fn roll_digit_p(input: &[u8]) -> IResult<&[u8], i16> {
+/// Matches digits for "D" and parses to i32
+pub fn roll_digit_p(input: &[u8]) -> IResult<&[u8], i32> {
     do_parse!(input,
         var: digit >>
         num: value!(String::from_utf8(var.to_vec()).unwrap()) >>
-        (num.parse::<i16>().unwrap())
+        (num.parse::<i32>().unwrap())
     )
 }
 
@@ -495,13 +495,13 @@ named!(arguments_whisper <&[u8], Arg>, call!(arguments_whisper_p));
 named!(command <&[u8], MacroOp>, call!(command_p));
 named!(disadvantage <&[u8], Arg>, call!(disadvantage_p));
 named!(name <&[u8], MacroOp>, call!(name_p));
-named!(num <&[u8], i16>, call!(num_p));
+named!(num <&[u8], i32>, call!(num_p));
 named!(op <&[u8], MacroOp>, call!(op_p));
 named!(parse <&[u8], Program>, call!(parse_p));
 named!(parse_step <&[u8], Step>, call!(parse_step_p));
 named!(primitive <&[u8], MacroOp>, call!(primitive_p));
 named!(quoted <&[u8], String>, call!(quoted_p));
-named!(roll_digit <&[u8], i16>, call!(roll_digit_p));
+named!(roll_digit <&[u8], i32>, call!(roll_digit_p));
 named!(roll_flag_e <&[u8], Arg>, call!(roll_flag_e_p));
 named!(roll_flag_h <&[u8], Arg>, call!(roll_flag_h_p));
 named!(roll_flag_l <&[u8], Arg>, call!(roll_flag_l_p));

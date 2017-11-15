@@ -24,7 +24,6 @@ pub fn execute_macro(input: Vec<u8>, input_tokens: Vec<u8>) -> Output {
     let input_clone = input.clone();
     let prog = parse_p(input_clone.as_slice());
 
-
     // Parse tokens
     let input_tokens_str = str::from_utf8(&input_tokens).unwrap();
     let mut tokens: HashMap<String, Token> = serde_json::from_str(input_tokens_str).unwrap();
@@ -53,7 +52,7 @@ pub fn execute_macro(input: Vec<u8>, input_tokens: Vec<u8>) -> Output {
 
         for step in &mut program.steps {
             match step.op {
-                MacroOp::Assign => {
+                MacroOp::Lambda => {
                     for arg in &step.args {
                         if let &Arg::Assign(ref assign) = arg {
                             match assign.left {

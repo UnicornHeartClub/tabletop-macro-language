@@ -129,7 +129,7 @@ fn test_complex_parser() {
                         right: ArgValue::Text("bar".to_string()),
                     }),
                 ],
-                op: MacroOp::Assign,
+                op: MacroOp::Lambda,
                 result: StepResult::Ignore,
                 value: None,
             },
@@ -145,6 +145,44 @@ fn test_complex_parser() {
         ],
     };
     let (_, result) = parse_p(b"#test-assignment $foo = 'bar' !r 1d20").unwrap();
+    assert_eq!(result, program);
+
+    let program = Program {
+        name: MacroOp::Name(String::from("test")),
+        steps: vec![
+            Step {
+                args: vec![
+                    Arg::Roll(RollArg::N(ArgValue::Number(1))),
+                    Arg::Roll(RollArg::D(ArgValue::Number(20)))
+                ],
+                op: MacroOp::Roll,
+                result: StepResult::Save,
+                value: None,
+            },
+            Step {
+                args: vec![
+                    Arg::Conditional(Conditional {
+                        left: ArgValue::VariableReserved(1),
+                        comparison: ComparisonArg::GreaterThan,
+                        right: ArgValue::Number(10),
+                        success: Some(Step {
+                            args: vec![
+                                Arg::Say(SayArg::Message("Success".to_string())),
+                            ],
+                            op: MacroOp::Say,
+                            result: StepResult::Ignore,
+                            value: None,
+                        }),
+                        failure: None,
+                    }),
+                ],
+                op: MacroOp::Lambda,
+                result: StepResult::Ignore,
+                value: None,
+            },
+        ],
+    };
+    let (_, result) = parse_p(b"#test !r 1d20 >> $1 > 10 ? !say \"Success\" :|").unwrap();
     assert_eq!(result, program);
 }
 

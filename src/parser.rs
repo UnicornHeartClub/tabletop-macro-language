@@ -73,16 +73,8 @@ pub enum ComparisonArg {
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum MacroOp {
-    /// Addition (+)
-    Add,
-    /// Assign (=)
-    Assign,
-    /// Conditional (>, <, >=, <=)
-    Conditional,
-    /// Division (/)
-    Divide,
-    /// Multiplication (*)
-    Multiply,
+    /// Lamda (assignment or conditional argument)
+    Lambda,
     /// Macro Name
     Name(String),
     /// Prompt (!prompt)
@@ -91,8 +83,6 @@ pub enum MacroOp {
     Roll,
     /// Say (!say)
     Say,
-    /// Subtraction (-)
-    Subtract,
     /// Whisper (!whisper)
     Whisper,
 }
@@ -303,8 +293,7 @@ pub fn op_p(input: &[u8]) -> IResult<&[u8], MacroOp> {
     alt_complete!(input,
         name |
         command |
-        ws!(primitive) |
-        value!(MacroOp::Assign)
+        value!(MacroOp::Lambda)
     )
 }
 
@@ -337,16 +326,6 @@ pub fn parse_step_p(input: &[u8]) -> IResult<&[u8], Step> {
             args,
             value: None,
         })
-    )
-}
-
-/// Matches primitive operations
-pub fn primitive_p(input: &[u8]) -> IResult<&[u8], MacroOp> {
-    alt!(input,
-        map!(tag!("*"), |_| MacroOp::Multiply)  |
-        map!(tag!("+"), |_| MacroOp::Add)       |
-        map!(tag!("-"), |_| MacroOp::Subtract)  |
-        map!(tag!("/"), |_| MacroOp::Divide)
     )
 }
 
@@ -566,7 +545,6 @@ named!(num <&[u8], i32>, call!(num_p));
 named!(op <&[u8], MacroOp>, call!(op_p));
 named!(parse <&[u8], Program>, call!(parse_p));
 named!(parse_step <&[u8], Step>, call!(parse_step_p));
-named!(primitive <&[u8], MacroOp>, call!(primitive_p));
 named!(quoted <&[u8], String>, call!(quoted_p));
 named!(roll_digit <&[u8], i32>, call!(roll_digit_p));
 named!(roll_flag_e <&[u8], Arg>, call!(roll_flag_e_p));

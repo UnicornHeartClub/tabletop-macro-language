@@ -226,6 +226,7 @@ pub fn conditional_p(input: &[u8]) -> IResult<&[u8], Conditional> {
     do_parse!(input,
         // we can only assign to tokens and variables
         left: ws!(alt_complete!(
+            map!(variable_reserved, | a | ArgValue::VariableReserved(a)) |
             map!(variable, | a | ArgValue::Variable(a)) |
             map!(token, | a | ArgValue::Token(a)) |
             map!(num, | a | ArgValue::Number(a))

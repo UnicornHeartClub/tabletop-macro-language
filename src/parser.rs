@@ -64,6 +64,7 @@ pub enum ArgValue {
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ComparisonArg {
+    EqualTo,
     GreaterThan,
     GreaterThanOrEqual,
     LessThan,
@@ -171,8 +172,8 @@ pub fn assignment_p(input: &[u8]) -> IResult<&[u8], Assign> {
 /// Matches arguments of unknown commands
 pub fn arguments_p(input: &[u8]) -> IResult<&[u8], Arg> {
     alt_complete!(input,
-        map!(assignment, | a | Arg::Assign(a)) |
         map!(conditional, | a | Arg::Conditional(a)) |
+        map!(assignment, | a | Arg::Assign(a)) |
         map!(variable, | a | Arg::Variable(a)) |
         map!(token, | a | Arg::Token(a)) |
         map!(string, | a | Arg::Unrecognized(a)) |
@@ -240,6 +241,7 @@ pub fn conditional_p(input: &[u8]) -> IResult<&[u8], Conditional> {
             map!(num, | a | ArgValue::Number(a))
         )) >>
         comparison: ws!(alt_complete!(
+            map!(tag!("=="), |_| ComparisonArg::EqualTo) |
             map!(tag!(">="), |_| ComparisonArg::GreaterThanOrEqual) |
             map!(tag!("<="), |_| ComparisonArg::LessThanOrEqual) |
             map!(tag!(">"), |_| ComparisonArg::GreaterThan) |

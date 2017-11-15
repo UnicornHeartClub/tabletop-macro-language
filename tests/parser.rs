@@ -471,4 +471,33 @@ fn test_conditional_parser() {
     });
 
     assert_eq!(result, compare);
+
+    // equal to
+    let (_, result) = arguments_p(b"$foo == 10 ? !r 1d20+5 : !r 1d20").unwrap();
+    let compare = Arg::Conditional(Conditional {
+        left: ArgValue::Variable("foo".to_string()),
+        comparison: ComparisonArg::EqualTo,
+        right: ArgValue::Number(10),
+        success: Some(Step {
+            args: vec![
+                Arg::Roll(RollArg::N(ArgValue::Number(1))),
+                Arg::Roll(RollArg::D(ArgValue::Number(20))),
+                Arg::Roll(RollArg::ModifierPos(ArgValue::Number(5))),
+            ],
+            op: MacroOp::Roll,
+            result: StepResult::Ignore,
+            value: None,
+        }),
+        failure: Some(Step {
+            args: vec![
+                Arg::Roll(RollArg::N(ArgValue::Number(1))),
+                Arg::Roll(RollArg::D(ArgValue::Number(20))),
+            ],
+            op: MacroOp::Roll,
+            result: StepResult::Ignore,
+            value: None,
+        }),
+    });
+
+    assert_eq!(result, compare);
 }

@@ -5,6 +5,7 @@ use uuid::Uuid;
 // Rolls all the arguments into a single struct
 pub struct ComposedRoll {
     pub advantage: bool,
+    pub comment: Option<String>,
     pub die: DieType,
     pub disadvantage: bool,
     pub e: i16,
@@ -21,6 +22,9 @@ pub struct ComposedRoll {
 pub struct Roll {
     /// Unique identifier for the roll
     pub _id: String,
+
+    /// Roll comment
+    pub comment: Option<String>,
 
     /// The dice that compose this roll
     pub dice: Vec<Die>,
@@ -49,12 +53,18 @@ impl Roll {
 
         Roll {
             _id: Uuid::new_v4().to_string(),
+            comment: None,
             dice,
             modifiers: Vec::new(),
             raw_value: value,
             token: None,
             value,
         }
+    }
+
+    /// Associate this roll with a comment
+    pub fn add_comment(&mut self, comment: String) {
+        self.comment = Some(comment)
     }
 
     /// Associate this roll with a token

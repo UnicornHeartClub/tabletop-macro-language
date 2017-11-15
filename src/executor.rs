@@ -145,6 +145,7 @@ pub fn execute_roll (step: &Step, results: &HashMap<String, StepValue>, tokens: 
     // Compose the roll
     let mut composed_roll = ComposedRoll {
         advantage: false,
+        comment: None,
         die: DieType::Other,
         disadvantage: false,
         e: 0,
@@ -295,6 +296,8 @@ pub fn execute_roll (step: &Step, results: &HashMap<String, StepValue>, tokens: 
                 },
                 _ => {}
             }
+        } else if let &Arg::Roll(RollArg::Comment(ArgValue::Text(ref n))) = arg {
+            composed_roll.comment = Some(n.to_owned());
         }
     }
 
@@ -344,6 +347,11 @@ pub fn execute_roll (step: &Step, results: &HashMap<String, StepValue>, tokens: 
         roll.keep_high(composed_roll.h as u16);
     } else if composed_roll.l != 0 {
         roll.keep_low(composed_roll.l as u16);
+    }
+
+    match composed_roll.comment {
+        Some(c) => roll.add_comment(c),
+        None => {}
     }
 
     roll

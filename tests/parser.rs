@@ -472,6 +472,25 @@ fn test_conditional_parser() {
 
     assert_eq!(result, compare);
 
+    let (_, result) = arguments_p(b"$foo <= 5 ? | : !r 1d20").unwrap();
+    let compare = Arg::Conditional(Conditional {
+        left: ArgValue::Variable("foo".to_string()),
+        comparison: ComparisonArg::LessThanOrEqual,
+        right: ArgValue::Number(5),
+        success: None,
+        failure: Some(Step {
+            args: vec![
+                Arg::Roll(RollArg::N(ArgValue::Number(1))),
+                Arg::Roll(RollArg::D(ArgValue::Number(20)))
+            ],
+            op: MacroOp::Roll,
+            result: StepResult::Ignore,
+            value: None,
+        }),
+    });
+
+    assert_eq!(result, compare);
+
     // equal to
     let (_, result) = arguments_p(b"$foo == 10 ? !r 1d20+5 : !r 1d20").unwrap();
     let compare = Arg::Conditional(Conditional {

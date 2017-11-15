@@ -254,7 +254,10 @@ pub fn conditional_p(input: &[u8]) -> IResult<&[u8], Conditional> {
             map!(variable, | a | ArgValue::Variable(a))
         )) >>
         ws!(tag!("?")) >>
-        success: opt!(parse_step) >>
+        success: ws!(alt_complete!(
+            map!(tag!("|"), |_| None) |
+            opt!(parse_step)
+        )) >>
         ws!(tag!(":")) >>
         failure: ws!(alt_complete!(
             map!(tag!("|"), |_| None) |

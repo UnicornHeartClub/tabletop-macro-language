@@ -6,6 +6,21 @@ use nom::simple_errors::Err;
 use std::str;
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Assign {
+    pub left: ArgValue,
+    pub right: ArgValue,
+}
+
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Conditional {
+    pub left: ArgValue,
+    pub comparison: ComparisonArg,
+    pub right: ArgValue,
+    pub success: Option<Step>,
+    pub failure: Option<Step>,
+}
+
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Program {
     pub name: MacroOp,
     pub steps: Vec<Step>,
@@ -25,16 +40,11 @@ pub struct TokenArg {
     pub attribute: Option<String>
 }
 
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Assign {
-    pub left: ArgValue,
-    pub right: ArgValue,
-}
-
 // Top-level arguments
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Arg {
     Assign(Assign),
+    Conditional(Conditional),
     Roll(RollArg),
     Say(SayArg),
     Token(TokenArg),
@@ -53,11 +63,21 @@ pub enum ArgValue {
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ComparisonArg {
+    GreaterThan,
+    GreaterThanOrEqual,
+    LessThan,
+    LessThanOrEqual,
+}
+
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum MacroOp {
     /// Addition (+)
     Add,
     /// Assign (=)
     Assign,
+    /// Conditional (>, <, >=, <=)
+    Conditional,
     /// Division (/)
     Divide,
     /// Multiplication (*)
@@ -126,11 +146,13 @@ pub fn advantage_p(input: &[u8]) -> IResult<&[u8], Arg> {
 /// Matches left = right scenarios
 pub fn assignment_p(input: &[u8]) -> IResult<&[u8], Assign> {
     do_parse!(input,
+        // we can only assign to tokens and variables
         left: ws!(alt_complete!(
             map!(variable, | a | ArgValue::Variable(a)) |
             map!(token, | a | ArgValue::Token(a))
         )) >>
         ws!(tag!("=")) >>
+        // but we can assign almost anything else to them (except inline arguments)
         right: ws!(alt_complete!(
             map!(num, | a | ArgValue::Number(a)) |
             map!(string, | a | ArgValue::Text(a)) |
@@ -150,6 +172,7 @@ pub fn assignment_p(input: &[u8]) -> IResult<&[u8], Assign> {
 pub fn arguments_p(input: &[u8]) -> IResult<&[u8], Arg> {
     alt_complete!(input,
         map!(assignment, | a | Arg::Assign(a)) |
+        map!(conditional, | a | Arg::Conditional(a)) |
         map!(variable, | a | Arg::Variable(a)) |
         map!(token, | a | Arg::Token(a)) |
         map!(string, | a | Arg::Unrecognized(a)) |
@@ -205,6 +228,44 @@ pub fn command_p(input: &[u8]) -> IResult<&[u8], MacroOp> {
         map!(alt!(tag!("!say") | tag!("!s")),       |_| MacroOp::Say)       |
         map!(alt!(tag!("!whisper") | tag!("!w")),   |_| MacroOp::Whisper)
     )))
+}
+
+/// Matches conditional statements (e.g. "1 > 2 ? success : failure")
+pub fn conditional_p(input: &[u8]) -> IResult<&[u8], Conditional> {
+    do_parse!(input,
+        // we can only assign to tokens and variables
+        left: ws!(alt_complete!(
+            map!(variable, | a | ArgValue::Variable(a)) |
+            map!(token, | a | ArgValue::Token(a)) |
+            map!(num, | a | ArgValue::Number(a))
+        )) >>
+        comparison: ws!(alt_complete!(
+            map!(tag!(">="), |_| ComparisonArg::GreaterThanOrEqual) |
+            map!(tag!("<="), |_| ComparisonArg::LessThanOrEqual) |
+            map!(tag!(">"), |_| ComparisonArg::GreaterThan) |
+            map!(tag!("<"), |_| ComparisonArg::LessThan)
+        )) >>
+        // but we can assign almost anything else to them (except inline arguments)
+        right: ws!(alt_complete!(
+            map!(num, | a | ArgValue::Number(a)) |
+            map!(variable_reserved, | a | ArgValue::VariableReserved(a)) |
+            map!(variable, | a | ArgValue::Variable(a))
+        )) >>
+        ws!(tag!("?")) >>
+        success: opt!(parse_step) >>
+        ws!(tag!(":")) >>
+        failure: ws!(alt_complete!(
+            map!(tag!("|"), |_| None) |
+            opt!(parse_step)
+        )) >>
+        (Conditional {
+            left,
+            comparison,
+            right,
+            success: success,
+            failure: failure,
+        })
+    )
 }
 
 /// Matches disadvantage roll argument
@@ -488,6 +549,7 @@ pub fn error_to_string(e: Err) -> String {
 // Define our macros
 named!(advantage <&[u8], Arg>, call!(advantage_p));
 named!(assignment <&[u8], Assign>, call!(assignment_p));
+named!(conditional <&[u8], Conditional>, call!(conditional_p));
 named!(arguments <&[u8], Arg>, call!(arguments_p));
 named!(arguments_roll <&[u8], Arg>, call!(arguments_roll_p));
 named!(arguments_say <&[u8], Arg>, call!(arguments_say_p));

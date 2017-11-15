@@ -119,7 +119,6 @@ fn test_complex_parser() {
     let (_, result) = parse_p(b"#complex-macro-name-2 !roll 3d8+3 !say \"Smite!\" !roll 2d20-5kh1 >> !say \"I rolled a \" $1").unwrap();
     assert_eq!(result, program);
 
-
     let program = Program {
         name: MacroOp::Name(String::from("test-assignment")),
         steps: vec![
@@ -421,4 +420,55 @@ fn test_assign_variable_parser() {
     });
 
     assert_eq!(result, assign);
+}
+
+#[test]
+fn test_conditional_parser() {
+    // compare greater than
+    let (_, result) = arguments_p(b"$foo > 1 ? !r 1d20 : !r 1d8").unwrap();
+    let compare = Arg::Conditional(Conditional {
+        left: ArgValue::Variable("foo".to_string()),
+        comparison: ComparisonArg::GreaterThan,
+        right: ArgValue::Number(1),
+        success: Some(Step {
+            args: vec![
+                Arg::Roll(RollArg::N(ArgValue::Number(1))),
+                Arg::Roll(RollArg::D(ArgValue::Number(20)))
+            ],
+            op: MacroOp::Roll,
+            result: StepResult::Ignore,
+            value: None,
+        }),
+        failure: Some(Step {
+            args: vec![
+                Arg::Roll(RollArg::N(ArgValue::Number(1))),
+                Arg::Roll(RollArg::D(ArgValue::Number(8)))
+            ],
+            op: MacroOp::Roll,
+            result: StepResult::Ignore,
+            value: None,
+        }),
+    });
+
+    assert_eq!(result, compare);
+
+    // ignoring results
+    let (_, result) = arguments_p(b"$foo <= 5 ? !r 1d20 : |").unwrap();
+    let compare = Arg::Conditional(Conditional {
+        left: ArgValue::Variable("foo".to_string()),
+        comparison: ComparisonArg::LessThanOrEqual,
+        right: ArgValue::Number(5),
+        success: Some(Step {
+            args: vec![
+                Arg::Roll(RollArg::N(ArgValue::Number(1))),
+                Arg::Roll(RollArg::D(ArgValue::Number(20)))
+            ],
+            op: MacroOp::Roll,
+            result: StepResult::Ignore,
+            value: None,
+        }),
+        failure: None,
+    });
+
+    assert_eq!(result, compare);
 }

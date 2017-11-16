@@ -5,8 +5,9 @@
   "main": "dist/bundle.js",
   "scripts": {
     "build": "webpack --profile --colors",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "serve": "http-server"
+    "postinstall": "npm run build",
+    "serve": "http-server",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": "git+https://github.com/UnicornHeartClub/tabletop-macro-language.git",
   "author": "Unicorn Heart Club",

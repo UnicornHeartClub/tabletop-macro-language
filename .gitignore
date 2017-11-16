@@ -2,5 +2,4 @@
 .DS_Store
 /target/
 Cargo.lock
-dist
 node_modules

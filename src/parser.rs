@@ -139,18 +139,18 @@ pub fn assignment_p(input: &[u8]) -> IResult<&[u8], Assign> {
     do_parse!(input,
         // we can only assign to tokens and variables
         left: ws!(alt_complete!(
-            map!(variable, | a | ArgValue::Variable(a)) |
-            map!(token, | a | ArgValue::Token(a))
+            map!(variable_p, | a | ArgValue::Variable(a)) |
+            map!(token_p, | a | ArgValue::Token(a))
         )) >>
         ws!(tag!("=")) >>
         // but we can assign almost anything else to them (except inline arguments)
         right: ws!(alt_complete!(
-            map!(num, | a | ArgValue::Number(a)) |
-            map!(string, | a | ArgValue::Text(a)) |
-            map!(quoted, | a | ArgValue::Text(a)) |
-            map!(single_quoted, | a | ArgValue::Text(a)) |
-            map!(variable_reserved, | a | ArgValue::VariableReserved(a)) |
-            map!(variable, | a | ArgValue::Variable(a))
+            map!(num_p, | a | ArgValue::Number(a)) |
+            map!(string_p, | a | ArgValue::Text(a)) |
+            map!(quoted_p, | a | ArgValue::Text(a)) |
+            map!(single_quoted_p, | a | ArgValue::Text(a)) |
+            map!(variable_reserved_p, | a | ArgValue::VariableReserved(a)) |
+            map!(variable_p, | a | ArgValue::Variable(a))
         )) >>
         (Assign {
             left,
@@ -162,53 +162,53 @@ pub fn assignment_p(input: &[u8]) -> IResult<&[u8], Assign> {
 /// Matches arguments of unknown commands
 pub fn arguments_p(input: &[u8]) -> IResult<&[u8], Arg> {
     alt_complete!(input,
-        map!(conditional, | a | Arg::Conditional(a)) |
-        map!(assignment, | a | Arg::Assign(a)) |
-        map!(variable, | a | Arg::Variable(a)) |
-        map!(token, | a | Arg::Token(a)) |
-        map!(string, | a | Arg::Unrecognized(a)) |
-        map!(quoted, | a | Arg::Unrecognized(a)) |
-        map!(single_quoted, | a | Arg::Unrecognized(a))
+        map!(conditional_p, | a | Arg::Conditional(a)) |
+        map!(assignment_p, | a | Arg::Assign(a)) |
+        map!(variable_p, | a | Arg::Variable(a)) |
+        map!(token_p, | a | Arg::Token(a)) |
+        map!(string_p, | a | Arg::Unrecognized(a)) |
+        map!(quoted_p, | a | Arg::Unrecognized(a)) |
+        map!(single_quoted_p, | a | Arg::Unrecognized(a))
     )
 }
 
 /// Matches !roll arguments
 pub fn arguments_roll_p(input: &[u8]) -> IResult<&[u8], Arg> {
     alt_complete!(input,
-        advantage |
-        disadvantage |
-        roll_num |
-        roll_die |
-        roll_flag_e |
-        roll_flag_h |
-        roll_flag_l |
-        roll_flag_ro |
-        roll_flag_rr |
-        roll_modifier_pos |
-        roll_modifier_neg |
-        map!(quoted,        | a | Arg::Roll(RollArg::Comment(ArgValue::Text(a)))) |
-        map!(single_quoted, | a | Arg::Roll(RollArg::Comment(ArgValue::Text(a)))) |
-        map!(variable,      | a | Arg::Variable(a))
+        advantage_p |
+        disadvantage_p |
+        roll_num_p |
+        roll_die_p |
+        roll_flag_e_p |
+        roll_flag_h_p |
+        roll_flag_l_p |
+        roll_flag_ro_p |
+        roll_flag_rr_p |
+        roll_modifier_pos_p |
+        roll_modifier_neg_p |
+        map!(quoted_p,        | a | Arg::Roll(RollArg::Comment(ArgValue::Text(a)))) |
+        map!(single_quoted_p, | a | Arg::Roll(RollArg::Comment(ArgValue::Text(a)))) |
+        map!(variable_p,      | a | Arg::Variable(a))
     )
 }
 
 /// Matches !say arguments
 pub fn arguments_say_p(input: &[u8]) -> IResult<&[u8], Arg> {
     alt_complete!(input,
-        map!(string, | a | Arg::Say(SayArg::Message(a))) |
-        map!(quoted, | a | Arg::Say(SayArg::Message(a))) |
-        map!(single_quoted, | a | Arg::Say(SayArg::Message(a))) |
-        map!(variable, | a | Arg::Variable(a))
+        map!(string_p, | a | Arg::Say(SayArg::Message(a))) |
+        map!(quoted_p, | a | Arg::Say(SayArg::Message(a))) |
+        map!(single_quoted_p, | a | Arg::Say(SayArg::Message(a))) |
+        map!(variable_p, | a | Arg::Variable(a))
     )
 }
 
 /// Matches !whisper arguments
 pub fn arguments_whisper_p(input: &[u8]) -> IResult<&[u8], Arg> {
     alt_complete!(input,
-        map!(variable, | a | Arg::Say(SayArg::To(a))) |
-        map!(string, | a | Arg::Say(SayArg::Message(a))) |
-        map!(quoted, | a | Arg::Say(SayArg::Message(a))) |
-        map!(single_quoted, | a | Arg::Say(SayArg::Message(a)))
+        map!(variable_p, | a | Arg::Say(SayArg::To(a))) |
+        map!(string_p, | a | Arg::Say(SayArg::Message(a))) |
+        map!(quoted_p, | a | Arg::Say(SayArg::Message(a))) |
+        map!(single_quoted_p, | a | Arg::Say(SayArg::Message(a)))
     )
 }
 
@@ -226,10 +226,10 @@ pub fn conditional_p(input: &[u8]) -> IResult<&[u8], Conditional> {
     do_parse!(input,
         // we can only assign to tokens and variables
         left: ws!(alt_complete!(
-            map!(variable_reserved, | a | ArgValue::VariableReserved(a)) |
-            map!(variable, | a | ArgValue::Variable(a)) |
-            map!(token, | a | ArgValue::Token(a)) |
-            map!(num, | a | ArgValue::Number(a))
+            map!(variable_reserved_p, | a | ArgValue::VariableReserved(a)) |
+            map!(variable_p, | a | ArgValue::Variable(a)) |
+            map!(token_p, | a | ArgValue::Token(a)) |
+            map!(num_p, | a | ArgValue::Number(a))
         )) >>
         comparison: ws!(alt_complete!(
             map!(tag!("=="), |_| ComparisonArg::EqualTo) |
@@ -240,19 +240,19 @@ pub fn conditional_p(input: &[u8]) -> IResult<&[u8], Conditional> {
         )) >>
         // but we can assign almost anything else to them (except inline arguments)
         right: ws!(alt_complete!(
-            map!(num, | a | ArgValue::Number(a)) |
-            map!(variable_reserved, | a | ArgValue::VariableReserved(a)) |
-            map!(variable, | a | ArgValue::Variable(a))
+            map!(num_p, | a | ArgValue::Number(a)) |
+            map!(variable_reserved_p, | a | ArgValue::VariableReserved(a)) |
+            map!(variable_p, | a | ArgValue::Variable(a))
         )) >>
         ws!(tag!("?")) >>
         success: ws!(alt_complete!(
             map!(tag!("|"), |_| None) |
-            opt!(parse_step)
+            opt!(parse_step_p)
         )) >>
         ws!(tag!(":")) >>
         failure: ws!(alt_complete!(
             map!(tag!("|"), |_| None) |
-            opt!(parse_step)
+            opt!(parse_step_p)
         )) >>
         (Conditional {
             left,
@@ -292,8 +292,8 @@ pub fn num_p(input: &[u8]) -> IResult<&[u8], i32> {
 /// Matches any type of operation
 pub fn op_p(input: &[u8]) -> IResult<&[u8], MacroOp> {
     alt_complete!(input,
-        name |
-        command |
+        name_p |
+        command_p |
         value!(MacroOp::Lambda)
     )
 }
@@ -301,8 +301,8 @@ pub fn op_p(input: &[u8]) -> IResult<&[u8], MacroOp> {
 /// Parse the complete macro
 pub fn parse_p(input: &[u8]) -> IResult<&[u8], Program> {
     do_parse!(input,
-        prog_name: name >>
-        steps: many0!(parse_step) >>
+        prog_name: name_p >>
+        steps: many0!(parse_step_p) >>
         (Program {
             name: prog_name,
             steps: steps,
@@ -313,14 +313,14 @@ pub fn parse_p(input: &[u8]) -> IResult<&[u8], Program> {
 /// Parse a step of the program
 pub fn parse_step_p(input: &[u8]) -> IResult<&[u8], Step> {
     do_parse!(input,
-        op_type: op >>
+        op_type: op_p >>
         args: many0!(switch!(value!(&op_type),
-            &MacroOp::Roll => call!(arguments_roll) |
-            &MacroOp::Say => call!(arguments_say) |
-            &MacroOp::Whisper => call!(arguments_whisper) |
-            _ => call!(arguments)
+            &MacroOp::Roll => call!(arguments_roll_p) |
+            &MacroOp::Say => call!(arguments_say_p) |
+            &MacroOp::Whisper => call!(arguments_whisper_p) |
+            _ => call!(arguments_p)
         )) >>
-        result: step_result >>
+        result: step_result_p >>
         (Step {
             op: op_type,
             result,
@@ -351,11 +351,7 @@ pub fn roll_digit_p(input: &[u8]) -> IResult<&[u8], i32> {
 pub fn roll_flag_e_p(input: &[u8]) -> IResult<&[u8], Arg> {
     do_parse!(input,
         tag!("e") >>
-        var: ws!(alt_complete!(
-            map!(variable_reserved, |n| ArgValue::VariableReserved(n)) |
-            map!(variable, |n| ArgValue::Variable(n)) |
-            map!(roll_digit, |n| ArgValue::Number(n))
-        )) >>
+        var: roll_flag_var_p >>
         (Arg::Roll(RollArg::E(var)))
     )
 }
@@ -364,63 +360,52 @@ pub fn roll_flag_e_p(input: &[u8]) -> IResult<&[u8], Arg> {
 pub fn roll_flag_h_p(input: &[u8]) -> IResult<&[u8], Arg> {
     do_parse!(input,
         tag!("kh") >>
-        var: ws!(alt_complete!(
-            map!(variable_reserved, |n| ArgValue::VariableReserved(n)) |
-            map!(variable, |n| ArgValue::Variable(n)) |
-            map!(roll_digit, |n| ArgValue::Number(n))
-        )) >>
+        var: roll_flag_var_p >>
         (Arg::Roll(RollArg::H(var)))
     )
 }
 
-/// matches roll flag "l"
+/// Matches roll flag "l"
 pub fn roll_flag_l_p(input: &[u8]) -> IResult<&[u8], Arg> {
     do_parse!(input,
         tag!("kl") >>
-        var: ws!(alt_complete!(
-            map!(variable_reserved, |n| ArgValue::VariableReserved(n)) |
-            map!(variable, |n| ArgValue::Variable(n)) |
-            map!(roll_digit, |n| ArgValue::Number(n))
-        )) >>
+        var: roll_flag_var_p >>
         (Arg::Roll(RollArg::L(var)))
     )
 }
 
-/// matches roll flag "ro"
+/// Matches roll flag "ro"
 pub fn roll_flag_ro_p(input: &[u8]) -> IResult<&[u8], Arg> {
     do_parse!(input,
         tag!("ro") >>
-        var: ws!(alt_complete!(
-            map!(variable_reserved, |n| ArgValue::VariableReserved(n)) |
-            map!(variable, |n| ArgValue::Variable(n)) |
-            map!(roll_digit, |n| ArgValue::Number(n))
-        )) >>
+        var: roll_flag_var_p >>
         (Arg::Roll(RollArg::RO(var)))
     )
 }
 
-/// matches roll flag "rr"
+/// Matches roll flag "rr"
 pub fn roll_flag_rr_p(input: &[u8]) -> IResult<&[u8], Arg> {
     do_parse!(input,
         tag!("rr") >>
-        var: ws!(alt_complete!(
-            map!(variable_reserved, |n| ArgValue::VariableReserved(n)) |
-            map!(variable, |n| ArgValue::Variable(n)) |
-            map!(roll_digit, |n| ArgValue::Number(n))
-        )) >>
+        var: roll_flag_var_p >>
         (Arg::Roll(RollArg::RR(var)))
     )
 }
 
+/// Matches valid roll flag inputs
+pub fn roll_flag_var_p(input: &[u8]) -> IResult<&[u8], ArgValue> {
+    ws!(input, alt_complete!(
+        map!(variable_reserved_p, |n| ArgValue::VariableReserved(n)) |
+        map!(variable_p, |n| ArgValue::Variable(n)) |
+        map!(roll_digit_p, |n| ArgValue::Number(n))
+    )) 
+}
+
+
 /// Matches + modifiers
 pub fn roll_modifier_neg_p(input: &[u8]) -> IResult<&[u8], Arg> {
     do_parse!(input,
-        var: ws!(preceded!(tag!("-"), alt!(
-            map!(variable_reserved, |n| ArgValue::VariableReserved(n)) |
-            map!(variable, |n| ArgValue::Variable(n)) |
-            map!(roll_digit, |n| ArgValue::Number(n)) |
-            map!(token, |n| ArgValue::Token(n))
-        ))) >>
+        var: ws!(preceded!(tag!("-"), roll_modifier_var_p)) >>
         (Arg::Roll(RollArg::ModifierNeg(var)))
     )
 }
@@ -428,13 +413,18 @@ pub fn roll_modifier_neg_p(input: &[u8]) -> IResult<&[u8], Arg> {
 /// Matches - modifiers
 pub fn roll_modifier_pos_p(input: &[u8]) -> IResult<&[u8], Arg> {
     do_parse!(input,
-        var: ws!(preceded!(tag!("+"), alt!(
-            map!(variable_reserved, |n| ArgValue::VariableReserved(n)) |
-            map!(variable, |n| ArgValue::Variable(n)) |
-            map!(roll_digit, |n| ArgValue::Number(n)) |
-            map!(token, |n| ArgValue::Token(n))
-        ))) >>
+        var: ws!(preceded!(tag!("+"), roll_modifier_var_p)) >>
         (Arg::Roll(RollArg::ModifierPos(var)))
+    )
+}
+
+/// Matches valid modifier inputs
+pub fn roll_modifier_var_p(input: &[u8]) -> IResult<&[u8], ArgValue> {
+    alt!(input,
+        map!(variable_reserved_p, |n| ArgValue::VariableReserved(n)) |
+        map!(variable_p, |n| ArgValue::Variable(n)) |
+        map!(roll_digit_p, |n| ArgValue::Number(n)) |
+        map!(token_p, |n| ArgValue::Token(n))
     )
 }
 
@@ -442,11 +432,7 @@ pub fn roll_modifier_pos_p(input: &[u8]) -> IResult<&[u8], Arg> {
 pub fn roll_num_p(input: &[u8]) -> IResult<&[u8], Arg> {
     // @todo @error if string/invalid throw error
     do_parse!(input,
-        var: ws!(alt_complete!(
-            map!(variable_reserved, |n| ArgValue::VariableReserved(n)) |
-            map!(variable, |n| ArgValue::Variable(n)) |
-            map!(roll_digit, |n| ArgValue::Number(n))
-        )) >>
+        var: roll_flag_var_p >>
         (Arg::Roll(RollArg::N(var)))
     )
 }
@@ -455,11 +441,7 @@ pub fn roll_num_p(input: &[u8]) -> IResult<&[u8], Arg> {
 pub fn roll_die_p(input: &[u8]) -> IResult<&[u8], Arg> {
     // @todo @error if string/invalid throw error
     do_parse!(input,
-        var: ws!(preceded!(tag!("d"), alt_complete!(
-            map!(variable_reserved, |n| ArgValue::VariableReserved(n)) |
-            map!(variable, |n| ArgValue::Variable(n)) |
-            map!(roll_digit, |n| ArgValue::Number(n))
-        ))) >>
+        var: ws!(preceded!(tag!("d"), roll_flag_var_p)) >>
         (Arg::Roll(RollArg::D(var)))
     )
 }
@@ -530,36 +512,3 @@ pub fn error_to_string(e: Err) -> String {
     };
     err.to_string()
 }
-
-// Define our macros
-named!(advantage <&[u8], Arg>, call!(advantage_p));
-named!(assignment <&[u8], Assign>, call!(assignment_p));
-named!(conditional <&[u8], Conditional>, call!(conditional_p));
-named!(arguments <&[u8], Arg>, call!(arguments_p));
-named!(arguments_roll <&[u8], Arg>, call!(arguments_roll_p));
-named!(arguments_say <&[u8], Arg>, call!(arguments_say_p));
-named!(arguments_whisper <&[u8], Arg>, call!(arguments_whisper_p));
-named!(command <&[u8], MacroOp>, call!(command_p));
-named!(disadvantage <&[u8], Arg>, call!(disadvantage_p));
-named!(name <&[u8], MacroOp>, call!(name_p));
-named!(num <&[u8], i32>, call!(num_p));
-named!(op <&[u8], MacroOp>, call!(op_p));
-named!(parse <&[u8], Program>, call!(parse_p));
-named!(parse_step <&[u8], Step>, call!(parse_step_p));
-named!(quoted <&[u8], String>, call!(quoted_p));
-named!(roll_digit <&[u8], i32>, call!(roll_digit_p));
-named!(roll_flag_e <&[u8], Arg>, call!(roll_flag_e_p));
-named!(roll_flag_h <&[u8], Arg>, call!(roll_flag_h_p));
-named!(roll_flag_l <&[u8], Arg>, call!(roll_flag_l_p));
-named!(roll_flag_ro <&[u8], Arg>, call!(roll_flag_ro_p));
-named!(roll_flag_rr <&[u8], Arg>, call!(roll_flag_rr_p));
-named!(roll_modifier_neg <&[u8], Arg>, call!(roll_modifier_neg_p));
-named!(roll_modifier_pos <&[u8], Arg>, call!(roll_modifier_pos_p));
-named!(roll_num <&[u8], Arg>, call!(roll_num_p));
-named!(roll_die <&[u8], Arg>, call!(roll_die_p));
-named!(single_quoted <&[u8], String>, call!(single_quoted_p));
-named!(step_result <&[u8], StepResult>, call!(step_result_p));
-named!(string <&[u8], String>, call!(string_p));
-named!(token <&[u8], TokenArg>, call!(token_p));
-named!(variable <&[u8], String>, call!(variable_p));
-named!(variable_reserved <&[u8], i16>, call!(variable_reserved_p));

@@ -115,7 +115,7 @@ fn it_assigns_and_updates_token_attributes() {
         "me": {
             "attributes": {
                 "dexterity": {
-                    "Number": 21 
+                    "Number": 21
                 }
             }
         }
@@ -132,7 +132,7 @@ fn it_assigns_and_updates_token_attributes() {
         "me": {
             "attributes": {
                 "dexterity": {
-                    "Number": 21 
+                    "Number": 21
                 }
             }
         }
@@ -142,4 +142,23 @@ fn it_assigns_and_updates_token_attributes() {
     let token = tokens.get("me").unwrap();
     let attr = token.attributes.get("dexterity").unwrap();
     assert_ne!(attr, &TokenAttributeValue::Number(21));
+}
+
+#[test]
+fn it_executes_true_false_statements() {
+    let input = "#test @me.dexterity > 25 ? !roll 1d20 : !say 'I cannot do that'".to_string().into_bytes();
+    let token_input = r#"{
+        "me": {
+            "attributes": {
+                "dexterity": {
+                    "Number": 21
+                }
+            }
+        }
+    }"#.to_string().into_bytes();
+    let output = execute_macro(input, token_input);
+    println!("output {:?}", output);
+
+    assert_eq!(output.rolls.len(), 0);
+    assert_eq!(output.messages.len(), 1);
 }

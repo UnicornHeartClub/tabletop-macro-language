@@ -102,6 +102,8 @@ pub enum RollArg {
     E(ArgValue),
     H(ArgValue),
     L(ArgValue),
+    Max(ArgValue),
+    Min(ArgValue),
     ModifierPos(ArgValue),
     ModifierNeg(ArgValue),
     N(ArgValue), // e.g. 1 (part of 1d20)
@@ -371,6 +373,24 @@ pub fn roll_flag_l_p(input: &[u8]) -> IResult<&[u8], Arg> {
         tag!("kl") >>
         var: roll_flag_var_p >>
         (Arg::Roll(RollArg::L(var)))
+    )
+}
+
+/// Matches roll flag "max"
+pub fn roll_flag_max_p(input: &[u8]) -> IResult<&[u8], Arg> {
+    do_parse!(input,
+        tag!("max") >>
+        var: roll_flag_var_p >>
+        (Arg::Roll(RollArg::Max(var)))
+    )
+}
+
+/// Matches roll flag "min"
+pub fn roll_flag_min_p(input: &[u8]) -> IResult<&[u8], Arg> {
+    do_parse!(input,
+        tag!("min") >>
+        var: roll_flag_var_p >>
+        (Arg::Roll(RollArg::Min(var)))
     )
 }
 

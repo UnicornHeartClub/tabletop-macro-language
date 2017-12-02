@@ -291,6 +291,14 @@ fn test_arguments_roll_parser() {
     let (_, result) = arguments_roll_p(b"disadvantage").unwrap();
     assert_eq!(result, Arg::Roll(RollArg::Disadvantage));
 
+    // min
+    let (_, result) = roll_flag_min_p(b"min2").unwrap();
+    assert_eq!(result, Arg::Roll(RollArg::Min(ArgValue::Number(2))));
+
+    // max
+    let (_, result) = roll_flag_max_p(b"max22").unwrap();
+    assert_eq!(result, Arg::Roll(RollArg::Max(ArgValue::Number(22))));
+
     // Comment
     let (_, result) = arguments_roll_p(b"\"I am a comment\"").unwrap();
     assert_eq!(result, Arg::Roll(RollArg::Comment(ArgValue::Text("I am a comment".to_string()))));

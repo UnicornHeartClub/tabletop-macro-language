@@ -154,41 +154,26 @@ pub fn execute_roll (step: &Step, results: &HashMap<String, StepValue>, tokens: 
         h: 0,
         d: 0,
         l: 0,
+        max: 0,
+        min: 0,
         modifiers: vec![],
         n: 0,
         ro: 0,
         rr: 0,
     };
 
-    // @todo I am not a huge fan of how this looks, there must be an easier way ...
     for arg in &step.args {
-        if let &Arg::Roll(RollArg::N(ArgValue::Number(n))) = arg {
-            composed_roll.n = n as i16;
-        } else if let &Arg::Roll(RollArg::N(ArgValue::VariableReserved(n))) = arg {
-            // Lookup the variable in the index
-            match results.get(&n.to_string()) {
-                Some(&StepValue::Number(n)) => {
-                    composed_roll.n = n as i16;
+        if let &Arg::Roll(RollArg::N(ref value)) = arg {
+            match get_roll_value(value, results, tokens) {
+                Some(n) => {
+                    composed_roll.n = n;
                 },
-                _ => {}
+                None => {}
             }
-        } else if let &Arg::Roll(RollArg::D(ArgValue::Number(n))) = arg {
-            composed_roll.d = n as i16;
-            composed_roll.die = match n {
-                100   => DieType::D100,
-                20    => DieType::D20,
-                12    => DieType::D12,
-                10    => DieType::D10,
-                8     => DieType::D8,
-                6     => DieType::D6,
-                4     => DieType::D4,
-                _     => DieType::Other,
-            };
-        } else if let &Arg::Roll(RollArg::D(ArgValue::VariableReserved(n))) = arg {
-            // Lookup the variable in the index
-            match results.get(&n.to_string()) {
-                Some(&StepValue::Number(n)) => {
-                    composed_roll.d = n as i16;
+        } else if let &Arg::Roll(RollArg::D(ref value)) = arg {
+            match get_roll_value(value, results, tokens) {
+                Some(n) => {
+                    composed_roll.d = n;
                     composed_roll.die = match n {
                         100   => DieType::D100,
                         20    => DieType::D20,
@@ -200,104 +185,59 @@ pub fn execute_roll (step: &Step, results: &HashMap<String, StepValue>, tokens: 
                         _     => DieType::Other,
                     };
                 },
-                _ => {}
+                None => {}
             }
-        } else if let &Arg::Roll(RollArg::H(ArgValue::Number(n))) = arg {
-            composed_roll.h = n as i16;
-        } else if let &Arg::Roll(RollArg::H(ArgValue::VariableReserved(n))) = arg {
-            // Lookup the variable in the index
-            match results.get(&n.to_string()) {
-                Some(&StepValue::Number(n)) => {
-                    composed_roll.h = n as i16;
+        } else if let &Arg::Roll(RollArg::H(ref value)) = arg {
+            match get_roll_value(value, results, tokens) {
+                Some(n) => {
+                    composed_roll.h = n;
                 },
-                _ => {}
+                None => {}
             }
-        } else if let &Arg::Roll(RollArg::L(ArgValue::Number(n))) = arg {
-            composed_roll.l = n as i16;
-        } else if let &Arg::Roll(RollArg::L(ArgValue::VariableReserved(n))) = arg {
-            // Lookup the variable in the index
-            match results.get(&n.to_string()) {
-                Some(&StepValue::Number(n)) => {
-                    composed_roll.l = n as i16;
+        } else if let &Arg::Roll(RollArg::L(ref value)) = arg {
+            match get_roll_value(value, results, tokens) {
+                Some(n) => {
+                    composed_roll.l = n;
                 },
-                _ => {}
+                None => {}
             }
-        } else if let &Arg::Roll(RollArg::RR(ArgValue::Number(n))) = arg {
-            composed_roll.rr = n as i16;
-        } else if let &Arg::Roll(RollArg::RR(ArgValue::VariableReserved(n))) = arg {
-            // Lookup the variable in the index
-            match results.get(&n.to_string()) {
-                Some(&StepValue::Number(n)) => {
-                    composed_roll.rr = n as i16;
+        } else if let &Arg::Roll(RollArg::RR(ref value)) = arg {
+            match get_roll_value(value, results, tokens) {
+                Some(n) => {
+                    composed_roll.rr = n;
                 },
-                _ => {}
+                None => {}
             }
-        } else if let &Arg::Roll(RollArg::RO(ArgValue::Number(n))) = arg {
-            composed_roll.ro = n as i16;
-        } else if let &Arg::Roll(RollArg::RO(ArgValue::VariableReserved(n))) = arg {
-            // Lookup the variable in the index
-            match results.get(&n.to_string()) {
-                Some(&StepValue::Number(n)) => {
-                    composed_roll.ro = n as i16;
+        } else if let &Arg::Roll(RollArg::RO(ref value)) = arg {
+            match get_roll_value(value, results, tokens) {
+                Some(n) => {
+                    composed_roll.ro = n;
                 },
-                _ => {}
+                None => {}
             }
-        } else if let &Arg::Roll(RollArg::ModifierPos(ArgValue::Number(n))) = arg {
-            composed_roll.modifiers.push(n as i16);
-        } else if let &Arg::Roll(RollArg::ModifierPos(ArgValue::Variable(ref n))) = arg {
-            match results.get(&n.to_string()) {
-                Some(&StepValue::Number(n)) => {
-                    composed_roll.modifiers.push(n as i16);
+        } else if let &Arg::Roll(RollArg::RO(ref value)) = arg {
+            match get_roll_value(value, results, tokens) {
+                Some(n) => {
+                    composed_roll.ro = n;
                 },
-                _ => {}
+                None => {}
             }
-        } else if let &Arg::Roll(RollArg::ModifierPos(ArgValue::Token(ref t))) = arg {
-            let token_result = tokens.get(&t.name);
-            let token_attr = t.attribute.clone();
-            match token_result {
-                Some(token) => {
-                    match token_attr {
-                        Some(a) => {
-                            let attr = token.attributes.get(&a);
-                            match attr {
-                                Some(&TokenAttributeValue::Number(n)) => { composed_roll.modifiers.push(n as i16) }
-                                _ => {}
-                            }
-
-                        }
-                        _ => {}
-                    }
+        } else if let &Arg::Roll(RollArg::ModifierPos(ref value)) = arg {
+            match get_roll_value(value, results, tokens) {
+                Some(n) => {
+                    composed_roll.modifiers.push(n);
                 },
-                _ => {}
+                None => {}
             }
-        } else if let &Arg::Roll(RollArg::ModifierNeg(ArgValue::Number(n))) = arg {
-            composed_roll.modifiers.push(n as i16 * -1);
-        } else if let &Arg::Roll(RollArg::ModifierNeg(ArgValue::Variable(ref n))) = arg {
-            match results.get(&n.to_string()) {
-                Some(&StepValue::Number(n)) => {
-                    composed_roll.modifiers.push(n as i16 * -1);
+        } else if let &Arg::Roll(RollArg::ModifierNeg(ref value)) = arg {
+            match get_roll_value(value, results, tokens) {
+                Some(n) => {
+                    composed_roll.modifiers.push(n * -1);
                 },
-                _ => {}
+                None => {}
             }
-        } else if let &Arg::Roll(RollArg::ModifierNeg(ArgValue::Token(ref t))) = arg {
-            let token_result = tokens.get(&t.name);
-            let token_attr = t.attribute.clone();
-            match token_result {
-                Some(token) => {
-                    match token_attr {
-                        Some(a) => {
-                            let attr = token.attributes.get(&a);
-                            match attr {
-                                Some(&TokenAttributeValue::Number(n)) => { composed_roll.modifiers.push(n as i16 * -1) }
-                                _ => {}
-                            }
-
-                        }
-                        _ => {}
-                    }
-                },
-                _ => {}
-            }
+        } else if let &Arg::Roll(RollArg::Max(ref value)) = arg {
+        } else if let &Arg::Roll(RollArg::Min(ref value)) = arg {
         } else if let &Arg::Roll(RollArg::Comment(ArgValue::Text(ref n))) = arg {
             composed_roll.comment = Some(n.to_owned());
         }
@@ -358,3 +298,66 @@ pub fn execute_roll (step: &Step, results: &HashMap<String, StepValue>, tokens: 
 
     roll
 }
+
+/// Gets the value of the flag, whether from a variable, token, etc.
+pub fn get_roll_value (value: &ArgValue, results: &HashMap<String, StepValue>, tokens: &HashMap<String, Token>) -> Option<i16> {
+    match value {
+        &ArgValue::Number(ref n) => {
+            Some(n.clone() as i16)
+        },
+        &ArgValue::Text(ref n) => {
+            None
+        },
+        &ArgValue::Token(ref token) => {
+            let token_result = tokens.get(&token.name);
+            let token_attr = token.attribute.clone();
+            match token_result {
+                Some(t) => {
+                    match token_attr {
+                        Some(a) => {
+                            let attr = t.attributes.get(&a);
+                            match attr {
+                                Some(&TokenAttributeValue::Number(n)) => {
+                                    Some(n.clone() as i16)
+                                }
+                                _ => {
+                                    None
+                                }
+                            }
+                        }
+                        _ => {
+                            None
+                        }
+                    }
+                },
+                None => {
+                    None
+                }
+            }
+        },
+        &ArgValue::Variable(ref var) => {
+            match results.get(&var.to_string()) {
+                Some(&StepValue::Number(n)) => {
+                    Some(n as i16)
+                },
+                _ => {
+                    None
+                }
+            }
+        },
+        &ArgValue::VariableReserved(ref var) => {
+            match results.get(&var.to_string()) {
+                Some(&StepValue::Number(n)) => {
+                    Some(n.clone() as i16)
+                },
+                Some(&StepValue::Text(ref n)) => {
+                    None
+                },
+                None => {
+                    None
+                }
+            }
+        },
+    }
+}
+

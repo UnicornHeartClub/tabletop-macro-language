@@ -12,6 +12,8 @@ pub struct ComposedRoll {
     pub h: i16,
     pub d: i16,
     pub l: i16,
+    pub max: i16,
+    pub min: i16,
     pub modifiers: Vec<i16>,
     pub n: i16,
     pub ro: i16,

@@ -255,6 +255,8 @@ Rolls can be extended using the flags below.
 | -------- | --------------------------------------- | ---------------------------------------------- |
 | `e`      | Re-roll dice forever above a threshold. (e.g. Exploding Dice) | _(dice)_**e**_(threshold)_ (e.g. `r! 1d6e6`) |
 | `k`      | Keep certain dice.                      | _(dice)_**k**_(selector)_ (e.g. `r! 1d8kh1`)   |
+| `max`    | Set the dice maximum.                   | _(dice)_**max**_(threshold)_ (e.g. `r! 1d8max16`)|
+| `min`    | Set the dice minimum.                   | _(dice)_**min**_(threshold)_ (e.g. `r! 1d8min3`)|
 | `ro`     | Re-roll dice once below a threshold.    | _(dice)_**ro**_(threshold)_ (e.g. `r! 1d8ro2`) |
 | `rr`     | Re-roll dice forever below a threshold. | _(dice)_**rr**_(threshold)_ (e.g. `r! 1d8rr2`) |
 
@@ -273,6 +275,11 @@ Roll advantage.
 Roll disadvantage.
 ```bash
 !roll dis
+```
+
+Roll overriding minimum
+```bash
+!roll 1d20min2
 ```
 
 Roll 3x d8's and keep only the top 2.

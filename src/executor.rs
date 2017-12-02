@@ -155,7 +155,7 @@ pub fn execute_roll (step: &Step, results: &HashMap<String, StepValue>, tokens: 
         d: 0,
         l: 0,
         max: 0,
-        min: 0,
+        min: 1,
         modifiers: vec![],
         n: 0,
         ro: 0,
@@ -174,6 +174,7 @@ pub fn execute_roll (step: &Step, results: &HashMap<String, StepValue>, tokens: 
             match get_roll_value(value, results, tokens) {
                 Some(n) => {
                     composed_roll.d = n;
+                    composed_roll.max = n;
                     composed_roll.die = match n {
                         100   => DieType::D100,
                         20    => DieType::D20,
@@ -237,33 +238,36 @@ pub fn execute_roll (step: &Step, results: &HashMap<String, StepValue>, tokens: 
                 None => {}
             }
         } else if let &Arg::Roll(RollArg::Max(ref value)) = arg {
+            match get_roll_value(value, results, tokens) {
+                Some(n) => {
+                    composed_roll.max = n;
+                },
+                None => {}
+            }
         } else if let &Arg::Roll(RollArg::Min(ref value)) = arg {
+            match get_roll_value(value, results, tokens) {
+                Some(n) => {
+                    composed_roll.min = n;
+                },
+                None => {}
+            }
         } else if let &Arg::Roll(RollArg::Comment(ArgValue::Text(ref n))) = arg {
             composed_roll.comment = Some(n.to_owned());
         }
     }
 
-    let mut roll = match composed_roll.die {
-        DieType::D100   => roll_d100(composed_roll.n as u16),
-        DieType::D20    => roll_d20(composed_roll.n as u16),
-        DieType::D12    => roll_d12(composed_roll.n as u16),
-        DieType::D10    => roll_d10(composed_roll.n as u16),
-        DieType::D8     => roll_d8(composed_roll.n as u16),
-        DieType::D6     => roll_d6(composed_roll.n as u16),
-        DieType::D4     => roll_d4(composed_roll.n as u16),
-        _ => {
-            // Build the custom sided die
-            let mut dice = Vec::new();
-            for _ in 0..composed_roll.n {
-                let mut die = Die::new(composed_roll.die);
-                die.set_sides(composed_roll.d as u8);
-                die.set_min(1);
-                die.set_max(composed_roll.d as i16);
-                dice.push(die);
-            }
-            Roll::new(dice)
-        }
-    };
+    // @todo build custom dice always
+
+    // Build the custom sided die
+    let mut dice = Vec::new();
+    for _ in 0..composed_roll.n {
+        let mut die = Die::new(composed_roll.die);
+        die.set_sides(composed_roll.d as u8);
+        die.set_min(composed_roll.min);
+        die.set_max(composed_roll.max);
+        dice.push(die);
+    }
+    let mut roll = Roll::new(dice);
 
     if composed_roll.modifiers.len() > 0 {
         for i in composed_roll.modifiers.into_iter() {

@@ -29,25 +29,45 @@ fn it_returns_a_roll() {
 
 #[test]
 fn it_executes_roll_with_min_max_flags() {
-    // let step = Step {
-        // args: vec![
-            // Arg::Roll(RollArg::N(ArgValue::Number(1))),
-            // Arg::Roll(RollArg::D(ArgValue::Number(20))),
-            // Arg::Roll(RollArg::Min(ArgValue::Number(2))),
-            // Arg::Roll(RollArg::Max(ArgValue::Number(3))),
-        // ],
-        // op: MacroOp::Roll,
-        // result: StepResult::Ignore,
-        // value: None,
-    // };
+    let step = Step {
+        args: vec![
+            Arg::Roll(RollArg::N(ArgValue::Number(1))),
+            Arg::Roll(RollArg::D(ArgValue::Number(20))),
+            Arg::Roll(RollArg::Min(ArgValue::Number(2))),
+            Arg::Roll(RollArg::Max(ArgValue::Number(3))),
+        ],
+        op: MacroOp::Roll,
+        result: StepResult::Ignore,
+        value: None,
+    };
 
-    // let results = HashMap::new();
-    // let tokens = HashMap::new();
-    // let roll = execute_roll(&step, &results, &tokens);
+    let results = HashMap::new();
+    let tokens = HashMap::new();
+    let roll = execute_roll(&step, &results, &tokens);
 
-    // assert!(roll.value >= 2);
-    // assert!(roll.value <= 3);
-    // assert_eq!(roll.dice.len(), 1);
+    assert!(roll.value >= 2);
+    assert!(roll.value <= 3);
+    assert_eq!(roll.dice.len(), 1);
+
+    let step = Step {
+        args: vec![
+            Arg::Roll(RollArg::N(ArgValue::Number(1))),
+            Arg::Roll(RollArg::D(ArgValue::Number(20))),
+            Arg::Roll(RollArg::Min(ArgValue::Number(200))),
+            Arg::Roll(RollArg::Max(ArgValue::Number(300))),
+        ],
+        op: MacroOp::Roll,
+        result: StepResult::Ignore,
+        value: None,
+    };
+
+    let results = HashMap::new();
+    let tokens = HashMap::new();
+    let roll = execute_roll(&step, &results, &tokens);
+
+    assert!(roll.value >= 200);
+    assert!(roll.value <= 300);
+    assert_eq!(roll.dice.len(), 1);
 }
 
 #[test]
@@ -75,7 +95,7 @@ fn it_uses_variables() {
 
 #[test]
 fn it_executes_simple_input() {
-    let input = "#test !r 1d20+@me.dexterity".to_string().into_bytes();
+    let input = "#test !r 1d20min20max40+@me.dexterity".to_string().into_bytes();
     let token_input = r#"{
         "me": {
             "attributes": {

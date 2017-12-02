@@ -184,6 +184,8 @@ pub fn arguments_roll_p(input: &[u8]) -> IResult<&[u8], Arg> {
         roll_flag_e_p |
         roll_flag_h_p |
         roll_flag_l_p |
+        roll_flag_max_p |
+        roll_flag_min_p |
         roll_flag_ro_p |
         roll_flag_rr_p |
         roll_modifier_pos_p |

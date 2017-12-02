@@ -80,6 +80,8 @@ fn test_complex_parser() {
                 args: vec![
                     Arg::Roll(RollArg::N(ArgValue::Number(3))),
                     Arg::Roll(RollArg::D(ArgValue::Number(8))),
+                    Arg::Roll(RollArg::Min(ArgValue::Number(8))),
+                    Arg::Roll(RollArg::Max(ArgValue::Number(16))),
                     Arg::Roll(RollArg::ModifierPos(ArgValue::Number(3))),
                 ],
                 op: MacroOp::Roll,
@@ -116,7 +118,7 @@ fn test_complex_parser() {
             },
         ],
     };
-    let (_, result) = parse_p(b"#complex-macro-name-2 !roll 3d8+3 !say \"Smite!\" !roll 2d20-5kh1 >> !say \"I rolled a \" $1").unwrap();
+    let (_, result) = parse_p(b"#complex-macro-name-2 !roll 3d8min8max16+3 !say \"Smite!\" !roll 2d20-5kh1 >> !say \"I rolled a \" $1").unwrap();
     assert_eq!(result, program);
 
     let program = Program {

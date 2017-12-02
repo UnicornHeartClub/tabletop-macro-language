@@ -3,6 +3,7 @@ use std::collections::HashMap;
 #[derive(Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct Token {
     pub attributes: HashMap<String, TokenAttributeValue>,
+    pub macros: HashMap<String, TokenAttributeValue>,
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]

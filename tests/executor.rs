@@ -102,7 +102,8 @@ fn it_executes_simple_input() {
                 "dexterity": {
                     "Number": 5
                 }
-            }
+            },
+            "macros": {}
         }
     }"#.to_string().into_bytes();
 
@@ -138,7 +139,8 @@ fn it_executes_negative_modifier() {
                 "dexterity": {
                     "Number": 5
                 }
-            }
+            },
+            "macros": {}
         }
     }"#.to_string().into_bytes();
 
@@ -160,7 +162,8 @@ fn it_assigns_and_updates_token_attributes() {
                 "dexterity": {
                     "Number": 21
                 }
-            }
+            },
+            "macros": {}
         }
     }"#.to_string().into_bytes();
     let output = execute_macro(input, token_input);
@@ -177,7 +180,8 @@ fn it_assigns_and_updates_token_attributes() {
                 "dexterity": {
                     "Number": 21
                 }
-            }
+            },
+            "macros": {}
         }
     }"#.to_string().into_bytes();
     let output = execute_macro(input, token_input);

@@ -313,11 +313,11 @@ fn test_arguments_roll_parser() {
     assert_eq!(result, Arg::Roll(RollArg::ModifierPos(ArgValue::VariableReserved(1))));
 
     // Token Modifier
-
     let (_, result) = arguments_roll_p(b"+@me.dexterity").unwrap();
     assert_eq!(result, Arg::Roll(RollArg::ModifierPos(ArgValue::Token(TokenArg {
         name: "me".to_string(),
         attribute: Some("dexterity".to_string()),
+        macro_name: None,
     }))));
 
     // Variables
@@ -354,6 +354,19 @@ fn test_arguments_roll_parses_token_attributes() {
         Arg::Roll(RollArg::ModifierPos(ArgValue::Token(TokenArg {
             name: "me".to_string(),
             attribute: Some("dexterity".to_string()),
+            macro_name: None,
+        })))
+    );
+}
+
+fn test_arguments_roll_parses_token_macros() {
+    let (_, result) = arguments_roll_p(b"@me->test_macro").unwrap();
+    assert_eq!(
+        result,
+        Arg::Roll(RollArg::ModifierPos(ArgValue::Token(TokenArg {
+            name: "me".to_string(),
+            attribute: None,
+            macro_name: Some("test_macro".to_string()),
         })))
     );
 }
@@ -379,10 +392,10 @@ fn test_error_handling() {
 #[test]
 fn test_token_parser() {
     let (_, result) = token_p(b"@foo").unwrap();
-    assert_eq!(result, TokenArg { name: "foo".to_string(), attribute: None });
+    assert_eq!(result, TokenArg { name: "foo".to_string(), attribute: None, macro_name: None });
 
     let (_, result) = token_p(b"@foo123bar.baz").unwrap();
-    assert_eq!(result, TokenArg { name: "foo123bar".to_string(), attribute: Some("baz".to_string()) });
+    assert_eq!(result, TokenArg { name: "foo123bar".to_string(), attribute: Some("baz".to_string()), macro_name: None });
 }
 
 #[test]
@@ -411,6 +424,7 @@ fn test_assign_token_parser() {
         left: ArgValue::Token(TokenArg {
             name: "me".to_string(),
             attribute: Some("test".to_string()),
+            macro_name: None,
         }),
         right: ArgValue::Text("foo".to_string()),
     });
@@ -422,6 +436,7 @@ fn test_assign_token_parser() {
         left: ArgValue::Token(TokenArg {
             name: "me".to_string(),
             attribute: Some("test".to_string()),
+            macro_name: None,
         }),
         right: ArgValue::Text("foo".to_string()),
     });
@@ -434,6 +449,7 @@ fn test_assign_token_parser() {
         left: ArgValue::Token(TokenArg {
             name: "me".to_string(),
             attribute: Some("test".to_string()),
+            macro_name: None,
         }),
         right: ArgValue::Number(42),
     });

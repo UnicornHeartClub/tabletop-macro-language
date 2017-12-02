@@ -37,7 +37,8 @@ pub struct Step {
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TokenArg {
     pub name: String,
-    pub attribute: Option<String>
+    pub attribute: Option<String>,
+    pub macro_name: Option<String>,
 }
 
 // Top-level arguments
@@ -503,7 +504,11 @@ pub fn token_p(input: &[u8]) -> IResult<&[u8], TokenArg> {
             Some(a) => value!(Some(String::from_utf8(a.to_vec()).unwrap())) |
             _ => value!(None)
         ) >>
-        (TokenArg { name, attribute })
+        macro_name: switch!(opt!(complete!(preceded!(tag!("->"), alphanumeric))),
+            Some(a) => value!(Some(String::from_utf8(a.to_vec()).unwrap())) |
+            _ => value!(None)
+        ) >>
+        (TokenArg { name, attribute, macro_name })
     )
 }
 

@@ -46,7 +46,8 @@ pub fn test_run_macro() {
                 "foo": {
                     "Number": 42
                 }
-            }
+            },
+            "macros": {}
         }
     }"#;
 

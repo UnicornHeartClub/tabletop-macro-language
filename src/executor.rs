@@ -109,6 +109,7 @@ pub fn execute_step_lambda(step: &Step, results: &mut HashMap<String, StepValue>
                     let name = t.name.clone();
                     let mut token = tokens.entry(name).or_insert(Token {
                         attributes: HashMap::new(),
+                        macros: HashMap::new(),
                     });
                     match attr {
                         Some(a) => {

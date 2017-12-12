@@ -228,7 +228,7 @@ pub fn command_p(input: &[u8]) -> IResult<&[u8], MacroOp> {
 
 /// Matches conditional statements (e.g. "1 > 2 ? success : failure")
 pub fn conditional_p(input: &[u8]) -> IResult<&[u8], Conditional> {
-    do_parse!(input,
+    add_return_error!(input, ErrorKind::Custom(3), do_parse!(
         // we can only assign to tokens and variables
         left: ws!(alt_complete!(
             map!(variable_reserved_p, | a | ArgValue::VariableReserved(a)) |
@@ -266,7 +266,7 @@ pub fn conditional_p(input: &[u8]) -> IResult<&[u8], Conditional> {
             success: success,
             failure: failure,
         })
-    )
+    ))
 }
 
 /// Matches disadvantage roll argument
@@ -535,6 +535,7 @@ pub fn error_to_string(e: Err) -> String {
     let err = match e {
         ErrorKind::Custom(1)    => "Missing or invalid macro name",
         ErrorKind::Custom(2)    => "Invalid or unrecognized command",
+        ErrorKind::Custom(3)    => "Problem parsing conditional statement",
         _                       => "Unknown problem encountered while parsing",
     };
     err.to_string()

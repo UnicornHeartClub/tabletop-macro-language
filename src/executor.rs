@@ -1,7 +1,18 @@
-use chrono::prelude::Utc;
 use die::{Die, DieType};
 use output::Output;
-use parser::{Arg, ArgValue, MacroOp, Step, StepResult, StepValue, RollArg, error_to_string, parse_p};
+use parser::{
+    Arg,
+    ArgValue,
+    ComparisonArg,
+    Conditional,
+    MacroOp,
+    RollArg,
+    Step,
+    StepResult,
+    StepValue,
+    error_to_string,
+    parse_p,
+};
 use roll::*;
 use serde_json;
 use std::collections::HashMap;
@@ -13,93 +24,75 @@ use token::{Token, TokenAttributeValue};
 pub fn execute_macro(input: Vec<u8>, input_tokens: Vec<u8>) -> Output {
     // Start the timer
     let start = Instant::now();
-    let executed = Utc::now();
 
-    let mut errors = Vec::new(); // error messages, points to the col/row that error happened
-    let mut messages = Vec::new(); // messages to send to chat
-    let mut results: HashMap<String, StepValue> = HashMap::new(); // a list of variables that we can use (e.g. $1, $2)
-    let mut rolls = Vec::new(); // rolls
-    let version = String::from(env!("CARGO_PKG_VERSION"));
-
-    // Parse the input
+    // Parse input
     let input_clone = input.clone();
     let prog = parse_p(input_clone.as_slice());
 
-    // Parse tokens
+    // Parse tokens, create a list of tokens we can use (e.g. @me, @selected)
     let input_tokens_str = str::from_utf8(&input_tokens).unwrap();
-    let mut tokens: HashMap<String, Token> = serde_json::from_str(input_tokens_str).unwrap();
+    let tokens: HashMap<String, Token> = serde_json::from_str(input_tokens_str).unwrap();
+
+    // Start the output
+    let mut output = Output::new(String::from_utf8(input).unwrap());
+    output.tokens = tokens;
 
     if prog.is_err() {
         // Push the error
         let error = prog.unwrap_err();
-        errors.push(error_to_string(error));
+        output.errors.push(error_to_string(error));
 
         let elapsed = start.elapsed();
-        let execution_time = (elapsed.as_secs() * 1000) + (elapsed.subsec_nanos() / 1000000) as u64;
-
-        Output {
-            input: String::from_utf8(input).unwrap(),
-            executed,
-            execution_time,
-            errors,
-            messages,
-            program: None,
-            rolls,
-            tokens,
-            version,
-        }
+        output.execution_time = (elapsed.as_secs() * 1000) + (elapsed.subsec_nanos() / 1000000) as u64;
+        output
     } else {
         let (_, mut program) = prog.unwrap();
 
-        for step in &mut program.steps {
-            match step.op {
-                MacroOp::Lambda => execute_step_lambda(&step, &mut results, &mut tokens),
-                MacroOp::Roll => {
-                    // execute the roll and update the step value
-                    let roll = execute_roll(&step, &results, &tokens);
-                    step.value = Some(StepValue::Number(roll.value));
-
-                    // pass the result if needed
-                    if step.result == StepResult::Save {
-                        let index = results.len() + 1;
-                        results.insert(index.to_string(), StepValue::Number(roll.value));
-                    }
-
-                    // push to the tracked rolls
-                    rolls.push(roll);
-                },
-                _ => println!("Not yet implemented {:?}", step.op)
-            }
+        for mut step in &mut program.steps {
+            execute_step(&mut step, &mut output);
         };
 
+        output.program = Some(program);
         let elapsed = start.elapsed();
-        let execution_time = (elapsed.as_secs() * 1000) + (elapsed.subsec_nanos() / 1000000) as u64;
-
-        Output {
-            input: String::from_utf8(input).unwrap(),
-            executed,
-            execution_time,
-            errors,
-            messages,
-            program: Some(program),
-            rolls,
-            tokens,
-            version,
-        }
+        output.execution_time = (elapsed.as_secs() * 1000) + (elapsed.subsec_nanos() / 1000000) as u64;
+        output
     }
 }
 
-pub fn execute_step_lambda(step: &Step, results: &mut HashMap<String, StepValue>, tokens: &mut HashMap<String, Token>) {
+pub fn execute_step (step: &mut Step, mut output: &mut Output) {
+    match step.op {
+        MacroOp::Lambda => {
+            execute_step_lambda(&step, &mut output);
+        },
+        MacroOp::Roll => {
+            // execute the roll and update the step value
+            let roll = execute_roll(&step, output);
+            step.value = Some(StepValue::Number(roll.value));
+
+            // pass the result if needed
+            if step.result == StepResult::Save {
+                let index = output.results.len() + 1;
+                output.results.insert(index.to_string(), StepValue::Number(roll.value));
+            }
+
+            // push to the tracked rolls
+            output.rolls.push(roll);
+        },
+        _ => println!("Not yet implemented {:?}", step.op)
+    }
+}
+
+pub fn execute_step_lambda(step: &Step, output: &mut Output) {
     for arg in &step.args {
         if let &Arg::Assign(ref assign) = arg {
             match assign.left {
                 ArgValue::Variable(ref k) => {
                     match assign.right {
                         ArgValue::Number(ref v) => {
-                            results.insert(k.to_owned(), StepValue::Number(v.to_owned()));
+                            output.results.insert(k.to_owned(), StepValue::Number(v.to_owned()));
                         },
                         ArgValue::Text(ref v) => {
-                            results.insert(k.to_owned(), StepValue::Text(v.to_owned()));
+                            output.results.insert(k.to_owned(), StepValue::Text(v.to_owned()));
                         },
                         _ => {}
                     }
@@ -107,7 +100,7 @@ pub fn execute_step_lambda(step: &Step, results: &mut HashMap<String, StepValue>
                 ArgValue::Token(ref t) => {
                     let attr = t.attribute.clone();
                     let name = t.name.clone();
-                    let mut token = tokens.entry(name).or_insert(Token {
+                    let token = output.tokens.entry(name).or_insert(Token {
                         attributes: HashMap::new(),
                         macros: HashMap::new(),
                     });
@@ -122,7 +115,7 @@ pub fn execute_step_lambda(step: &Step, results: &mut HashMap<String, StepValue>
                                 },
                                 ArgValue::VariableReserved(ref v) => {
                                     // Lookup the variable in the index
-                                    match results.get(&v.to_string()) {
+                                    match output.results.get(&v.to_string()) {
                                         Some(&StepValue::Number(ref n)) => {
                                             &token.attributes.insert(a, TokenAttributeValue::Number(n.to_owned()));
                                         },
@@ -140,11 +133,60 @@ pub fn execute_step_lambda(step: &Step, results: &mut HashMap<String, StepValue>
                 },
                 _ => {}
             }
+        } else if let &Arg::Conditional(ref conditional) = arg {
+            let &Conditional {
+                ref left,
+                ref right,
+                ref comparison,
+                ref success,
+                ref failure,
+            } = conditional;
+
+            // Get the value from the left side, we only allow numbers right now
+            let left_value = match get_arg_value(left, &output.results, &output.tokens) {
+                Some(ArgValue::Number(l)) => { l },
+                _ => { 0 }
+            };
+
+            let right_value = match get_arg_value(right, &output.results, &output.tokens) {
+                Some(ArgValue::Number(l)) => { l },
+                _ => { 0 }
+            };
+
+            // compare the left and right values
+            let is_success = match comparison {
+                &ComparisonArg::EqualTo => {
+                    left_value == right_value
+                },
+                &ComparisonArg::GreaterThan => {
+                    left_value > right_value
+                },
+                &ComparisonArg::GreaterThanOrEqual => {
+                    left_value >= right_value
+                },
+                &ComparisonArg::LessThan => {
+                    left_value < right_value
+                },
+                &ComparisonArg::LessThanOrEqual => {
+                    left_value <= right_value
+                }
+            };
+
+            if is_success {
+                // match success {
+                    // &Some(step) => {
+                    // },
+                    // &None => {}
+                // }
+                println!("executing success");
+            } else {
+                println!("executing failure");
+            }
         }
     };
 }
 
-pub fn execute_roll (step: &Step, results: &HashMap<String, StepValue>, tokens: &HashMap<String, Token>) -> Roll {
+pub fn execute_roll (step: &Step, output: &mut Output) -> Roll {
     // Compose the roll
     let mut composed_roll = ComposedRoll {
         advantage: false,
@@ -165,17 +207,17 @@ pub fn execute_roll (step: &Step, results: &HashMap<String, StepValue>, tokens: 
 
     for arg in &step.args {
         if let &Arg::Roll(RollArg::N(ref value)) = arg {
-            match get_roll_value(value, results, tokens) {
-                Some(n) => {
-                    composed_roll.n = n;
+            match get_arg_value(value, &output.results, &output.tokens) {
+                Some(ArgValue::Number(n)) => {
+                    composed_roll.n = n as i16;
                 },
-                None => {}
+                _ => {}
             }
         } else if let &Arg::Roll(RollArg::D(ref value)) = arg {
-            match get_roll_value(value, results, tokens) {
-                Some(n) => {
-                    composed_roll.d = n;
-                    composed_roll.max = n;
+            match get_arg_value(value, &output.results, &output.tokens) {
+                Some(ArgValue::Number(n)) => {
+                    composed_roll.d = n as i16;
+                    composed_roll.max = n as i16;
                     composed_roll.die = match n {
                         100   => DieType::D100,
                         20    => DieType::D20,
@@ -187,70 +229,70 @@ pub fn execute_roll (step: &Step, results: &HashMap<String, StepValue>, tokens: 
                         _     => DieType::Other,
                     };
                 },
-                None => {}
+                _ => {}
             }
         } else if let &Arg::Roll(RollArg::H(ref value)) = arg {
-            match get_roll_value(value, results, tokens) {
-                Some(n) => {
-                    composed_roll.h = n;
+            match get_arg_value(value, &output.results, &output.tokens) {
+                Some(ArgValue::Number(n)) => {
+                    composed_roll.h = n as i16;
                 },
-                None => {}
+                _ => {}
             }
         } else if let &Arg::Roll(RollArg::L(ref value)) = arg {
-            match get_roll_value(value, results, tokens) {
-                Some(n) => {
-                    composed_roll.l = n;
+            match get_arg_value(value, &output.results, &output.tokens) {
+                Some(ArgValue::Number(n)) => {
+                    composed_roll.l = n as i16;
                 },
-                None => {}
+                _ => {}
             }
         } else if let &Arg::Roll(RollArg::RR(ref value)) = arg {
-            match get_roll_value(value, results, tokens) {
-                Some(n) => {
-                    composed_roll.rr = n;
+            match get_arg_value(value, &output.results, &output.tokens) {
+                Some(ArgValue::Number(n)) => {
+                    composed_roll.rr = n as i16;
                 },
-                None => {}
+                _ => {}
             }
         } else if let &Arg::Roll(RollArg::RO(ref value)) = arg {
-            match get_roll_value(value, results, tokens) {
-                Some(n) => {
-                    composed_roll.ro = n;
+            match get_arg_value(value, &output.results, &output.tokens) {
+                Some(ArgValue::Number(n)) => {
+                    composed_roll.ro = n as i16;
                 },
-                None => {}
+                _ => {}
             }
         } else if let &Arg::Roll(RollArg::RO(ref value)) = arg {
-            match get_roll_value(value, results, tokens) {
-                Some(n) => {
-                    composed_roll.ro = n;
+            match get_arg_value(value, &output.results, &output.tokens) {
+                Some(ArgValue::Number(n)) => {
+                    composed_roll.ro = n as i16;
                 },
-                None => {}
+                _ => {}
             }
         } else if let &Arg::Roll(RollArg::ModifierPos(ref value)) = arg {
-            match get_roll_value(value, results, tokens) {
-                Some(n) => {
-                    composed_roll.modifiers.push(n);
+            match get_arg_value(value, &output.results, &output.tokens) {
+                Some(ArgValue::Number(n)) => {
+                    composed_roll.modifiers.push(n as i16);
                 },
-                None => {}
+                _ => {}
             }
         } else if let &Arg::Roll(RollArg::ModifierNeg(ref value)) = arg {
-            match get_roll_value(value, results, tokens) {
-                Some(n) => {
-                    composed_roll.modifiers.push(n * -1);
+            match get_arg_value(value, &output.results, &output.tokens) {
+                Some(ArgValue::Number(n)) => {
+                    composed_roll.modifiers.push(n as i16 * -1);
                 },
-                None => {}
+                _ => {}
             }
         } else if let &Arg::Roll(RollArg::Max(ref value)) = arg {
-            match get_roll_value(value, results, tokens) {
-                Some(n) => {
-                    composed_roll.max = n;
+            match get_arg_value(value, &output.results, &output.tokens) {
+                Some(ArgValue::Number(n)) => {
+                    composed_roll.max = n as i16;
                 },
-                None => {}
+                _ => {}
             }
         } else if let &Arg::Roll(RollArg::Min(ref value)) = arg {
-            match get_roll_value(value, results, tokens) {
-                Some(n) => {
-                    composed_roll.min = n;
+            match get_arg_value(value, &output.results, &output.tokens) {
+                Some(ArgValue::Number(n)) => {
+                    composed_roll.min = n as i16;
                 },
-                None => {}
+                _ => {}
             }
         } else if let &Arg::Roll(RollArg::Comment(ArgValue::Text(ref n))) = arg {
             composed_roll.comment = Some(n.to_owned());
@@ -304,11 +346,11 @@ pub fn execute_roll (step: &Step, results: &HashMap<String, StepValue>, tokens: 
     roll
 }
 
-/// Gets the value of the flag, whether from a variable, token, etc.
-pub fn get_roll_value (value: &ArgValue, results: &HashMap<String, StepValue>, tokens: &HashMap<String, Token>) -> Option<i16> {
+/// Gets the value of the argvalue, whether from a variable, token, etc.
+pub fn get_arg_value (value: &ArgValue, results: &HashMap<String, StepValue>, tokens: &HashMap<String, Token>) -> Option<ArgValue> {
     match value {
         &ArgValue::Number(ref n) => {
-            Some(n.clone() as i16)
+            Some(ArgValue::Number(n.clone()))
         },
         &ArgValue::Text(ref n) => {
             None
@@ -323,7 +365,7 @@ pub fn get_roll_value (value: &ArgValue, results: &HashMap<String, StepValue>, t
                             let attr = t.attributes.get(&a);
                             match attr {
                                 Some(&TokenAttributeValue::Number(n)) => {
-                                    Some(n.clone() as i16)
+                                    Some(ArgValue::Number(n.clone()))
                                 }
                                 _ => {
                                     None
@@ -343,7 +385,7 @@ pub fn get_roll_value (value: &ArgValue, results: &HashMap<String, StepValue>, t
         &ArgValue::Variable(ref var) => {
             match results.get(&var.to_string()) {
                 Some(&StepValue::Number(n)) => {
-                    Some(n as i16)
+                    Some(ArgValue::Number(n))
                 },
                 _ => {
                     None
@@ -353,7 +395,7 @@ pub fn get_roll_value (value: &ArgValue, results: &HashMap<String, StepValue>, t
         &ArgValue::VariableReserved(ref var) => {
             match results.get(&var.to_string()) {
                 Some(&StepValue::Number(n)) => {
-                    Some(n.clone() as i16)
+                    Some(ArgValue::Number(n.clone()))
                 },
                 Some(&StepValue::Text(ref n)) => {
                     None

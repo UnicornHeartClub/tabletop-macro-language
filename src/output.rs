@@ -1,6 +1,6 @@
 use chrono::DateTime;
 use chrono::prelude::Utc;
-use parser::Program;
+use parser::{StepValue, Program};
 use roll::Roll;
 use std::collections::HashMap;
 use token::Token;
@@ -28,6 +28,9 @@ pub struct Output {
     /// Dice rolls
     pub rolls: Vec<Roll>,
 
+    /// Results
+    pub results: HashMap<String, StepValue>,
+
     /// Tokens
     pub tokens: HashMap<String, Token>,
  
@@ -35,11 +38,21 @@ pub struct Output {
     pub version: String,
 }
 
-// #[derive(Debug, Deserialize, Serialize)]
-// pub struct ErrorOutput {
-    // /// Type of error
-    // error: String,
-
-    // /// Message
-    // message: String
-// }
+impl Output {
+    pub fn new (input: String) -> Output {
+        let version = String::from(env!("CARGO_PKG_VERSION"));
+        let executed = Utc::now();
+        Output {
+            input,
+            executed,
+            execution_time: 0,
+            errors: Vec::new(),
+            messages: Vec::new(),
+            program: None,
+            rolls: Vec::new(),
+            tokens: HashMap::new(),
+            results: HashMap::new(),
+            version,
+        }
+    }
+}

@@ -2,6 +2,7 @@ extern crate ttml;
 
 use std::collections::HashMap;
 use ttml::parser::*;
+use ttml::output::Output;
 use ttml::die::DieType;
 use ttml::token::TokenAttributeValue;
 use ttml::executor::{execute_macro, execute_roll};
@@ -18,9 +19,8 @@ fn it_returns_a_roll() {
         value: None,
     };
 
-    let results = HashMap::new();
-    let tokens = HashMap::new();
-    let roll = execute_roll(&step, &results, &tokens);
+    let mut output = Output::new("#test".to_string());
+    let roll = execute_roll(&step, &mut output);
 
     assert!(roll.value >= 1);
     assert!(roll.value <= 20);
@@ -41,9 +41,8 @@ fn it_executes_roll_with_min_max_flags() {
         value: None,
     };
 
-    let results = HashMap::new();
-    let tokens = HashMap::new();
-    let roll = execute_roll(&step, &results, &tokens);
+    let mut output = Output::new("#test".to_string());
+    let roll = execute_roll(&step, &mut output);
 
     assert!(roll.value >= 2);
     assert!(roll.value <= 3);
@@ -61,9 +60,8 @@ fn it_executes_roll_with_min_max_flags() {
         value: None,
     };
 
-    let results = HashMap::new();
-    let tokens = HashMap::new();
-    let roll = execute_roll(&step, &results, &tokens);
+    let mut output = Output::new("#test".to_string());
+    let roll = execute_roll(&step, &mut output);
 
     assert!(roll.value >= 200);
     assert!(roll.value <= 300);
@@ -82,11 +80,9 @@ fn it_uses_variables() {
         value: None,
     };
 
-    let mut results = HashMap::new();
-    results.insert("1".to_string(), StepValue::Number(5));
-
-    let tokens = HashMap::new();
-    let roll = execute_roll(&step, &results, &tokens);
+    let mut output = Output::new("#test".to_string());
+    output.results.insert("1".to_string(), StepValue::Number(5));
+    let roll = execute_roll(&step, &mut output);
 
     assert!(roll.value >= 5);
     assert!(roll.value <= 100);
@@ -193,19 +189,19 @@ fn it_assigns_and_updates_token_attributes() {
 
 #[test]
 fn it_executes_true_false_statements() {
-    // let input = "#test @me.dexterity > 25 ? !roll 1d20 : !say 'I cannot do that'".to_string().into_bytes();
+    // let input = "#test @me.dexterity > 25 ? !roll 1d8+5 : !r 1d8".to_string().into_bytes();
     // let token_input = r#"{
         // "me": {
             // "attributes": {
                 // "dexterity": {
                     // "Number": 21
                 // }
-            // }
+            // },
+            // "macros": {}
         // }
     // }"#.to_string().into_bytes();
     // let output = execute_macro(input, token_input);
-    // println!("output {:?}", output);
+    // println!("output {:?}", output.rolls);
 
-    // assert_eq!(output.rolls.len(), 0);
-    // assert_eq!(output.messages.len(), 1);
+    // assert_eq!(output.rolls.len(), 1);
 }

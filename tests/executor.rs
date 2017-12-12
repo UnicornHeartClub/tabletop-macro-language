@@ -1,6 +1,5 @@
 extern crate ttml;
 
-use std::collections::HashMap;
 use ttml::parser::*;
 use ttml::output::Output;
 use ttml::die::DieType;
@@ -189,19 +188,18 @@ fn it_assigns_and_updates_token_attributes() {
 
 #[test]
 fn it_executes_true_false_statements() {
-    // let input = "#test @me.dexterity > 25 ? !roll 1d8+5 : !r 1d8".to_string().into_bytes();
-    // let token_input = r#"{
-        // "me": {
-            // "attributes": {
-                // "dexterity": {
-                    // "Number": 21
-                // }
-            // },
-            // "macros": {}
-        // }
-    // }"#.to_string().into_bytes();
-    // let output = execute_macro(input, token_input);
-    // println!("output {:?}", output.rolls);
+    let input = "#test @me.dexterity > 25 ? !roll 1d8+5 : !r 1d8".to_string().into_bytes();
+    let token_input = r#"{
+        "me": {
+            "attributes": {
+                "dexterity": {
+                    "Number": 21
+                }
+            },
+            "macros": {}
+        }
+    }"#.to_string().into_bytes();
+    let output = execute_macro(input, token_input);
 
-    // assert_eq!(output.rolls.len(), 1);
+    assert_eq!(output.rolls.len(), 1);
 }

@@ -359,17 +359,18 @@ fn test_arguments_roll_parses_token_attributes() {
     );
 }
 
-fn test_arguments_roll_parses_token_macros() {
-    let (_, result) = arguments_roll_p(b"@me->test_macro").unwrap();
-    assert_eq!(
-        result,
-        Arg::Roll(RollArg::ModifierPos(ArgValue::Token(TokenArg {
-            name: "me".to_string(),
-            attribute: None,
-            macro_name: Some("test_macro".to_string()),
-        })))
-    );
-}
+// #[test]
+// fn test_arguments_roll_parses_token_macros() {
+    // let (_, result) = arguments_roll_p(b"+@me->test_macro").unwrap();
+    // assert_eq!(
+        // result,
+        // Arg::Roll(RollArg::ModifierPos(ArgValue::Token(TokenArg {
+            // name: "me".to_string(),
+            // attribute: None,
+            // macro_name: Some("test_macro".to_string()),
+        // })))
+    // );
+// }
 
 #[test]
 fn test_arguments_whisper_parser() {

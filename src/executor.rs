@@ -48,8 +48,8 @@ pub fn execute_macro(input: Vec<u8>, input_tokens: Vec<u8>) -> Output {
     } else {
         let (_, mut program) = prog.unwrap();
 
-        for mut step in &mut program.steps {
-            execute_step(&mut step, &mut output);
+        for step in &mut program.steps {
+            execute_step(&step, &mut output);
         };
 
         output.program = Some(program);
@@ -59,7 +59,7 @@ pub fn execute_macro(input: Vec<u8>, input_tokens: Vec<u8>) -> Output {
     }
 }
 
-pub fn execute_step (step: &mut Step, mut output: &mut Output) {
+pub fn execute_step (step: &Step, mut output: &mut Output) {
     match step.op {
         MacroOp::Lambda => {
             execute_step_lambda(&step, &mut output);
@@ -67,7 +67,6 @@ pub fn execute_step (step: &mut Step, mut output: &mut Output) {
         MacroOp::Roll => {
             // execute the roll and update the step value
             let roll = execute_roll(&step, output);
-            step.value = Some(StepValue::Number(roll.value));
 
             // pass the result if needed
             if step.result == StepResult::Save {
@@ -173,14 +172,19 @@ pub fn execute_step_lambda(step: &Step, output: &mut Output) {
             };
 
             if is_success {
-                // match success {
-                    // &Some(step) => {
-                    // },
-                    // &None => {}
-                // }
-                println!("executing success");
+                match success {
+                    &Some(ref step) => {
+                        execute_step(&step, output);
+                    },
+                    &None => {}
+                }
             } else {
-                println!("executing failure");
+                match failure {
+                    &Some(ref step) => {
+                        execute_step(&step, output);
+                    },
+                    &None => {}
+                }
             }
         }
     };

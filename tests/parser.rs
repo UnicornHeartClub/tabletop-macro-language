@@ -383,6 +383,20 @@ fn test_arguments_whisper_parser() {
         attribute: None,
         macro_name: None,
     })));
+
+    let (_, result) = arguments_whisper_p(b"$var").unwrap();
+    assert_eq!(result, Arg::Variable("var".to_string()));
+
+    // we should be able to combine strings
+    let (_, result) = parse_p(b"#whisper !w 'Rolled a ' $foo @npc1").unwrap();
+    let steps = result.steps;
+    assert_eq!(steps[0].args[0], Arg::Say(SayArg::Message("Rolled a ".to_string())));
+    assert_eq!(steps[0].args[1], Arg::Variable("foo".to_string()));
+    assert_eq!(steps[0].args[2], Arg::Say(SayArg::To(TokenArg {
+        name: "npc1".to_string(),
+        attribute: None,
+        macro_name: None,
+    })));
 }
 
 #[test]

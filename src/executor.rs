@@ -67,11 +67,9 @@ pub fn execute_step (step: &Step, mut output: &mut Output) {
         MacroOp::Lambda => {
             execute_step_lambda(&step, &mut output);
         },
-        MacroOp::Say => {
-            execute_step_say(&step, &mut output);
-        },
+        MacroOp::Say |
         MacroOp::Whisper => {
-            execute_step_whisper(&step, &mut output);
+            execute_step_say(&step, &mut output);
         },
         MacroOp::Roll => {
             // execute the roll and update the step value
@@ -94,21 +92,28 @@ pub fn execute_step_say(step: &Step, output: &mut Output) {
     let mut message = Message::new("".to_string());
     for arg in &step.args {
         if let &Arg::Say(SayArg::Message(ref value)) = arg {
-            message.message = value.clone();
-        } else if let &Arg::Say(SayArg::From(ref token)) = arg {
-            message.from = Some(token.name.clone());
-        }
-    }
-    output.messages.push(message);
-}
-
-pub fn execute_step_whisper(step: &Step, output: &mut Output) {
-    let mut message = Message::new("".to_string());
-    for arg in &step.args {
-        if let &Arg::Say(SayArg::Message(ref value)) = arg {
-            message.message = value.clone();
+            // Concat the message string
+            let mut original_message = message.message.clone();
+            original_message.push_str(value);
+            message.message = original_message;
+        } else if let &Arg::Variable(ref var) = arg {
+            match output.results.get(&var.to_string()) {
+                Some(&StepValue::Text(ref value)) => {
+                    let mut original_message = message.message.clone();
+                    original_message.push_str(value);
+                    message.message = original_message;
+                },
+                Some(&StepValue::Number(ref value)) => {
+                    let mut original_message = message.message.clone();
+                    original_message.push_str(&value.to_string());
+                    message.message = original_message;
+                },
+                _ => {}
+            };
         } else if let &Arg::Say(SayArg::To(ref token)) = arg {
             message.to = Some(token.name.clone());
+        } else if let &Arg::Say(SayArg::From(ref token)) = arg {
+            message.from = Some(token.name.clone());
         }
     }
     output.messages.push(message);

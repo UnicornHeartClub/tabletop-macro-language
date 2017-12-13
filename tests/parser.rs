@@ -128,7 +128,7 @@ fn test_complex_parser() {
                 args: vec![
                     Arg::Assign(Assign {
                         left: ArgValue::Variable("foo".to_string()),
-                        right: ArgValue::Text("bar".to_string()),
+                        right: vec![ ArgValue::Text("bar".to_string()) ],
                     }),
                 ],
                 op: MacroOp::Lambda,
@@ -458,7 +458,7 @@ fn test_assign_token_parser() {
             attribute: Some("test".to_string()),
             macro_name: None,
         }),
-        right: ArgValue::Text("foo".to_string()),
+        right: vec![ ArgValue::Text("foo".to_string()) ],
     });
 
     assert_eq!(result, assign);
@@ -470,7 +470,7 @@ fn test_assign_token_parser() {
             attribute: Some("test".to_string()),
             macro_name: None,
         }),
-        right: ArgValue::Text("foo".to_string()),
+        right: vec![ ArgValue::Text("foo".to_string()) ],
     });
 
     assert_eq!(result, assign);
@@ -483,7 +483,24 @@ fn test_assign_token_parser() {
             attribute: Some("test".to_string()),
             macro_name: None,
         }),
-        right: ArgValue::Number(42),
+        right: vec![ ArgValue::Number(42) ],
+    });
+
+    assert_eq!(result, assign);
+
+    // assign expressions
+    let (_, result) = arguments_p(b"@me.bar= 1 / 3").unwrap();
+    let assign = Arg::Assign(Assign {
+        left: ArgValue::Token(TokenArg {
+            name: "me".to_string(),
+            attribute: Some("bar".to_string()),
+            macro_name: None,
+        }),
+        right: vec![
+            ArgValue::Number(1),
+            ArgValue::Primitive(Primitive::Divide),
+            ArgValue::Number(3),
+        ],
     });
 
     assert_eq!(result, assign);
@@ -495,7 +512,7 @@ fn test_assign_variable_parser() {
     let (_, result) = arguments_p(b"$foo = 'baz'").unwrap();
     let assign = Arg::Assign(Assign {
         left: ArgValue::Variable("foo".to_string()),
-        right: ArgValue::Text("baz".to_string()),
+        right: vec![ ArgValue::Text("baz".to_string()) ],
     });
 
     assert_eq!(result, assign);
@@ -503,7 +520,7 @@ fn test_assign_variable_parser() {
     let (_, result) = arguments_p(b" $foo  =   \"foo\"   ").unwrap();
     let assign = Arg::Assign(Assign {
         left: ArgValue::Variable("foo".to_string()),
-        right: ArgValue::Text("foo".to_string()),
+        right: vec![ ArgValue::Text("foo".to_string()) ],
     });
 
     assert_eq!(result, assign);
@@ -512,7 +529,20 @@ fn test_assign_variable_parser() {
     let (_, result) = arguments_p(b"$foo  =  42").unwrap();
     let assign = Arg::Assign(Assign {
         left: ArgValue::Variable("foo".to_string()),
-        right: ArgValue::Number(42),
+        right: vec![ ArgValue::Number(42) ],
+    });
+
+    assert_eq!(result, assign);
+
+    // assign expressions
+    let (_, result) = arguments_p(b"$foo  =  1 + 2").unwrap();
+    let assign = Arg::Assign(Assign {
+        left: ArgValue::Variable("foo".to_string()),
+        right: vec![
+            ArgValue::Number(1),
+            ArgValue::Primitive(Primitive::Add),
+            ArgValue::Number(2),
+        ],
     });
 
     assert_eq!(result, assign);

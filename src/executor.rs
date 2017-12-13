@@ -124,7 +124,7 @@ pub fn execute_step_lambda(step: &Step, output: &mut Output) {
         if let &Arg::Assign(ref assign) = arg {
             match assign.left {
                 ArgValue::Variable(ref k) => {
-                    match assign.right {
+                    match assign.right[0] {
                         ArgValue::Number(ref v) => {
                             output.results.insert(k.to_owned(), StepValue::Number(v.to_owned()));
                         },
@@ -143,7 +143,7 @@ pub fn execute_step_lambda(step: &Step, output: &mut Output) {
                     });
                     match attr {
                         Some(a) => {
-                            match assign.right {
+                            match assign.right[0] {
                                 ArgValue::Number(ref v) => {
                                     &token.attributes.insert(a, TokenAttributeValue::Number(v.to_owned()));
                                 },
@@ -433,6 +433,9 @@ pub fn get_arg_value (value: &ArgValue, results: &HashMap<String, StepValue>, to
     match value {
         &ArgValue::Number(ref n) => {
             Some(ArgValue::Number(n.clone()))
+        },
+        &ArgValue::Primitive(ref n) => {
+            None
         },
         &ArgValue::Text(ref n) => {
             None

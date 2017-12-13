@@ -8,7 +8,7 @@ use std::str;
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Assign {
     pub left: ArgValue,
-    pub right: ArgValue,
+    pub right: Vec<ArgValue>,
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -57,10 +57,19 @@ pub enum Arg {
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ArgValue {
     Number(i32),
+    Primitive(Primitive),
     Text(String),
     Token(TokenArg),
     Variable(String),
     VariableReserved(i16),
+}
+
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Primitive {
+    Add,
+    Divide,
+    Multiply,
+    Subtract,
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -74,6 +83,7 @@ pub enum ComparisonArg {
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum MacroOp {
+    Primitive,
     /// Lamda (assignment or conditional argument)
     Lambda,
     /// Macro Name
@@ -152,14 +162,15 @@ pub fn assignment_p(input: &[u8]) -> IResult<&[u8], Assign> {
         )) >>
         ws!(tag!("=")) >>
         // but we can assign almost anything else to them (except inline arguments)
-        right: ws!(alt_complete!(
+        right: many0!(ws!(alt_complete!(
+            primitive_p |
             map!(num_p, | a | ArgValue::Number(a)) |
             map!(string_p, | a | ArgValue::Text(a)) |
             map!(quoted_p, | a | ArgValue::Text(a)) |
             map!(single_quoted_p, | a | ArgValue::Text(a)) |
             map!(variable_reserved_p, | a | ArgValue::VariableReserved(a)) |
             map!(variable_p, | a | ArgValue::Variable(a))
-        )) >>
+        ))) >>
         (Assign {
             left,
             right,
@@ -344,6 +355,16 @@ pub fn parse_step_p(input: &[u8]) -> IResult<&[u8], Step> {
             value: None,
         })
     )
+}
+
+/// Matches primitive operations (starts with a number)
+pub fn primitive_p(input: &[u8]) -> IResult<&[u8], ArgValue> {
+    ws!(input, alt_complete!(
+        map!(tag!("+"), |_| ArgValue::Primitive(Primitive::Add)) |
+        map!(tag!("-"), |_| ArgValue::Primitive(Primitive::Subtract)) |
+        map!(tag!("/"), |_| ArgValue::Primitive(Primitive::Divide)) |
+        map!(tag!("*"), |_| ArgValue::Primitive(Primitive::Multiply))
+    ))
 }
 
 /// Matches arguments in quotes ("")

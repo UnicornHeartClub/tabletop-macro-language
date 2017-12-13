@@ -241,7 +241,7 @@ fn it_execute_whisper_commands() {
     assert_eq!(output.messages[0].message, "Hello!".to_string());
     assert_eq!(output.messages[0].to, Some("gm".to_string()));
 
-    let input = "#test $foo = 'From Variable' $bar = 12 !w @gm 'Hello ' $foo '-' $bar".to_string().into_bytes();
+    let input = "#test $foo = 'From Variable' | $bar = 12 !w @gm 'Hello ' $foo '-' $bar".to_string().into_bytes();
     let token_input = r#"{}"#.to_string().into_bytes();
     let output = execute_macro(input, token_input);
 
@@ -258,6 +258,27 @@ fn it_executes_roll_comparisons() {
 
     assert_eq!(output.rolls.len(), 1);
     assert_eq!(output.rolls[0].dice[0].is_dropped, true);
+}
+
+#[test]
+#[ignore]
+fn it_executes_primitive_operations() {
+    let input = "#test @me.hp = @me.hp + 5".to_string().into_bytes();
+    let token_input = r#"{
+        "me": {
+            "attributes": {
+                "hp": {
+                    "Number": 50
+                }
+            },
+            "macros": {}
+        }
+    }"#.to_string().into_bytes();
+    let output = execute_macro(input, token_input);
+    let tokens = output.tokens;
+    let token = tokens.get("me").unwrap();
+    let attr = token.attributes.get("hp").unwrap();
+    assert_eq!(attr, &TokenAttributeValue::Number(55));
 }
 
 // #[test]

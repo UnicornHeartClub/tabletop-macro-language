@@ -203,3 +203,30 @@ fn it_executes_true_false_statements() {
 
     assert_eq!(output.rolls.len(), 1);
 }
+
+#[test]
+fn it_execute_say_commands() {
+    let input = "#test !say 'Hello!'".to_string().into_bytes();
+    let token_input = r#"{}"#.to_string().into_bytes();
+    let output = execute_macro(input, token_input);
+
+    assert_eq!(output.messages.len(), 1);
+    assert_eq!(output.messages[0].message, "Hello!".to_string());
+
+    let input = "#test !say 'Hello from token!' @token1".to_string().into_bytes();
+    let token_input = r#"{
+        "token1": {
+            "attributes": {
+                "dexterity": {
+                    "Number": 21
+                }
+            },
+            "macros": {}
+        }
+    }"#.to_string().into_bytes();
+    let output = execute_macro(input, token_input);
+
+    assert_eq!(output.messages.len(), 1);
+    assert_eq!(output.messages[0].message, "Hello from token!".to_string());
+    assert_eq!(output.messages[0].from, Some("token1".to_string()));
+}

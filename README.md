@@ -69,6 +69,7 @@ We have a lot to get done but are looking to get it done quick!
   - [x] ~~Assign Variables~~
   - [x] ~~Use Variables~~
   - [x] ~~Use Tokens~~
+  - [x] ~~True/False~~
   - [ ] Prompt Command _(In Progress)_
   - [x] ~~Assign Tokens~~
   - [ ] Say Command _(In Progress)_
@@ -76,6 +77,7 @@ We have a lot to get done but are looking to get it done quick!
 - [ ] Executor _(In Progress)_
   - [x] ~~Pass Results~~
   - [x] ~~Ignore Results~~
+  - [x] ~~True/False~~
   - [x] Variables _(In Progress)_
   - [x] ~~Tokens~~
   - [ ] Roll _(In Progress)_

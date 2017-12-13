@@ -299,7 +299,23 @@ Exploding dice with a comment.
 
 ## Say
 
-_@todo_
+Say a message to the room.
+
+`!say "<message>" <as>`
+
+### Examples
+
+Say a message to the room.
+
+```bash
+!say "Hello, everyone!"
+```
+
+Impersonate another token
+
+```bash
+!say 'Hello, everyone!' @npc1
+```
 
 ## Whisper
 

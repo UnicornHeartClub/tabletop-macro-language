@@ -9,6 +9,7 @@ extern crate uuid;
 pub mod die;
 // pub mod dom;
 pub mod errors;
+pub mod message;
 pub mod executor;
 pub mod output;
 pub mod parser;

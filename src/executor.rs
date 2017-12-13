@@ -1,4 +1,5 @@
 use die::{Die, DieType};
+use message::Message;
 use output::Output;
 use parser::{
     Arg,
@@ -7,9 +8,11 @@ use parser::{
     Conditional,
     MacroOp,
     RollArg,
+    SayArg,
     Step,
     StepResult,
     StepValue,
+    TokenArg,
     error_to_string,
     parse_p,
 };
@@ -64,6 +67,9 @@ pub fn execute_step (step: &Step, mut output: &mut Output) {
         MacroOp::Lambda => {
             execute_step_lambda(&step, &mut output);
         },
+        MacroOp::Say => {
+            execute_step_say(&step, &mut output);
+        },
         MacroOp::Roll => {
             // execute the roll and update the step value
             let roll = execute_roll(&step, output);
@@ -79,6 +85,18 @@ pub fn execute_step (step: &Step, mut output: &mut Output) {
         },
         _ => println!("Not yet implemented {:?}", step.op)
     }
+}
+
+pub fn execute_step_say(step: &Step, output: &mut Output) {
+    let mut message = Message::new("".to_string());
+    for arg in &step.args {
+        if let &Arg::Say(SayArg::Message(ref value)) = arg {
+            message.message = value.clone();
+        } else if let &Arg::Say(SayArg::From(ref token)) = arg {
+            message.from = Some(token.name.clone());
+        }
+    }
+    output.messages.push(message);
 }
 
 pub fn execute_step_lambda(step: &Step, output: &mut Output) {

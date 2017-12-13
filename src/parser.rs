@@ -116,6 +116,7 @@ pub enum RollArg {
 pub enum SayArg {
     Message(String),
     To(String),
+    From(TokenArg),
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -203,6 +204,7 @@ pub fn arguments_say_p(input: &[u8]) -> IResult<&[u8], Arg> {
         map!(string_p, | a | Arg::Say(SayArg::Message(a))) |
         map!(quoted_p, | a | Arg::Say(SayArg::Message(a))) |
         map!(single_quoted_p, | a | Arg::Say(SayArg::Message(a))) |
+        map!(token_p, | a | Arg::Say(SayArg::From(a))) |
         map!(variable_p, | a | Arg::Variable(a))
     )
 }

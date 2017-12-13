@@ -377,8 +377,12 @@ fn test_arguments_whisper_parser() {
     let (_, result) = arguments_whisper_p(b"\"I am a message\"").unwrap();
     assert_eq!(result, Arg::Say(SayArg::Message("I am a message".to_string())));
 
-    let (_, result) = arguments_whisper_p(b"$me").unwrap();
-    assert_eq!(result, Arg::Say(SayArg::To("me".to_string())));
+    let (_, result) = arguments_whisper_p(b"@me").unwrap();
+    assert_eq!(result, Arg::Say(SayArg::To(TokenArg {
+        name: "me".to_string(),
+        attribute: None,
+        macro_name: None,
+    })));
 }
 
 #[test]

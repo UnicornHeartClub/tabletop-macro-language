@@ -230,3 +230,14 @@ fn it_execute_say_commands() {
     assert_eq!(output.messages[0].message, "Hello from token!".to_string());
     assert_eq!(output.messages[0].from, Some("token1".to_string()));
 }
+
+#[test]
+fn it_execute_whisper_commands() {
+    let input = "#test !w @gm 'Hello!'".to_string().into_bytes();
+    let token_input = r#"{}"#.to_string().into_bytes();
+    let output = execute_macro(input, token_input);
+
+    assert_eq!(output.messages.len(), 1);
+    assert_eq!(output.messages[0].message, "Hello!".to_string());
+    assert_eq!(output.messages[0].to, Some("gm".to_string()));
+}

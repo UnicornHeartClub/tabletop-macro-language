@@ -115,7 +115,7 @@ pub enum RollArg {
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SayArg {
     Message(String),
-    To(String),
+    To(TokenArg),
     From(TokenArg),
 }
 
@@ -212,10 +212,11 @@ pub fn arguments_say_p(input: &[u8]) -> IResult<&[u8], Arg> {
 /// Matches !whisper arguments
 pub fn arguments_whisper_p(input: &[u8]) -> IResult<&[u8], Arg> {
     alt_complete!(input,
-        map!(variable_p, | a | Arg::Say(SayArg::To(a))) |
         map!(string_p, | a | Arg::Say(SayArg::Message(a))) |
         map!(quoted_p, | a | Arg::Say(SayArg::Message(a))) |
-        map!(single_quoted_p, | a | Arg::Say(SayArg::Message(a)))
+        map!(single_quoted_p, | a | Arg::Say(SayArg::Message(a))) |
+        map!(token_p, | a | Arg::Say(SayArg::To(a))) |
+        map!(variable_p, | a | Arg::Variable(a))
     )
 }
 

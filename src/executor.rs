@@ -70,6 +70,9 @@ pub fn execute_step (step: &Step, mut output: &mut Output) {
         MacroOp::Say => {
             execute_step_say(&step, &mut output);
         },
+        MacroOp::Whisper => {
+            execute_step_whisper(&step, &mut output);
+        },
         MacroOp::Roll => {
             // execute the roll and update the step value
             let roll = execute_roll(&step, output);
@@ -94,6 +97,18 @@ pub fn execute_step_say(step: &Step, output: &mut Output) {
             message.message = value.clone();
         } else if let &Arg::Say(SayArg::From(ref token)) = arg {
             message.from = Some(token.name.clone());
+        }
+    }
+    output.messages.push(message);
+}
+
+pub fn execute_step_whisper(step: &Step, output: &mut Output) {
+    let mut message = Message::new("".to_string());
+    for arg in &step.args {
+        if let &Arg::Say(SayArg::Message(ref value)) = arg {
+            message.message = value.clone();
+        } else if let &Arg::Say(SayArg::To(ref token)) = arg {
+            message.to = Some(token.name.clone());
         }
     }
     output.messages.push(message);

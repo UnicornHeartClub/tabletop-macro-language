@@ -254,27 +254,31 @@ Rolls can be extended using the flags below.
 | **Flag** | **Description**                         | **Syntax**                                     |
 | -------- | --------------------------------------- | ---------------------------------------------- |
 | `e`      | Re-roll dice forever above a threshold. (e.g. Exploding Dice) | _(dice)_**e**_(threshold)_ (e.g. `r! 1d6e6`) |
-| `k`      | Keep certain dice.                      | _(dice)_**k**_(selector)_ (e.g. `r! 1d8kh1`)   |
+| `gt`     | Keep die greater than a threshold.      | _(dice)_**gt**_(threshold)_ (e.g. `r! 3d8gt3`) |
+| `gte`    | Keep die greater than or equal to a threshold. | _(dice)_**gte**_(threshold)_ (e.g. `r! 3d8gte6`) |
+| `lt`     | Keep die less than a threshold.         | _(dice)_**lt**_(threshold)_ (e.g. `r! 2d8lt5`) |
+| `lte`    | Keep die less than or equal to a threshold. | _(dice)_**lte**_(threshold)_ (e.g. `r! 2d8lte4`) |
+| `kl#`    | Keep the lowest `#` of dice             | _(dice)_**kl**_(number)_ (e.g. `r! 2d20kl1`)   |
+| `kh#`    | Keep the highest `#` of dice            | _(dice)_**kh**_(number)_ (e.g. `r! 4d8kh2`)   |
 | `max`    | Set the dice maximum.                   | _(dice)_**max**_(threshold)_ (e.g. `r! 1d8max16`)|
 | `min`    | Set the dice minimum.                   | _(dice)_**min**_(threshold)_ (e.g. `r! 1d8min3`)|
 | `ro`     | Re-roll dice once below a threshold.    | _(dice)_**ro**_(threshold)_ (e.g. `r! 1d8ro2`) |
 | `rr`     | Re-roll dice forever below a threshold. | _(dice)_**rr**_(threshold)_ (e.g. `r! 1d8rr2`) |
-
-| **Selector**  | **Description**                | **Syntax**                                            |
-| ------------- | ------------------------------ | ----------------------------------------------------- |
-| `l#`          | Select the lowest `#` of dice  | _(dice)(operator)_**l**_(number)_ (e.g. `r! 4d8kl3`)  |
-| `h#`          | Select the highest `#` of dice | _(dice)(operator)_**h**_(number)_ (e.g. `r! 3d6kh2`)  |
 
 ### Examples
 
 Roll advantage.
 ```bash
 !roll adv
+!r advantage
+!r 2d20kh1
 ```
 
 Roll disadvantage.
 ```bash
 !roll dis
+!r disadvantage
+!r 2d20kl1
 ```
 
 Roll overriding minimum
@@ -285,6 +289,11 @@ Roll overriding minimum
 Roll 3x d8's and keep only the top 2.
 ```bash
 !roll 3d8kh2
+```
+
+Roll and keep any die above 3
+```bash
+!roll 3d8gt3
 ```
 
 Exploding dice.

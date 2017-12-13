@@ -312,6 +312,19 @@ fn test_arguments_roll_parser() {
     let (_, result) = arguments_roll_p(b"+$1").unwrap();
     assert_eq!(result, Arg::Roll(RollArg::ModifierPos(ArgValue::VariableReserved(1))));
 
+    // gt, gte, lt, lte
+    let (_, result) = arguments_roll_p(b"gt12").unwrap();
+    assert_eq!(result, Arg::Roll(RollArg::GT(ArgValue::Number(12))));
+
+    let (_, result) = arguments_roll_p(b"gte20").unwrap();
+    assert_eq!(result, Arg::Roll(RollArg::GTE(ArgValue::Number(20))));
+
+    let (_, result) = arguments_roll_p(b"lt$1").unwrap();
+    assert_eq!(result, Arg::Roll(RollArg::LT(ArgValue::VariableReserved(1))));
+
+    let (_, result) = arguments_roll_p(b"lte$foo").unwrap();
+    assert_eq!(result, Arg::Roll(RollArg::LTE(ArgValue::Variable("foo".to_string()))));
+
     // Token Modifier
     let (_, result) = arguments_roll_p(b"+@me.dexterity").unwrap();
     assert_eq!(result, Arg::Roll(RollArg::ModifierPos(ArgValue::Token(TokenArg {

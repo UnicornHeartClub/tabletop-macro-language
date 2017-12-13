@@ -233,12 +233,16 @@ pub fn execute_roll (step: &Step, output: &mut Output) -> Roll {
     let mut composed_roll = ComposedRoll {
         advantage: false,
         comment: None,
+        d: 0,
         die: DieType::Other,
         disadvantage: false,
         e: 0,
+        gt: 0,
+        gte: 0,
         h: 0,
-        d: 0,
         l: 0,
+        lt: 0,
+        lte: 0,
         max: 0,
         min: 1,
         modifiers: vec![],
@@ -284,6 +288,34 @@ pub fn execute_roll (step: &Step, output: &mut Output) -> Roll {
             match get_arg_value(value, &output.results, &output.tokens) {
                 Some(ArgValue::Number(n)) => {
                     composed_roll.l = n as i16;
+                },
+                _ => {}
+            }
+        } else if let &Arg::Roll(RollArg::GT(ref value)) = arg {
+            match get_arg_value(value, &output.results, &output.tokens) {
+                Some(ArgValue::Number(n)) => {
+                    composed_roll.gt = n as u16;
+                },
+                _ => {}
+            }
+        } else if let &Arg::Roll(RollArg::GTE(ref value)) = arg {
+            match get_arg_value(value, &output.results, &output.tokens) {
+                Some(ArgValue::Number(n)) => {
+                    composed_roll.gte = n as u16;
+                },
+                _ => {}
+            }
+        } else if let &Arg::Roll(RollArg::LT(ref value)) = arg {
+            match get_arg_value(value, &output.results, &output.tokens) {
+                Some(ArgValue::Number(n)) => {
+                    composed_roll.lt = n as u16;
+                },
+                _ => {}
+            }
+        } else if let &Arg::Roll(RollArg::LTE(ref value)) = arg {
+            match get_arg_value(value, &output.results, &output.tokens) {
+                Some(ArgValue::Number(n)) => {
+                    composed_roll.lte = n as u16;
                 },
                 _ => {}
             }
@@ -374,7 +406,15 @@ pub fn execute_roll (step: &Step, output: &mut Output) -> Roll {
         roll.reroll_dice_once_below(composed_roll.ro);
     }
 
-    if composed_roll.h != 0 {
+    if composed_roll.gt != 0 {
+        roll.keep_greater_than(composed_roll.gt);
+    } else if composed_roll.gte != 0 {
+        roll.keep_greater_than_or_equal_to(composed_roll.gte);
+    } else if composed_roll.lt != 0 {
+        roll.keep_less_than(composed_roll.lt);
+    } else if composed_roll.lte != 0 {
+        roll.keep_less_than_or_equal_to(composed_roll.lte);
+    } else if composed_roll.h != 0 {
         roll.keep_high(composed_roll.h as u16);
     } else if composed_roll.l != 0 {
         roll.keep_low(composed_roll.l as u16);

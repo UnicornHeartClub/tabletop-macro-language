@@ -6,12 +6,16 @@ use uuid::Uuid;
 pub struct ComposedRoll {
     pub advantage: bool,
     pub comment: Option<String>,
+    pub d: i16,
     pub die: DieType,
     pub disadvantage: bool,
     pub e: i16,
+    pub gt: u16,
+    pub gte: u16,
     pub h: i16,
-    pub d: i16,
     pub l: i16,
+    pub lt: u16,
+    pub lte: u16,
     pub max: i16,
     pub min: i16,
     pub modifiers: Vec<i16>,
@@ -78,6 +82,54 @@ impl Roll {
     pub fn apply_modifier(&mut self, modifier: i16) {
         self.modifiers.push(modifier);
         self.value += modifier as i32;
+    }
+
+    /// Keep the dice greater than a number
+    pub fn keep_greater_than(&mut self, keep: u16) {
+        for die in &mut self.dice {
+            if (die.value as u16) <= keep {
+                die.drop();
+                self.value -= die.value as i32;
+            } else {
+                die.success();
+            }
+        }
+    }
+
+    /// Keep the dice greater than or equal to a number
+    pub fn keep_greater_than_or_equal_to(&mut self, keep: u16) {
+        for die in &mut self.dice {
+            if (die.value as u16) < keep {
+                die.drop();
+                self.value -= die.value as i32;
+            } else {
+                die.success();
+            }
+        }
+    }
+
+    /// Keep the dice less than a number
+    pub fn keep_less_than(&mut self, keep: u16) {
+        for die in &mut self.dice {
+            if (die.value as u16) >= keep {
+                die.drop();
+                self.value -= die.value as i32;
+            } else {
+                die.success();
+            }
+        }
+    }
+
+    /// Keep the dice less than or equal to a number
+    pub fn keep_less_than_or_equal_to(&mut self, keep: u16) {
+        for die in &mut self.dice {
+            if (die.value as u16) > keep {
+                die.drop();
+                self.value -= die.value as i32;
+            } else {
+                die.success();
+            }
+        }
     }
 
     /// Keep the highest rolled dice

@@ -120,6 +120,11 @@ impl Die {
         self.is_dropped = true
     }
 
+    /// Mark the die as successful to the a comparison
+    pub fn success(&mut self) {
+        self.is_successful = true
+    }
+
     pub fn rerolled (&mut self, die: &Die) {
         self.is_rerolled = true;
         let id = &die._id;

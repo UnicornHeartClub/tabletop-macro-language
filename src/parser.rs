@@ -98,15 +98,19 @@ pub enum ProgramResult {
 pub enum RollArg {
     Advantage,
     Comment(ArgValue),
-    Disadvantage,
     D(ArgValue), // e.g. d20
+    Disadvantage,
     E(ArgValue),
+    GT(ArgValue),
+    GTE(ArgValue),
     H(ArgValue),
     L(ArgValue),
+    LT(ArgValue),
+    LTE(ArgValue),
     Max(ArgValue),
     Min(ArgValue),
-    ModifierPos(ArgValue),
     ModifierNeg(ArgValue),
+    ModifierPos(ArgValue),
     N(ArgValue), // e.g. 1 (part of 1d20)
     RO(ArgValue),
     RR(ArgValue),
@@ -184,8 +188,12 @@ pub fn arguments_roll_p(input: &[u8]) -> IResult<&[u8], Arg> {
         roll_num_p |
         roll_die_p |
         roll_flag_e_p |
+        roll_flag_gt_p |
+        roll_flag_gte_p |
         roll_flag_h_p |
         roll_flag_l_p |
+        roll_flag_lt_p |
+        roll_flag_lte_p |
         roll_flag_max_p |
         roll_flag_min_p |
         roll_flag_ro_p |
@@ -361,6 +369,42 @@ pub fn roll_flag_e_p(input: &[u8]) -> IResult<&[u8], Arg> {
         tag!("e") >>
         var: roll_flag_var_p >>
         (Arg::Roll(RollArg::E(var)))
+    )
+}
+
+/// Matches roll flag "gt"
+pub fn roll_flag_gt_p(input: &[u8]) -> IResult<&[u8], Arg> {
+    do_parse!(input,
+        tag!("gt") >>
+        var: roll_flag_var_p >>
+        (Arg::Roll(RollArg::GT(var)))
+    )
+}
+
+/// Matches roll flag "gte"
+pub fn roll_flag_gte_p(input: &[u8]) -> IResult<&[u8], Arg> {
+    do_parse!(input,
+        tag!("gte") >>
+        var: roll_flag_var_p >>
+        (Arg::Roll(RollArg::GTE(var)))
+    )
+}
+
+/// Matches roll flag "lt"
+pub fn roll_flag_lt_p(input: &[u8]) -> IResult<&[u8], Arg> {
+    do_parse!(input,
+        tag!("lt") >>
+        var: roll_flag_var_p >>
+        (Arg::Roll(RollArg::LT(var)))
+    )
+}
+
+/// Matches roll flag "lte"
+pub fn roll_flag_lte_p(input: &[u8]) -> IResult<&[u8], Arg> {
+    do_parse!(input,
+        tag!("lte") >>
+        var: roll_flag_var_p >>
+        (Arg::Roll(RollArg::LTE(var)))
     )
 }
 

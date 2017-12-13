@@ -250,6 +250,16 @@ fn it_execute_whisper_commands() {
     assert_eq!(output.messages[0].to, Some("gm".to_string()));
 }
 
+#[test]
+fn it_executes_roll_comparisons() {
+    let input = "#test !r 1d20gt20".to_string().into_bytes();
+    let token_input = r#"{}"#.to_string().into_bytes();
+    let output = execute_macro(input, token_input);
+
+    assert_eq!(output.rolls.len(), 1);
+    assert_eq!(output.rolls[0].dice[0].is_dropped, true);
+}
+
 // #[test]
 // fn it_executes_token_macros() {
     // let input = "#test @me->test_macro".to_string().into_bytes();

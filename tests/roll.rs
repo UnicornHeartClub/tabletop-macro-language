@@ -110,6 +110,62 @@ fn it_can_roll_and_keep_high() {
 }
 
 #[test]
+fn it_can_roll_and_keep_greater_than() {
+    let mut roll = roll_d20(15);
+    roll.keep_greater_than(10);
+    for die in roll.dice.iter() {
+        if !die.is_dropped {
+            assert!(die.value > 10);
+            assert!(die.is_successful, true);
+        } else {
+            assert!(die.value <= 10);
+        }
+    }
+}
+
+#[test]
+fn it_can_roll_and_keep_greater_than_or_equal_to() {
+    let mut roll = roll_d20(25);
+    roll.keep_greater_than_or_equal_to(5);
+    for die in roll.dice.iter() {
+        if !die.is_dropped {
+            assert!(die.value >= 5);
+            assert!(die.is_successful, true);
+        } else {
+            assert!(die.value < 5);
+        }
+    }
+}
+
+#[test]
+fn it_can_roll_and_keep_less_than() {
+    let mut roll = roll_d20(15);
+    roll.keep_less_than(10);
+    for die in roll.dice.iter() {
+        if !die.is_dropped {
+            assert!(die.value < 10);
+            assert!(die.is_successful, true);
+        } else {
+            assert!(die.value >= 10);
+        }
+    }
+}
+
+#[test]
+fn it_can_roll_and_keep_less_than_or_equal_to() {
+    let mut roll = roll_d20(25);
+    roll.keep_less_than_or_equal_to(15);
+    for die in roll.dice.iter() {
+        if !die.is_dropped {
+            assert!(die.value <= 15);
+            assert!(die.is_successful, true);
+        } else {
+            assert!(die.value > 15);
+        }
+    }
+}
+
+#[test]
 fn it_can_roll_and_keep_multiple_high() {
     let roll = roll_and_keep_high(9, DieType::D20, 2);
     let mut dropped = 0;

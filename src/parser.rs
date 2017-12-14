@@ -169,7 +169,8 @@ pub fn assignment_p(input: &[u8]) -> IResult<&[u8], Assign> {
             map!(quoted_p, | a | ArgValue::Text(a)) |
             map!(single_quoted_p, | a | ArgValue::Text(a)) |
             map!(variable_reserved_p, | a | ArgValue::VariableReserved(a)) |
-            map!(variable_p, | a | ArgValue::Variable(a))
+            map!(variable_p, | a | ArgValue::Variable(a)) |
+            map!(token_p, | a | ArgValue::Token(a))
         ))) >>
         (Assign {
             left,

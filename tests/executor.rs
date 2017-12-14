@@ -261,8 +261,8 @@ fn it_executes_roll_comparisons() {
 }
 
 #[test]
-#[ignore]
 fn it_executes_primitive_operations() {
+    // Add
     let input = "#test @me.hp = @me.hp + 5".to_string().into_bytes();
     let token_input = r#"{
         "me": {
@@ -279,6 +279,65 @@ fn it_executes_primitive_operations() {
     let token = tokens.get("me").unwrap();
     let attr = token.attributes.get("hp").unwrap();
     assert_eq!(attr, &TokenAttributeValue::Number(55));
+
+    // Divide
+    let input = "#test @me.foo = @me.bar / 10".to_string().into_bytes();
+    let token_input = r#"{
+        "me": {
+            "attributes": {
+                "foo": {
+                    "Number": 100
+                },
+                "bar": {
+                    "Number": 50
+                }
+            },
+            "macros": {}
+        }
+    }"#.to_string().into_bytes();
+    let output = execute_macro(input, token_input);
+    let tokens = output.tokens;
+    let token = tokens.get("me").unwrap();
+    let attr = token.attributes.get("foo").unwrap();
+    assert_eq!(attr, &TokenAttributeValue::Number(5));
+    let attr = token.attributes.get("bar").unwrap();
+    assert_eq!(attr, &TokenAttributeValue::Number(50));
+
+    // Subtract
+    let input = "#test @me.hp = @me.hp - 5".to_string().into_bytes();
+    let token_input = r#"{
+        "me": {
+            "attributes": {
+                "hp": {
+                    "Number": 50
+                }
+            },
+            "macros": {}
+        }
+    }"#.to_string().into_bytes();
+    let output = execute_macro(input, token_input);
+    let tokens = output.tokens;
+    let token = tokens.get("me").unwrap();
+    let attr = token.attributes.get("hp").unwrap();
+    assert_eq!(attr, &TokenAttributeValue::Number(45));
+
+    // Multiply
+    let input = "#test @me.bar = @me.hp * 10".to_string().into_bytes();
+    let token_input = r#"{
+        "me": {
+            "attributes": {
+                "hp": {
+                    "Number": 100
+                }
+            },
+            "macros": {}
+        }
+    }"#.to_string().into_bytes();
+    let output = execute_macro(input, token_input);
+    let tokens = output.tokens;
+    let token = tokens.get("me").unwrap();
+    let attr = token.attributes.get("bar").unwrap();
+    assert_eq!(attr, &TokenAttributeValue::Number(1000));
 }
 
 // #[test]

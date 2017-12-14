@@ -7,6 +7,7 @@ use parser::{
     ComparisonArg,
     Conditional,
     MacroOp,
+    Primitive,
     RollArg,
     SayArg,
     Step,
@@ -135,34 +136,61 @@ pub fn execute_step_lambda(step: &Step, output: &mut Output) {
                     }
                 },
                 ArgValue::Token(ref t) => {
+                    // Insert our token if it doesn't exist
+                    {
+                        let name = t.name.clone();
+                        output.tokens.entry(name).or_insert(Token {
+                            attributes: HashMap::new(),
+                            macros: HashMap::new(),
+                        });
+                    }
+
+                    let ref right = assign.right;
                     let attr = t.attribute.clone();
-                    let name = t.name.clone();
-                    let token = output.tokens.entry(name).or_insert(Token {
-                        attributes: HashMap::new(),
-                        macros: HashMap::new(),
-                    });
                     match attr {
                         Some(a) => {
-                            match assign.right[0] {
-                                ArgValue::Number(ref v) => {
-                                    &token.attributes.insert(a, TokenAttributeValue::Number(v.to_owned()));
-                                },
-                                ArgValue::Text(ref v) => {
-                                    &token.attributes.insert(a, TokenAttributeValue::Text(v.to_owned()));
-                                },
-                                ArgValue::VariableReserved(ref v) => {
-                                    // Lookup the variable in the index
-                                    match output.results.get(&v.to_string()) {
-                                        Some(&StepValue::Number(ref n)) => {
-                                            &token.attributes.insert(a, TokenAttributeValue::Number(n.to_owned()));
-                                        },
-                                        Some(&StepValue::Text(ref n)) => {
-                                            &token.attributes.insert(a, TokenAttributeValue::Text(n.to_owned()));
-                                        },
-                                        _ => {}
-                                    }
-                                },
-                                _ => {}
+                            let mut operator = None;
+                            let mut attribute: Option<TokenAttributeValue> = None;
+
+                            for ref right_arg in right.into_iter() {
+                                match get_arg_value(right_arg, &output.results, &output.tokens) {
+                                    Some(ArgValue::Primitive(primitive)) => {
+                                        operator = Some(primitive);
+                                    },
+                                    Some(ArgValue::Number(v)) => {
+                                        let current_value = v.to_owned();
+
+                                        if let Some(op) = operator {
+                                            if let Some(TokenAttributeValue::Number(last_value)) = attribute {
+                                                let new_value = match op {
+                                                    Primitive::Add => last_value + current_value,
+                                                    Primitive::Subtract => last_value - current_value,
+                                                    Primitive::Divide => last_value / current_value,
+                                                    Primitive::Multiply => last_value * current_value,
+                                                };
+                                                attribute = Some(TokenAttributeValue::Number(new_value));
+                                            } else {
+                                                attribute = Some(TokenAttributeValue::Number(current_value));
+                                            }
+                                            operator = None;
+                                        } else {
+                                            attribute = Some(TokenAttributeValue::Number(current_value));
+                                        }
+                                    },
+                                    Some(ArgValue::Text(v)) => {
+                                        let current_value = v.to_owned();
+                                        attribute = Some(TokenAttributeValue::Text(current_value));
+                                    },
+                                    _ => {}
+                                }
+                            }
+
+                            if let Some(token) = output.tokens.get_mut(&t.name) {
+                                if let Some(TokenAttributeValue::Number(value)) = attribute {
+                                    token.attributes.insert(a.to_owned(), TokenAttributeValue::Number(value));
+                                } else if let Some(TokenAttributeValue::Text(value)) = attribute {
+                                    token.attributes.insert(a.to_owned(), TokenAttributeValue::Text(value));
+                                }
                             }
                         },
                         _ => {}
@@ -434,11 +462,8 @@ pub fn get_arg_value (value: &ArgValue, results: &HashMap<String, StepValue>, to
         &ArgValue::Number(ref n) => {
             Some(ArgValue::Number(n.clone()))
         },
-        &ArgValue::Primitive(ref n) => {
-            None
-        },
         &ArgValue::Text(ref n) => {
-            None
+            Some(ArgValue::Text(n.clone()))
         },
         &ArgValue::Token(ref token) => {
             let token_result = tokens.get(&token.name);
@@ -466,6 +491,16 @@ pub fn get_arg_value (value: &ArgValue, results: &HashMap<String, StepValue>, to
                     None
                 }
             }
+        },
+        &ArgValue::Primitive(ref n) => {
+            // there has to be a better way to do this ....
+            let prim = match n {
+                &Primitive::Add => ArgValue::Primitive(Primitive::Add),
+                &Primitive::Subtract => ArgValue::Primitive(Primitive::Subtract),
+                &Primitive::Divide => ArgValue::Primitive(Primitive::Divide),
+                &Primitive::Multiply => ArgValue::Primitive(Primitive::Multiply),
+            };
+            Some(prim)
         },
         &ArgValue::Variable(ref var) => {
             match results.get(&var.to_string()) {

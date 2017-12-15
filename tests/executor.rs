@@ -113,6 +113,7 @@ fn it_executes_positive_modifier() {
     let token_input = r#"{}"#.to_string().into_bytes();
 
     let output = execute_macro(input, token_input);
+    println!("output {:?}", output);
     let rolls = output.rolls;
     assert_eq!(rolls[0].dice.len(), 1);
     assert_eq!(rolls[0].dice[0].die, DieType::D20);

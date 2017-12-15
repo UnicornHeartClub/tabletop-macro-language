@@ -109,6 +109,11 @@ pub fn execute_step_say(step: &Step, output: &mut Output) {
                     original_message.push_str(&value.to_string());
                     message.message = original_message;
                 },
+                Some(&StepValue::Float(ref value)) => {
+                    let mut original_message = message.message.clone();
+                    original_message.push_str(&value.to_string());
+                    message.message = original_message;
+                },
                 _ => {}
             };
         } else if let &Arg::Say(SayArg::To(ref token)) = arg {
@@ -125,14 +130,64 @@ pub fn execute_step_lambda(step: &Step, output: &mut Output) {
         if let &Arg::Assign(ref assign) = arg {
             match assign.left {
                 ArgValue::Variable(ref k) => {
-                    match assign.right[0] {
-                        ArgValue::Number(ref v) => {
-                            output.results.insert(k.to_owned(), StepValue::Number(v.to_owned()));
-                        },
-                        ArgValue::Text(ref v) => {
-                            output.results.insert(k.to_owned(), StepValue::Text(v.to_owned()));
-                        },
-                        _ => {}
+                    let ref right = assign.right;
+                    let mut operator = None;
+                    let mut attribute: Option<StepValue> = None;
+
+                    for ref right_arg in right.into_iter() {
+                        match get_arg_value(right_arg, &output.results, &output.tokens) {
+                            Some(ArgValue::Primitive(primitive)) => {
+                                operator = Some(primitive);
+                            },
+                            Some(ArgValue::Float(v)) => {
+                                let current_value = v.to_owned();
+
+                                if let Some(op) = operator {
+                                    if let Some(StepValue::Float(last_value)) = attribute {
+                                        let new_value = match op {
+                                            Primitive::Add => last_value + current_value,
+                                            Primitive::Subtract => last_value - current_value,
+                                            Primitive::Divide => last_value / current_value,
+                                            Primitive::Multiply => last_value * current_value,
+                                        };
+                                        attribute = Some(StepValue::Float(new_value));
+                                    } else {
+                                        attribute = Some(StepValue::Float(current_value));
+                                    }
+                                    operator = None;
+                                } else {
+                                    attribute = Some(StepValue::Float(current_value));
+                                }
+                            },
+                            Some(ArgValue::Number(v)) => {
+                                let current_value = v.to_owned();
+
+                                if let Some(op) = operator {
+                                    if let Some(StepValue::Float(last_value)) = attribute {
+                                        let new_value = match op {
+                                            Primitive::Add => (last_value as i32) + current_value,
+                                            Primitive::Subtract => (last_value as i32) - current_value,
+                                            Primitive::Divide => (last_value as i32) / current_value,
+                                            Primitive::Multiply => (last_value as i32) * current_value,
+                                        };
+                                        attribute = Some(StepValue::Float(new_value as f32));
+                                    } else {
+                                        attribute = Some(StepValue::Float(current_value as f32));
+                                    }
+                                    operator = None;
+                                } else {
+                                    attribute = Some(StepValue::Float(current_value as f32));
+                                }
+                            },
+                            Some(ArgValue::Text(v)) => {
+                                attribute = Some(StepValue::Text(v.to_owned()));
+                            },
+                            _ => {}
+                        }
+                    }
+
+                    if let Some(attr) = attribute {
+                        output.results.insert(k.to_owned(), attr);
                     }
                 },
                 ArgValue::Token(ref t) => {
@@ -384,6 +439,9 @@ pub fn execute_roll (step: &Step, output: &mut Output) -> Roll {
             }
         } else if let &Arg::Roll(RollArg::ModifierPos(ref value)) = arg {
             match get_arg_value(value, &output.results, &output.tokens) {
+                Some(ArgValue::Float(n)) => {
+                    composed_roll.modifiers.push(n as i16);
+                },
                 Some(ArgValue::Number(n)) => {
                     composed_roll.modifiers.push(n as i16);
                 },
@@ -391,6 +449,9 @@ pub fn execute_roll (step: &Step, output: &mut Output) -> Roll {
             }
         } else if let &Arg::Roll(RollArg::ModifierNeg(ref value)) = arg {
             match get_arg_value(value, &output.results, &output.tokens) {
+                Some(ArgValue::Float(n)) => {
+                    composed_roll.modifiers.push(n as i16);
+                },
                 Some(ArgValue::Number(n)) => {
                     composed_roll.modifiers.push(n as i16 * -1);
                 },
@@ -398,6 +459,9 @@ pub fn execute_roll (step: &Step, output: &mut Output) -> Roll {
             }
         } else if let &Arg::Roll(RollArg::Max(ref value)) = arg {
             match get_arg_value(value, &output.results, &output.tokens) {
+                Some(ArgValue::Float(n)) => {
+                    composed_roll.modifiers.push(n as i16);
+                },
                 Some(ArgValue::Number(n)) => {
                     composed_roll.max = n as i16;
                 },
@@ -405,6 +469,9 @@ pub fn execute_roll (step: &Step, output: &mut Output) -> Roll {
             }
         } else if let &Arg::Roll(RollArg::Min(ref value)) = arg {
             match get_arg_value(value, &output.results, &output.tokens) {
+                Some(ArgValue::Float(n)) => {
+                    composed_roll.modifiers.push(n as i16);
+                },
                 Some(ArgValue::Number(n)) => {
                     composed_roll.min = n as i16;
                 },
@@ -493,10 +560,13 @@ pub fn get_arg_value (value: &ArgValue, results: &HashMap<String, StepValue>, to
                             match attr {
                                 Some(&TokenAttributeValue::Number(n)) => {
                                     Some(ArgValue::Number(n.clone()))
-                                }
+                                },
                                 Some(&TokenAttributeValue::Float(n)) => {
                                     Some(ArgValue::Float(n.clone()))
-                                }
+                                },
+                                Some(&TokenAttributeValue::Text(ref n)) => {
+                                    Some(ArgValue::Text(n.clone()))
+                                },
                                 _ => {
                                     None
                                 }
@@ -530,6 +600,9 @@ pub fn get_arg_value (value: &ArgValue, results: &HashMap<String, StepValue>, to
                 Some(&StepValue::Float(n)) => {
                     Some(ArgValue::Float(n.clone()))
                 },
+                Some(&StepValue::Text(ref n)) => {
+                    Some(ArgValue::Text(n.clone()))
+                },
                 _ => {
                     None
                 }
@@ -544,7 +617,7 @@ pub fn get_arg_value (value: &ArgValue, results: &HashMap<String, StepValue>, to
                     Some(ArgValue::Float(n.clone()))
                 },
                 Some(&StepValue::Text(ref n)) => {
-                    None
+                    Some(ArgValue::Text(n.clone()))
                 },
                 None => {
                     None

@@ -22,7 +22,7 @@ use serde_json;
 use std::collections::HashMap;
 use std::str;
 use std::time::Instant;
-use token::{Token, TokenAttributeValue};
+use token::Token;
 
 /// Executes macro input and outputs a completed program
 pub fn execute_macro(input: Vec<u8>, input_tokens: Vec<u8>) -> Output {
@@ -136,8 +136,8 @@ pub fn execute_step_lambda(step: &Step, output: &mut Output) {
 
                     for ref right_arg in right.into_iter() {
                         match get_arg_value(right_arg, &output.results, &output.tokens) {
-                            Some(ArgValue::Primitive(primitive)) => {
-                                operator = Some(primitive);
+                            Some(ArgValue::Boolean(boolean)) => {
+                                attribute = Some(StepValue::Boolean(boolean));
                             },
                             Some(ArgValue::Float(v)) => {
                                 let current_value = v.to_owned();
@@ -179,10 +179,22 @@ pub fn execute_step_lambda(step: &Step, output: &mut Output) {
                                     attribute = Some(StepValue::Float(current_value as f32));
                                 }
                             },
-                            Some(ArgValue::Text(v)) => {
-                                attribute = Some(StepValue::Text(v.to_owned()));
+                            Some(ArgValue::Primitive(primitive)) => {
+                                operator = Some(primitive);
                             },
-                            _ => {}
+                            Some(ArgValue::Text(text)) => {
+                                attribute = Some(StepValue::Text(text.to_owned()));
+                            },
+                            Some(ArgValue::Token(v)) => {
+                                // not yet implemented
+                            },
+                            Some(ArgValue::Variable(v)) => {
+                                // not yet implemented
+                            },
+                            Some(ArgValue::VariableReserved(v)) => {
+                                // not yet implemented
+                            },
+                            None => {},
                         }
                     }
 
@@ -205,70 +217,79 @@ pub fn execute_step_lambda(step: &Step, output: &mut Output) {
                     match attr {
                         Some(a) => {
                             let mut operator = None;
-                            let mut attribute: Option<TokenAttributeValue> = None;
+                            let mut attribute: Option<StepValue> = None;
 
                             for ref right_arg in right.into_iter() {
                                 match get_arg_value(right_arg, &output.results, &output.tokens) {
-                                    Some(ArgValue::Primitive(primitive)) => {
-                                        operator = Some(primitive);
+                                    Some(ArgValue::Boolean(boolean)) => {
+                                        attribute = Some(StepValue::Boolean(boolean));
                                     },
                                     Some(ArgValue::Float(v)) => {
                                         let current_value = v.to_owned();
 
                                         if let Some(op) = operator {
-                                            if let Some(TokenAttributeValue::Float(last_value)) = attribute {
+                                            if let Some(StepValue::Float(last_value)) = attribute {
                                                 let new_value = match op {
                                                     Primitive::Add => last_value + current_value,
                                                     Primitive::Subtract => last_value - current_value,
                                                     Primitive::Divide => last_value / current_value,
                                                     Primitive::Multiply => last_value * current_value,
                                                 };
-                                                attribute = Some(TokenAttributeValue::Float(new_value));
+                                                attribute = Some(StepValue::Float(new_value));
                                             } else {
-                                                attribute = Some(TokenAttributeValue::Float(current_value));
+                                                attribute = Some(StepValue::Float(current_value));
                                             }
                                             operator = None;
                                         } else {
-                                            attribute = Some(TokenAttributeValue::Float(current_value));
+                                            attribute = Some(StepValue::Float(current_value));
                                         }
                                     },
                                     Some(ArgValue::Number(v)) => {
                                         let current_value = v.to_owned();
 
                                         if let Some(op) = operator {
-                                            if let Some(TokenAttributeValue::Float(last_value)) = attribute {
+                                            if let Some(StepValue::Float(last_value)) = attribute {
                                                 let new_value = match op {
                                                     Primitive::Add => (last_value as i32) + current_value,
                                                     Primitive::Subtract => (last_value as i32) - current_value,
                                                     Primitive::Divide => (last_value as i32) / current_value,
                                                     Primitive::Multiply => (last_value as i32) * current_value,
                                                 };
-                                                attribute = Some(TokenAttributeValue::Float(new_value as f32));
+                                                attribute = Some(StepValue::Float(new_value as f32));
                                             } else {
-                                                attribute = Some(TokenAttributeValue::Float(current_value as f32));
+                                                attribute = Some(StepValue::Float(current_value as f32));
                                             }
                                             operator = None;
                                         } else {
-                                            attribute = Some(TokenAttributeValue::Float(current_value as f32));
+                                            attribute = Some(StepValue::Float(current_value as f32));
                                         }
                                     },
-                                    Some(ArgValue::Text(v)) => {
-                                        let current_value = v.to_owned();
-                                        attribute = Some(TokenAttributeValue::Text(current_value));
+                                    Some(ArgValue::Primitive(primitive)) => {
+                                        operator = Some(primitive);
                                     },
-                                    _ => {}
+                                    Some(ArgValue::Text(text)) => {
+                                        attribute = Some(StepValue::Text(text.to_owned()));
+                                    },
+                                    Some(ArgValue::Token(v)) => {
+                                        // not yet implemented
+                                    },
+                                    Some(ArgValue::Variable(v)) => {
+                                        // not yet implemented
+                                    },
+                                    Some(ArgValue::VariableReserved(v)) => {
+                                        // not yet implemented
+                                    },
+                                    None => {}
                                 }
                             }
 
                             if let Some(token) = output.tokens.get_mut(&t.name) {
-                                if let Some(TokenAttributeValue::Float(value)) = attribute {
-                                    token.attributes.insert(a.to_owned(), TokenAttributeValue::Float(value));
-                                } else if let Some(TokenAttributeValue::Text(value)) = attribute {
-                                    token.attributes.insert(a.to_owned(), TokenAttributeValue::Text(value));
+                                if let Some(attr) = attribute {
+                                    token.attributes.insert(a.to_owned(), attr);
                                 }
                             }
                         },
-                        _ => {}
+                        None => {}
                     }
                 },
                 _ => {}
@@ -540,6 +561,9 @@ pub fn execute_roll (step: &Step, output: &mut Output) -> Roll {
 /// Gets the value of the argvalue, whether from a variable, token, etc.
 pub fn get_arg_value (value: &ArgValue, results: &HashMap<String, StepValue>, tokens: &HashMap<String, Token>) -> Option<ArgValue> {
     match value {
+        &ArgValue::Boolean(ref n) => {
+            Some(ArgValue::Boolean(n.clone()))
+        },
         &ArgValue::Number(ref n) => {
             Some(ArgValue::Number(n.clone()))
         },
@@ -558,13 +582,16 @@ pub fn get_arg_value (value: &ArgValue, results: &HashMap<String, StepValue>, to
                         Some(a) => {
                             let attr = t.attributes.get(&a);
                             match attr {
-                                Some(&TokenAttributeValue::Number(n)) => {
+                                Some(&StepValue::Boolean(n)) => {
+                                    Some(ArgValue::Boolean(n.clone()))
+                                },
+                                Some(&StepValue::Number(n)) => {
                                     Some(ArgValue::Number(n.clone()))
                                 },
-                                Some(&TokenAttributeValue::Float(n)) => {
+                                Some(&StepValue::Float(n)) => {
                                     Some(ArgValue::Float(n.clone()))
                                 },
-                                Some(&TokenAttributeValue::Text(ref n)) => {
+                                Some(&StepValue::Text(ref n)) => {
                                     Some(ArgValue::Text(n.clone()))
                                 },
                                 _ => {
@@ -594,6 +621,9 @@ pub fn get_arg_value (value: &ArgValue, results: &HashMap<String, StepValue>, to
         },
         &ArgValue::Variable(ref var) => {
             match results.get(&var.to_string()) {
+                Some(&StepValue::Boolean(n)) => {
+                    Some(ArgValue::Boolean(n.clone()))
+                },
                 Some(&StepValue::Number(n)) => {
                     Some(ArgValue::Number(n))
                 },
@@ -603,18 +633,21 @@ pub fn get_arg_value (value: &ArgValue, results: &HashMap<String, StepValue>, to
                 Some(&StepValue::Text(ref n)) => {
                     Some(ArgValue::Text(n.clone()))
                 },
-                _ => {
+                None => {
                     None
                 }
             }
         },
         &ArgValue::VariableReserved(ref var) => {
             match results.get(&var.to_string()) {
-                Some(&StepValue::Number(n)) => {
-                    Some(ArgValue::Number(n.clone()))
+                Some(&StepValue::Boolean(n)) => {
+                    Some(ArgValue::Boolean(n.clone()))
                 },
                 Some(&StepValue::Float(n)) => {
                     Some(ArgValue::Float(n.clone()))
+                },
+                Some(&StepValue::Number(n)) => {
+                    Some(ArgValue::Number(n.clone()))
                 },
                 Some(&StepValue::Text(ref n)) => {
                     Some(ArgValue::Text(n.clone()))

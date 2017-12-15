@@ -61,8 +61,9 @@ pub enum Arg {
 // Command-level arguments
 #[derive(Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub enum ArgValue {
-    Number(i32),
+    Boolean(bool),
     Float(f32),
+    Number(i32),
     Primitive(Primitive),
     Text(String),
     Token(TokenArg),
@@ -147,8 +148,9 @@ pub enum StepResult {
     Save,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum StepValue {
+    Boolean(bool),
     Number(i32),
     Float(f32),
     Text(String),
@@ -170,6 +172,7 @@ pub fn assignment_p(input: &[u8]) -> IResult<&[u8], Assign> {
         ws!(tag!("=")) >>
         // but we can assign almost anything else to them (except inline arguments)
         right: many0!(alt_complete!(
+            map!(boolean_p, | a | ArgValue::Boolean(a)) |
             map!(float_p, | a | ArgValue::Float(a)) |
             map!(num_p, | a | ArgValue::Number(a)) |
             map!(string_p, | a | ArgValue::Text(a)) |
@@ -246,6 +249,14 @@ pub fn arguments_whisper_p(input: &[u8]) -> IResult<&[u8], Arg> {
         map!(token_p, | a | Arg::Say(SayArg::To(a))) |
         map!(variable_p, | a | Arg::Variable(a))
     )
+}
+
+/// Matches a boolean operator
+pub fn boolean_p(input: &[u8]) -> IResult<&[u8], bool> {
+    ws!(input, alt!(
+        map!(tag!("true"), |_| true) |
+        map!(tag!("false"), |_| false)
+    ))
 }
 
 /// Matches any command

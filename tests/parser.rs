@@ -256,6 +256,9 @@ fn test_step_result_parser() {
 
     let (_, result) = step_result_p(b" ").unwrap();
     assert_eq!(result, StepResult::Ignore);
+
+    let (_, result) = step_result_p(b"|").unwrap();
+    assert_eq!(result, StepResult::Ignore);
 }
 
 #[test]
@@ -551,6 +554,23 @@ fn test_assign_variable_parser() {
             ArgValue::Primitive(Primitive::Add),
             ArgValue::Number(2),
         ],
+    });
+
+    assert_eq!(result, assign);
+
+    // assign booleans
+    let (_, result) = arguments_p(b"$baz= true").unwrap();
+    let assign = Arg::Assign(Assign {
+        left: ArgValue::Variable("baz".to_string()),
+        right: vec![ ArgValue::Boolean(true) ],
+    });
+
+    assert_eq!(result, assign);
+
+    let (_, result) = arguments_p(b"$bal = false").unwrap();
+    let assign = Arg::Assign(Assign {
+        left: ArgValue::Variable("bal".to_string()),
+        right: vec![ ArgValue::Boolean(false) ],
     });
 
     assert_eq!(result, assign);

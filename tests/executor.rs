@@ -15,7 +15,6 @@ fn it_returns_a_roll() {
         ],
         op: MacroOp::Roll,
         result: StepResult::Ignore,
-        value: None,
     };
 
     let mut output = Output::new("#test".to_string());
@@ -37,7 +36,6 @@ fn it_executes_roll_with_min_max_flags() {
         ],
         op: MacroOp::Roll,
         result: StepResult::Ignore,
-        value: None,
     };
 
     let mut output = Output::new("#test".to_string());
@@ -56,7 +54,6 @@ fn it_executes_roll_with_min_max_flags() {
         ],
         op: MacroOp::Roll,
         result: StepResult::Ignore,
-        value: None,
     };
 
     let mut output = Output::new("#test".to_string());
@@ -76,7 +73,6 @@ fn it_uses_variables() {
         ],
         op: MacroOp::Roll,
         result: StepResult::Ignore,
-        value: None,
     };
 
     let mut output = Output::new("#test".to_string());
@@ -165,7 +161,7 @@ fn it_assigns_and_updates_token_attributes() {
     let tokens = output.tokens;
     let token = tokens.get("me").unwrap();
     let attr = token.attributes.get("dexterity").unwrap();
-    assert_eq!(attr, &TokenAttributeValue::Number(25));
+    assert_eq!(attr, &TokenAttributeValue::Float(25.00));
 
     // test assigning a variable
     let input = "#test !roll 1d20 >> @me.dexterity = $1".to_string().into_bytes();
@@ -278,7 +274,7 @@ fn it_executes_primitive_operations() {
     let tokens = output.tokens;
     let token = tokens.get("me").unwrap();
     let attr = token.attributes.get("hp").unwrap();
-    assert_eq!(attr, &TokenAttributeValue::Number(55));
+    assert_eq!(attr, &TokenAttributeValue::Float(55.00));
 
     // Divide
     let input = "#test @me.foo = @me.bar / 10".to_string().into_bytes();
@@ -299,7 +295,7 @@ fn it_executes_primitive_operations() {
     let tokens = output.tokens;
     let token = tokens.get("me").unwrap();
     let attr = token.attributes.get("foo").unwrap();
-    assert_eq!(attr, &TokenAttributeValue::Number(5));
+    assert_eq!(attr, &TokenAttributeValue::Float(5.00));
     let attr = token.attributes.get("bar").unwrap();
     assert_eq!(attr, &TokenAttributeValue::Number(50));
 
@@ -319,10 +315,10 @@ fn it_executes_primitive_operations() {
     let tokens = output.tokens;
     let token = tokens.get("me").unwrap();
     let attr = token.attributes.get("hp").unwrap();
-    assert_eq!(attr, &TokenAttributeValue::Number(45));
+    assert_eq!(attr, &TokenAttributeValue::Float(45.00));
 
     // Multiply
-    let input = "#test @me.bar = @me.hp * 10".to_string().into_bytes();
+    let input = "#test @me.bar = @me.hp * -2.5".to_string().into_bytes();
     let token_input = r#"{
         "me": {
             "attributes": {
@@ -337,7 +333,7 @@ fn it_executes_primitive_operations() {
     let tokens = output.tokens;
     let token = tokens.get("me").unwrap();
     let attr = token.attributes.get("bar").unwrap();
-    assert_eq!(attr, &TokenAttributeValue::Number(1000));
+    assert_eq!(attr, &TokenAttributeValue::Float(-250.00));
 }
 
 // #[test]

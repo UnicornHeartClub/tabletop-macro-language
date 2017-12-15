@@ -157,24 +157,44 @@ pub fn execute_step_lambda(step: &Step, output: &mut Output) {
                                     Some(ArgValue::Primitive(primitive)) => {
                                         operator = Some(primitive);
                                     },
-                                    Some(ArgValue::Number(v)) => {
+                                    Some(ArgValue::Float(v)) => {
                                         let current_value = v.to_owned();
 
                                         if let Some(op) = operator {
-                                            if let Some(TokenAttributeValue::Number(last_value)) = attribute {
+                                            if let Some(TokenAttributeValue::Float(last_value)) = attribute {
                                                 let new_value = match op {
                                                     Primitive::Add => last_value + current_value,
                                                     Primitive::Subtract => last_value - current_value,
                                                     Primitive::Divide => last_value / current_value,
                                                     Primitive::Multiply => last_value * current_value,
                                                 };
-                                                attribute = Some(TokenAttributeValue::Number(new_value));
+                                                attribute = Some(TokenAttributeValue::Float(new_value));
                                             } else {
-                                                attribute = Some(TokenAttributeValue::Number(current_value));
+                                                attribute = Some(TokenAttributeValue::Float(current_value));
                                             }
                                             operator = None;
                                         } else {
-                                            attribute = Some(TokenAttributeValue::Number(current_value));
+                                            attribute = Some(TokenAttributeValue::Float(current_value));
+                                        }
+                                    },
+                                    Some(ArgValue::Number(v)) => {
+                                        let current_value = v.to_owned();
+
+                                        if let Some(op) = operator {
+                                            if let Some(TokenAttributeValue::Float(last_value)) = attribute {
+                                                let new_value = match op {
+                                                    Primitive::Add => (last_value as i32) + current_value,
+                                                    Primitive::Subtract => (last_value as i32) - current_value,
+                                                    Primitive::Divide => (last_value as i32) / current_value,
+                                                    Primitive::Multiply => (last_value as i32) * current_value,
+                                                };
+                                                attribute = Some(TokenAttributeValue::Float(new_value as f32));
+                                            } else {
+                                                attribute = Some(TokenAttributeValue::Float(current_value as f32));
+                                            }
+                                            operator = None;
+                                        } else {
+                                            attribute = Some(TokenAttributeValue::Float(current_value as f32));
                                         }
                                     },
                                     Some(ArgValue::Text(v)) => {
@@ -186,8 +206,8 @@ pub fn execute_step_lambda(step: &Step, output: &mut Output) {
                             }
 
                             if let Some(token) = output.tokens.get_mut(&t.name) {
-                                if let Some(TokenAttributeValue::Number(value)) = attribute {
-                                    token.attributes.insert(a.to_owned(), TokenAttributeValue::Number(value));
+                                if let Some(TokenAttributeValue::Float(value)) = attribute {
+                                    token.attributes.insert(a.to_owned(), TokenAttributeValue::Float(value));
                                 } else if let Some(TokenAttributeValue::Text(value)) = attribute {
                                     token.attributes.insert(a.to_owned(), TokenAttributeValue::Text(value));
                                 }
@@ -207,49 +227,43 @@ pub fn execute_step_lambda(step: &Step, output: &mut Output) {
                 ref failure,
             } = conditional;
 
-            // Get the value from the left side, we only allow numbers right now
-            let left_value = match get_arg_value(left, &output.results, &output.tokens) {
-                Some(ArgValue::Number(l)) => { l },
-                _ => { 0 }
-            };
+            // Get the values from the left and right side
+            if let Some(left_value) = get_arg_value(left, &output.results, &output.tokens) {
+                if let Some(right_value) = get_arg_value(right, &output.results, &output.tokens) {
+                    // compare the left and right values
+                    let is_success = match comparison {
+                        &ComparisonArg::EqualTo => {
+                            left_value == right_value
+                        },
+                        &ComparisonArg::GreaterThan => {
+                            left_value > right_value
+                        },
+                        &ComparisonArg::GreaterThanOrEqual => {
+                            left_value >= right_value
+                        },
+                        &ComparisonArg::LessThan => {
+                            left_value < right_value
+                        },
+                        &ComparisonArg::LessThanOrEqual => {
+                            left_value <= right_value
+                        }
+                    };
 
-            let right_value = match get_arg_value(right, &output.results, &output.tokens) {
-                Some(ArgValue::Number(l)) => { l },
-                _ => { 0 }
-            };
-
-            // compare the left and right values
-            let is_success = match comparison {
-                &ComparisonArg::EqualTo => {
-                    left_value == right_value
-                },
-                &ComparisonArg::GreaterThan => {
-                    left_value > right_value
-                },
-                &ComparisonArg::GreaterThanOrEqual => {
-                    left_value >= right_value
-                },
-                &ComparisonArg::LessThan => {
-                    left_value < right_value
-                },
-                &ComparisonArg::LessThanOrEqual => {
-                    left_value <= right_value
-                }
-            };
-
-            if is_success {
-                match success {
-                    &Some(ref step) => {
-                        execute_step(&step, output);
-                    },
-                    &None => {}
-                }
-            } else {
-                match failure {
-                    &Some(ref step) => {
-                        execute_step(&step, output);
-                    },
-                    &None => {}
+                    if is_success {
+                        match success {
+                            &Some(ref step) => {
+                                execute_step(&step, output);
+                            },
+                            &None => {}
+                        }
+                    } else {
+                        match failure {
+                            &Some(ref step) => {
+                                execute_step(&step, output);
+                            },
+                            &None => {}
+                        }
+                    }
                 }
             }
         }
@@ -462,6 +476,9 @@ pub fn get_arg_value (value: &ArgValue, results: &HashMap<String, StepValue>, to
         &ArgValue::Number(ref n) => {
             Some(ArgValue::Number(n.clone()))
         },
+        &ArgValue::Float(ref n) => {
+            Some(ArgValue::Float(n.clone()))
+        },
         &ArgValue::Text(ref n) => {
             Some(ArgValue::Text(n.clone()))
         },
@@ -476,6 +493,9 @@ pub fn get_arg_value (value: &ArgValue, results: &HashMap<String, StepValue>, to
                             match attr {
                                 Some(&TokenAttributeValue::Number(n)) => {
                                     Some(ArgValue::Number(n.clone()))
+                                }
+                                Some(&TokenAttributeValue::Float(n)) => {
+                                    Some(ArgValue::Float(n.clone()))
                                 }
                                 _ => {
                                     None
@@ -507,6 +527,9 @@ pub fn get_arg_value (value: &ArgValue, results: &HashMap<String, StepValue>, to
                 Some(&StepValue::Number(n)) => {
                     Some(ArgValue::Number(n))
                 },
+                Some(&StepValue::Float(n)) => {
+                    Some(ArgValue::Float(n.clone()))
+                },
                 _ => {
                     None
                 }
@@ -516,6 +539,9 @@ pub fn get_arg_value (value: &ArgValue, results: &HashMap<String, StepValue>, to
             match results.get(&var.to_string()) {
                 Some(&StepValue::Number(n)) => {
                     Some(ArgValue::Number(n.clone()))
+                },
+                Some(&StepValue::Float(n)) => {
+                    Some(ArgValue::Float(n.clone()))
                 },
                 Some(&StepValue::Text(ref n)) => {
                     None

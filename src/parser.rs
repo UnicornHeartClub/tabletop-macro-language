@@ -1,17 +1,23 @@
 // @todo - It would be nice to break each parser into it's own module
 // e.g. parser::roll, parser::say, parser::core
 
-use nom::{alphanumeric, digit, ErrorKind, IResult};
+use nom::{
+    ErrorKind,
+    IResult,
+    alphanumeric,
+    digit,
+    float,
+};
 use nom::simple_errors::Err;
 use std::str;
 
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Assign {
     pub left: ArgValue,
     pub right: Vec<ArgValue>,
 }
 
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Conditional {
     pub left: ArgValue,
     pub comparison: ComparisonArg,
@@ -20,21 +26,20 @@ pub struct Conditional {
     pub failure: Option<Step>,
 }
 
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Program {
     pub name: MacroOp,
     pub steps: Vec<Step>,
 }
 
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Step {
     pub args: Vec<Arg>,
     pub op: MacroOp,
     pub result: StepResult,
-    pub value: Option<StepValue>,
 }
 
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub struct TokenArg {
     pub name: String,
     pub attribute: Option<String>,
@@ -42,7 +47,7 @@ pub struct TokenArg {
 }
 
 // Top-level arguments
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum Arg {
     Assign(Assign),
     Conditional(Conditional),
@@ -54,9 +59,10 @@ pub enum Arg {
 }
 
 // Command-level arguments
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub enum ArgValue {
     Number(i32),
+    Float(f32),
     Primitive(Primitive),
     Text(String),
     Token(TokenArg),
@@ -64,7 +70,7 @@ pub enum ArgValue {
     VariableReserved(i16),
 }
 
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub enum Primitive {
     Add,
     Divide,
@@ -72,7 +78,7 @@ pub enum Primitive {
     Subtract,
 }
 
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum ComparisonArg {
     EqualTo,
     GreaterThan,
@@ -81,7 +87,7 @@ pub enum ComparisonArg {
     LessThanOrEqual,
 }
 
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum MacroOp {
     Primitive,
     /// Lamda (assignment or conditional argument)
@@ -98,13 +104,13 @@ pub enum MacroOp {
     Whisper,
 }
 
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum ProgramResult {
     Roll,
 }
 
 // Arguments for the roll command, used by the parser
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum RollArg {
     Advantage,
     Comment(ArgValue),
@@ -126,14 +132,14 @@ pub enum RollArg {
     RR(ArgValue),
 }
 
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum SayArg {
     Message(String),
     To(TokenArg),
     From(TokenArg),
 }
 
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum StepResult {
     /// Ignore Result (default)
     Ignore,
@@ -141,9 +147,10 @@ pub enum StepResult {
     Save,
 }
 
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum StepValue {
     Number(i32),
+    Float(f32),
     Text(String),
 }
 
@@ -162,16 +169,17 @@ pub fn assignment_p(input: &[u8]) -> IResult<&[u8], Assign> {
         )) >>
         ws!(tag!("=")) >>
         // but we can assign almost anything else to them (except inline arguments)
-        right: many0!(ws!(alt_complete!(
-            primitive_p |
+        right: many0!(alt_complete!(
+            map!(float_p, | a | ArgValue::Float(a)) |
             map!(num_p, | a | ArgValue::Number(a)) |
             map!(string_p, | a | ArgValue::Text(a)) |
             map!(quoted_p, | a | ArgValue::Text(a)) |
             map!(single_quoted_p, | a | ArgValue::Text(a)) |
             map!(variable_reserved_p, | a | ArgValue::VariableReserved(a)) |
             map!(variable_p, | a | ArgValue::Variable(a)) |
-            map!(token_p, | a | ArgValue::Token(a))
-        ))) >>
+            map!(token_p, | a | ArgValue::Token(a)) |
+            primitive_p
+        )) >>
         (Assign {
             left,
             right,
@@ -252,11 +260,11 @@ pub fn command_p(input: &[u8]) -> IResult<&[u8], MacroOp> {
 /// Matches conditional statements (e.g. "1 > 2 ? success : failure")
 pub fn conditional_p(input: &[u8]) -> IResult<&[u8], Conditional> {
     add_return_error!(input, ErrorKind::Custom(3), do_parse!(
-        // we can only assign to tokens and variables
         left: ws!(alt_complete!(
             map!(variable_reserved_p, | a | ArgValue::VariableReserved(a)) |
             map!(variable_p, | a | ArgValue::Variable(a)) |
             map!(token_p, | a | ArgValue::Token(a)) |
+            map!(float_p, | a | ArgValue::Float(a)) |
             map!(num_p, | a | ArgValue::Number(a))
         )) >>
         comparison: ws!(alt_complete!(
@@ -268,6 +276,7 @@ pub fn conditional_p(input: &[u8]) -> IResult<&[u8], Conditional> {
         )) >>
         // but we can assign almost anything else to them (except inline arguments)
         right: ws!(alt_complete!(
+            map!(float_p, | a | ArgValue::Float(a)) |
             map!(num_p, | a | ArgValue::Number(a)) |
             map!(variable_reserved_p, | a | ArgValue::VariableReserved(a)) |
             map!(variable_p, | a | ArgValue::Variable(a))
@@ -297,6 +306,11 @@ pub fn disadvantage_p(input: &[u8]) -> IResult<&[u8], Arg> {
     map!(input, alt_complete!(tag!("disadvantage") | tag!("dis")), |_| Arg::Roll(RollArg::Disadvantage))
 }
 
+/// Match floats to argument strings
+pub fn float_p(input: &[u8]) -> IResult<&[u8], f32> {
+    ws!(input, float)
+}
+
 /// Matches a macro name
 pub fn name_p(input: &[u8]) -> IResult<&[u8], MacroOp> {
     add_return_error!(input, ErrorKind::Custom(1), ws!(
@@ -311,9 +325,15 @@ pub fn name_p(input: &[u8]) -> IResult<&[u8], MacroOp> {
 /// Match numbers to argument strings
 pub fn num_p(input: &[u8]) -> IResult<&[u8], i32> {
     do_parse!(input,
-        num: ws!(digit) >>
+        sign: opt!(tag!("-")) >>
+        num: digit >>
         s: value!(String::from_utf8(num.to_vec()).unwrap()) >>
-        (s.parse::<i32>().unwrap())
+        val: value!(s.parse::<i32>().unwrap()) >>
+        switch: switch!(value!(&sign),
+            &Some(_) => value!(-1 * val) |
+            &None => value!(val)
+        ) >>
+        (switch)
     )
 }
 
@@ -353,7 +373,6 @@ pub fn parse_step_p(input: &[u8]) -> IResult<&[u8], Step> {
             op: op_type,
             result,
             args,
-            value: None,
         })
     )
 }

@@ -15,7 +15,6 @@ fn test_simple_parser() {
             ],
             op: MacroOp::Roll,
             result: StepResult::Ignore,
-            value: None,
         }],
     };
     let (_, result) = parse_p(b"#simple-macro-name !roll 1d20").unwrap();
@@ -29,7 +28,6 @@ fn test_simple_parser() {
             ],
             op: MacroOp::Say,
             result: StepResult::Ignore,
-            value: None,
         }],
     };
     let (_, result) = parse_p(b"#simple-macro-name-2 !say \"Hello, world!\"").unwrap();
@@ -48,7 +46,6 @@ fn test_complex_parser() {
                 ],
                 op: MacroOp::Roll,
                 result: StepResult::Save,
-                value: None,
             },
             Step {
                 args: vec![
@@ -58,7 +55,6 @@ fn test_complex_parser() {
                 ],
                 op: MacroOp::Roll,
                 result: StepResult::Ignore,
-                value: None,
             },
             Step {
                 args: vec![
@@ -66,7 +62,6 @@ fn test_complex_parser() {
                 ],
                 op: MacroOp::Say,
                 result: StepResult::Ignore,
-                value: None,
             },
         ],
     };
@@ -86,7 +81,6 @@ fn test_complex_parser() {
                 ],
                 op: MacroOp::Roll,
                 result: StepResult::Ignore,
-                value: None,
             },
             Step {
                 args: vec![
@@ -94,7 +88,6 @@ fn test_complex_parser() {
                 ],
                 op: MacroOp::Say,
                 result: StepResult::Ignore,
-                value: None,
             },
             Step {
                 args: vec![
@@ -105,7 +98,6 @@ fn test_complex_parser() {
                 ],
                 op: MacroOp::Roll,
                 result: StepResult::Save,
-                value: None,
             },
             Step {
                 args: vec![
@@ -114,7 +106,6 @@ fn test_complex_parser() {
                 ],
                 op: MacroOp::Say,
                 result: StepResult::Ignore,
-                value: None,
             },
         ],
     };
@@ -133,7 +124,6 @@ fn test_complex_parser() {
                 ],
                 op: MacroOp::Lambda,
                 result: StepResult::Ignore,
-                value: None,
             },
             Step {
                 args: vec![
@@ -142,7 +132,6 @@ fn test_complex_parser() {
                 ],
                 op: MacroOp::Roll,
                 result: StepResult::Ignore,
-                value: None,
             },
         ],
     };
@@ -159,7 +148,6 @@ fn test_complex_parser() {
                 ],
                 op: MacroOp::Roll,
                 result: StepResult::Save,
-                value: None,
             },
             Step {
                 args: vec![
@@ -173,14 +161,12 @@ fn test_complex_parser() {
                             ],
                             op: MacroOp::Say,
                             result: StepResult::Ignore,
-                            value: None,
                         }),
                         failure: None,
                     }),
                 ],
                 op: MacroOp::Lambda,
                 result: StepResult::Ignore,
-                value: None,
             },
         ],
     };
@@ -497,6 +483,19 @@ fn test_assign_token_parser() {
 
     assert_eq!(result, assign);
 
+    // assign floats
+    let (_, result) = arguments_p(b"@me.test  =  -124.222").unwrap();
+    let assign = Arg::Assign(Assign {
+        left: ArgValue::Token(TokenArg {
+            name: "me".to_string(),
+            attribute: Some("test".to_string()),
+            macro_name: None,
+        }),
+        right: vec![ ArgValue::Float(-124.222) ],
+    });
+
+    assert_eq!(result, assign);
+
     // assign expressions
     let (_, result) = arguments_p(b"@me.bar= 1 / 3").unwrap();
     let assign = Arg::Assign(Assign {
@@ -572,7 +571,6 @@ fn test_conditional_parser() {
             ],
             op: MacroOp::Roll,
             result: StepResult::Ignore,
-            value: None,
         }),
         failure: Some(Step {
             args: vec![
@@ -581,7 +579,6 @@ fn test_conditional_parser() {
             ],
             op: MacroOp::Roll,
             result: StepResult::Ignore,
-            value: None,
         }),
     });
 
@@ -600,18 +597,17 @@ fn test_conditional_parser() {
             ],
             op: MacroOp::Roll,
             result: StepResult::Ignore,
-            value: None,
         }),
         failure: None,
     });
 
     assert_eq!(result, compare);
 
-    let (_, result) = arguments_p(b"$foo <= 5 ? | : !r 1d20").unwrap();
+    let (_, result) = arguments_p(b"$foo >= -5 ? | : !r 1d20").unwrap();
     let compare = Arg::Conditional(Conditional {
         left: ArgValue::Variable("foo".to_string()),
-        comparison: ComparisonArg::LessThanOrEqual,
-        right: ArgValue::Number(5),
+        comparison: ComparisonArg::GreaterThanOrEqual,
+        right: ArgValue::Number(-5),
         success: None,
         failure: Some(Step {
             args: vec![
@@ -620,7 +616,6 @@ fn test_conditional_parser() {
             ],
             op: MacroOp::Roll,
             result: StepResult::Ignore,
-            value: None,
         }),
     });
 
@@ -640,7 +635,6 @@ fn test_conditional_parser() {
             ],
             op: MacroOp::Roll,
             result: StepResult::Ignore,
-            value: None,
         }),
         failure: Some(Step {
             args: vec![
@@ -649,7 +643,6 @@ fn test_conditional_parser() {
             ],
             op: MacroOp::Roll,
             result: StepResult::Ignore,
-            value: None,
         }),
     });
 

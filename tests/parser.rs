@@ -431,6 +431,9 @@ fn test_token_parser() {
 
     let (_, result) = token_p(b"@foo_53_test").unwrap();
     assert_eq!(result, TokenArg { name: "foo_53_test".to_string(), attribute: None, macro_name: None });
+
+    let (_, result) = token_p(b"@foo_bar.baz_bo").unwrap();
+    assert_eq!(result, TokenArg { name: "foo_bar".to_string(), attribute: Some("baz_bo".to_string()), macro_name: None });
 }
 
 #[test]

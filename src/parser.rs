@@ -569,11 +569,11 @@ pub fn token_p(input: &[u8]) -> IResult<&[u8], TokenArg> {
     do_parse!(input,
         name_raw: ws!(preceded!(tag!("@"), variable_name_p)) >>
         name: value!(String::from_utf8(name_raw.to_vec()).unwrap()) >>
-        attribute: switch!(opt!(complete!(preceded!(tag!("."), alphanumeric))),
+        attribute: switch!(opt!(complete!(preceded!(tag!("."), variable_name_p))),
             Some(a) => value!(Some(String::from_utf8(a.to_vec()).unwrap())) |
             _ => value!(None)
         ) >>
-        macro_name: switch!(opt!(complete!(preceded!(tag!("->"), alphanumeric))),
+        macro_name: switch!(opt!(complete!(preceded!(tag!("->"), variable_name_p))),
             Some(a) => value!(Some(String::from_utf8(a.to_vec()).unwrap())) |
             _ => value!(None)
         ) >>
@@ -583,7 +583,7 @@ pub fn token_p(input: &[u8]) -> IResult<&[u8], TokenArg> {
 
 /// Matches a valid variable name
 pub fn variable_name_p(input: &[u8]) -> IResult<&[u8], &[u8]> {
-     ws!(input, is_not!(" \t\r\n."))
+     ws!(input, is_not!(" \t\r\n.,?\\=<>|:;@!#$%^&*()+=/-[]{}"))
 }
 
 /// Matches variables

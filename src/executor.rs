@@ -33,13 +33,13 @@ pub fn execute_macro(input: Vec<u8>, input_tokens: Vec<u8>) -> Output {
     // Start the timer
     let start = Instant::now();
 
-    // Parse input
-    let input_clone = input.clone();
-    let prog = parse_p(input_clone.as_slice());
-
     // Parse tokens, create a list of tokens we can use (e.g. @me, @selected)
     let input_tokens_str = str::from_utf8(&input_tokens).unwrap();
     let tokens: HashMap<String, Token> = serde_json::from_str(input_tokens_str).unwrap();
+
+    // Parse input into a Program
+    let input_clone = input.clone();
+    let prog = parse_p(input_clone.as_slice());
 
     // Start the output
     let mut output = Output::new(String::from_utf8(input).unwrap());
@@ -55,7 +55,6 @@ pub fn execute_macro(input: Vec<u8>, input_tokens: Vec<u8>) -> Output {
         output
     } else {
         let (_, mut program) = prog.unwrap();
-        println!("program is {:?}", program);
 
         for step in &mut program.steps {
             execute_step(&step, &mut output);
@@ -65,6 +64,23 @@ pub fn execute_macro(input: Vec<u8>, input_tokens: Vec<u8>) -> Output {
         let elapsed = start.elapsed();
         output.execution_time = (elapsed.as_secs() * 1000) + (elapsed.subsec_nanos() / 1000000) as u64;
         output
+    }
+}
+
+pub fn execute_inline_macro(input: String, output: &mut Output) {
+    println!("inline macro is {:?}", input);
+    let prog = parse_p(input.as_ref());
+
+    if prog.is_err() {
+        // Push the error
+        let error = prog.unwrap_err();
+        output.errors.push(error_to_string(error));
+    } else {
+        let (_, mut program) = prog.unwrap();
+
+        for step in &mut program.steps {
+            execute_step(&step, output);
+        };
     }
 }
 
@@ -140,7 +156,7 @@ pub fn execute_step_lambda(step: &Step, output: &mut Output) {
                     let mut attribute: Option<StepValue> = None;
 
                     for ref right_arg in right.into_iter() {
-                        match get_arg_value(right_arg, &output.results, &output.tokens) {
+                        match get_arg_value(right_arg, &output) {
                             Some(ArgValue::Boolean(boolean)) => {
                                 attribute = Some(StepValue::Boolean(boolean));
                             },
@@ -208,7 +224,7 @@ pub fn execute_step_lambda(step: &Step, output: &mut Output) {
                     }
                 },
                 ArgValue::Token(ref t) => {
-                    // Insert our token if it doesn't exist
+                    // Insert our token if it doesn't exist, new scope because of the borrow checker
                     {
                         let name = t.name.clone();
                         output.tokens.entry(name).or_insert(Token {
@@ -225,7 +241,7 @@ pub fn execute_step_lambda(step: &Step, output: &mut Output) {
                             let mut attribute: Option<StepValue> = None;
 
                             for ref right_arg in right.into_iter() {
-                                match get_arg_value(right_arg, &output.results, &output.tokens) {
+                                match get_arg_value(right_arg, &output) {
                                     Some(ArgValue::Boolean(boolean)) => {
                                         attribute = Some(StepValue::Boolean(boolean));
                                     },
@@ -309,8 +325,8 @@ pub fn execute_step_lambda(step: &Step, output: &mut Output) {
             } = conditional;
 
             // Get the values from the left and right side
-            if let Some(left_value) = get_arg_value(left, &output.results, &output.tokens) {
-                if let Some(right_value) = get_arg_value(right, &output.results, &output.tokens) {
+            if let Some(left_value) = get_arg_value(left, &output) {
+                if let Some(right_value) = get_arg_value(right, &output) {
                     // compare the left and right values
                     let is_success = match comparison {
                         &ComparisonArg::EqualTo => {
@@ -347,6 +363,28 @@ pub fn execute_step_lambda(step: &Step, output: &mut Output) {
                     }
                 }
             }
+        } else if let &Arg::Token(ref token) = arg {
+            // Let's run a token macro
+            let token_macro_name = token.macro_name.clone();
+            let mut token_macro = None;
+            match token_macro_name {
+                Some(inline_macro_name) => {
+                    let token_result = output.tokens.get(&token.name).unwrap();
+
+                    // Lookup the macro in the attributes
+                    if let Some(&StepValue::Text(ref macro_text)) = token_result.macros.get(&inline_macro_name) {
+                        // combine the name and the macro
+                        let space = " ";
+                        token_macro = Some("#".to_owned() + &inline_macro_name + space + macro_text);
+                    }
+                },
+                None => {}
+            }
+
+            if let Some(inline_macro) = token_macro {
+                // execute this macro by parsing the output
+                execute_inline_macro(inline_macro, output);
+            }
         }
     };
 }
@@ -376,14 +414,14 @@ pub fn execute_roll (step: &Step, output: &mut Output) -> Roll {
 
     for arg in &step.args {
         if let &Arg::Roll(RollArg::N(ref value)) = arg {
-            match get_arg_value(value, &output.results, &output.tokens) {
+            match get_arg_value(value, &output) {
                 Some(ArgValue::Number(n)) => {
                     composed_roll.n = n as i16;
                 },
                 _ => {}
             }
         } else if let &Arg::Roll(RollArg::D(ref value)) = arg {
-            match get_arg_value(value, &output.results, &output.tokens) {
+            match get_arg_value(value, &output) {
                 Some(ArgValue::Number(n)) => {
                     composed_roll.d = n as i16;
                     composed_roll.max = n as i16;
@@ -401,70 +439,70 @@ pub fn execute_roll (step: &Step, output: &mut Output) -> Roll {
                 _ => {}
             }
         } else if let &Arg::Roll(RollArg::H(ref value)) = arg {
-            match get_arg_value(value, &output.results, &output.tokens) {
+            match get_arg_value(value, &output) {
                 Some(ArgValue::Number(n)) => {
                     composed_roll.h = n as i16;
                 },
                 _ => {}
             }
         } else if let &Arg::Roll(RollArg::L(ref value)) = arg {
-            match get_arg_value(value, &output.results, &output.tokens) {
+            match get_arg_value(value, &output) {
                 Some(ArgValue::Number(n)) => {
                     composed_roll.l = n as i16;
                 },
                 _ => {}
             }
         } else if let &Arg::Roll(RollArg::GT(ref value)) = arg {
-            match get_arg_value(value, &output.results, &output.tokens) {
+            match get_arg_value(value, &output) {
                 Some(ArgValue::Number(n)) => {
                     composed_roll.gt = n as u16;
                 },
                 _ => {}
             }
         } else if let &Arg::Roll(RollArg::GTE(ref value)) = arg {
-            match get_arg_value(value, &output.results, &output.tokens) {
+            match get_arg_value(value, &output) {
                 Some(ArgValue::Number(n)) => {
                     composed_roll.gte = n as u16;
                 },
                 _ => {}
             }
         } else if let &Arg::Roll(RollArg::LT(ref value)) = arg {
-            match get_arg_value(value, &output.results, &output.tokens) {
+            match get_arg_value(value, &output) {
                 Some(ArgValue::Number(n)) => {
                     composed_roll.lt = n as u16;
                 },
                 _ => {}
             }
         } else if let &Arg::Roll(RollArg::LTE(ref value)) = arg {
-            match get_arg_value(value, &output.results, &output.tokens) {
+            match get_arg_value(value, &output) {
                 Some(ArgValue::Number(n)) => {
                     composed_roll.lte = n as u16;
                 },
                 _ => {}
             }
         } else if let &Arg::Roll(RollArg::RR(ref value)) = arg {
-            match get_arg_value(value, &output.results, &output.tokens) {
+            match get_arg_value(value, &output) {
                 Some(ArgValue::Number(n)) => {
                     composed_roll.rr = n as i16;
                 },
                 _ => {}
             }
         } else if let &Arg::Roll(RollArg::RO(ref value)) = arg {
-            match get_arg_value(value, &output.results, &output.tokens) {
+            match get_arg_value(value, &output) {
                 Some(ArgValue::Number(n)) => {
                     composed_roll.ro = n as i16;
                 },
                 _ => {}
             }
         } else if let &Arg::Roll(RollArg::RO(ref value)) = arg {
-            match get_arg_value(value, &output.results, &output.tokens) {
+            match get_arg_value(value, &output) {
                 Some(ArgValue::Number(n)) => {
                     composed_roll.ro = n as i16;
                 },
                 _ => {}
             }
         } else if let &Arg::Roll(RollArg::ModifierPos(ref value)) = arg {
-            match get_arg_value(value, &output.results, &output.tokens) {
+            match get_arg_value(value, &output) {
                 Some(ArgValue::Float(n)) => {
                     composed_roll.modifiers.push(n as i16);
                 },
@@ -474,7 +512,7 @@ pub fn execute_roll (step: &Step, output: &mut Output) -> Roll {
                 _ => {}
             }
         } else if let &Arg::Roll(RollArg::ModifierNeg(ref value)) = arg {
-            match get_arg_value(value, &output.results, &output.tokens) {
+            match get_arg_value(value, &output) {
                 Some(ArgValue::Float(n)) => {
                     composed_roll.modifiers.push(n as i16);
                 },
@@ -484,7 +522,7 @@ pub fn execute_roll (step: &Step, output: &mut Output) -> Roll {
                 _ => {}
             }
         } else if let &Arg::Roll(RollArg::Max(ref value)) = arg {
-            match get_arg_value(value, &output.results, &output.tokens) {
+            match get_arg_value(value, &output) {
                 Some(ArgValue::Float(n)) => {
                     composed_roll.modifiers.push(n as i16);
                 },
@@ -494,7 +532,7 @@ pub fn execute_roll (step: &Step, output: &mut Output) -> Roll {
                 _ => {}
             }
         } else if let &Arg::Roll(RollArg::Min(ref value)) = arg {
-            match get_arg_value(value, &output.results, &output.tokens) {
+            match get_arg_value(value, &output) {
                 Some(ArgValue::Float(n)) => {
                     composed_roll.modifiers.push(n as i16);
                 },
@@ -564,7 +602,10 @@ pub fn execute_roll (step: &Step, output: &mut Output) -> Roll {
 }
 
 /// Gets the value of the argvalue, whether from a variable, token, etc.
-pub fn get_arg_value (value: &ArgValue, results: &HashMap<String, StepValue>, tokens: &HashMap<String, Token>) -> Option<ArgValue> {
+pub fn get_arg_value (value: &ArgValue, output: &Output) -> Option<ArgValue> {
+    let ref results = output.results;
+    let ref tokens = output.tokens;
+
     match value {
         &ArgValue::Boolean(ref n) => {
             Some(ArgValue::Boolean(n.clone()))
@@ -579,31 +620,24 @@ pub fn get_arg_value (value: &ArgValue, results: &HashMap<String, StepValue>, to
             Some(ArgValue::Text(n.clone()))
         },
         &ArgValue::Token(ref token) => {
-            let token_result = tokens.get(&token.name);
+            let token_result = tokens.get(&token.name).unwrap();
             let token_attr = token.attribute.clone();
-            match token_result {
-                Some(t) => {
-                    match token_attr {
-                        Some(a) => {
-                            let attr = t.attributes.get(&a);
-                            match attr {
-                                Some(&StepValue::Boolean(n)) => {
-                                    Some(ArgValue::Boolean(n.clone()))
-                                },
-                                Some(&StepValue::Number(n)) => {
-                                    Some(ArgValue::Number(n.clone()))
-                                },
-                                Some(&StepValue::Float(n)) => {
-                                    Some(ArgValue::Float(n.clone()))
-                                },
-                                Some(&StepValue::Text(ref n)) => {
-                                    Some(ArgValue::Text(n.clone()))
-                                },
-                                _ => {
-                                    None
-                                }
-                            }
-                        }
+            match token_attr {
+                Some(a) => {
+                    let attr = token_result.attributes.get(&a);
+                    match attr {
+                        Some(&StepValue::Boolean(n)) => {
+                            Some(ArgValue::Boolean(n.clone()))
+                        },
+                        Some(&StepValue::Number(n)) => {
+                            Some(ArgValue::Number(n.clone()))
+                        },
+                        Some(&StepValue::Float(n)) => {
+                            Some(ArgValue::Float(n.clone()))
+                        },
+                        Some(&StepValue::Text(ref n)) => {
+                            Some(ArgValue::Text(n.clone()))
+                        },
                         _ => {
                             None
                         }
@@ -664,4 +698,3 @@ pub fn get_arg_value (value: &ArgValue, results: &HashMap<String, StepValue>, to
         },
     }
 }
-

@@ -1,9 +1,10 @@
 use chrono::DateTime;
 use chrono::prelude::Utc;
 use message::Message;
-use parser::{StepValue, Program};
+use parser::Program;
 use roll::Roll;
 use std::collections::HashMap;
+use step::StepValue;
 use token::Token;
 
 #[derive(Debug, Deserialize, Serialize)]

@@ -2,7 +2,9 @@ extern crate ttml;
 extern crate nom;
 
 use nom::{IResult, ErrorKind};
+use ttml::arg::*;
 use ttml::parser::*;
+use ttml::step::*;
 
 #[test]
 fn test_simple_parser() {
@@ -361,19 +363,6 @@ fn test_arguments_roll_parses_token_attributes() {
     );
 }
 
-// #[test]
-// fn test_arguments_roll_parses_token_macros() {
-    // let (_, result) = arguments_roll_p(b"+@me->test_macro").unwrap();
-    // assert_eq!(
-        // result,
-        // Arg::Roll(RollArg::ModifierPos(ArgValue::Token(TokenArg {
-            // name: "me".to_string(),
-            // attribute: None,
-            // macro_name: Some("test_macro".to_string()),
-        // })))
-    // );
-// }
-
 #[test]
 fn test_arguments_whisper_parser() {
     let (_, result) = arguments_whisper_p(b"\"I am a message\"").unwrap();
@@ -423,6 +412,9 @@ fn test_token_parser() {
 
     let (_, result) = token_p(b"@foo_bar.baz_bo").unwrap();
     assert_eq!(result, TokenArg { name: "foo_bar".to_string(), attribute: Some("baz_bo".to_string()), macro_name: None });
+
+    let (_, result) = token_p(b"@fooZ->my_test_func").unwrap();
+    assert_eq!(result, TokenArg { name: "fooZ".to_string(), attribute: None, macro_name: Some("my_test_func".to_string()) });
 }
 
 #[test]

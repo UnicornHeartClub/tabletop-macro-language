@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use parser::StepValue;
+use step::StepValue;
 
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Token {

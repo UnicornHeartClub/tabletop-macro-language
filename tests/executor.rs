@@ -1,6 +1,8 @@
 extern crate ttml;
 
+use ttml::arg::*;
 use ttml::parser::*;
+use ttml::step::*;
 use ttml::output::Output;
 use ttml::die::DieType;
 use ttml::executor::{execute_macro, execute_roll};
@@ -360,24 +362,24 @@ fn it_executes_primitive_operations() {
     assert_eq!(attr, &StepValue::Float(-250.00));
 }
 
-// #[test]
-// fn it_executes_token_macros() {
-    // let input = "#test @me->test_macro".to_string().into_bytes();
-    // let token_input = r#"{
-        // "me": {
-            // "attributes": {
-                // "dexterity": {
-                    // "Number": 21
-                // }
-            // },
-            // "macros": {
-                // "test_macro": "\#inline_macro !r 1d20"
-            // }
-        // }
-    // }"#.to_string().into_bytes();
-    // let output = execute_macro(input, token_input);
-    // let rolls = output.rolls;
-    // assert_eq!(rolls[0].dice.len(), 1);
-    // assert_eq!(rolls[0].dice[0].die, DieType::D20);
-    // assert_eq!(rolls[0].modifiers.len(), 1);
-// }
+#[test]
+fn it_executes_token_macros() {
+    let input = "#test @me->test_macro".to_string().into_bytes();
+    let token_input = r#"{
+        "me": {
+            "attributes": {
+                "dexterity": {
+                    "Number": 21
+                }
+            },
+            "macros": {
+                "test_macro": "!r 1d20"
+            }
+        }
+    }"#.to_string().into_bytes();
+    let output = execute_macro(input, token_input);
+    let rolls = output.rolls;
+    assert_eq!(rolls[0].dice.len(), 1);
+    assert_eq!(rolls[0].dice[0].die, DieType::D20);
+    assert_eq!(rolls[0].modifiers.len(), 1);
+}

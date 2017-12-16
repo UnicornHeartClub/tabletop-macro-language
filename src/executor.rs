@@ -1,7 +1,7 @@
 use die::{Die, DieType};
 use message::Message;
 use output::Output;
-use parser::{
+use arg::{
     Arg,
     ArgValue,
     ComparisonArg,
@@ -10,10 +10,14 @@ use parser::{
     Primitive,
     RollArg,
     SayArg,
+    TokenArg,
+};
+use step::{
     Step,
     StepResult,
     StepValue,
-    TokenArg,
+};
+use parser::{
     error_to_string,
     parse_p,
 };
@@ -51,6 +55,7 @@ pub fn execute_macro(input: Vec<u8>, input_tokens: Vec<u8>) -> Output {
         output
     } else {
         let (_, mut program) = prog.unwrap();
+        println!("program is {:?}", program);
 
         for step in &mut program.steps {
             execute_step(&step, &mut output);

@@ -1,3 +1,5 @@
+use chrono::DateTime;
+use chrono::prelude::Utc;
 use die::Die;
 use die::DieType;
 use uuid::Uuid;
@@ -41,6 +43,9 @@ pub struct Roll {
     /// The combined value of the die before modifiers
     pub raw_value: i32,
 
+    /// Timestamp
+    pub timestamp: DateTime<Utc>,
+
     /// The associated token (optional)
     pub token: Option<String>,
 
@@ -50,6 +55,8 @@ pub struct Roll {
 
 impl Roll {
     pub fn new(mut dice: Vec<Die>) -> Roll {
+        let timestamp = Utc::now();
+
         // Roll each dice
         for die in &mut dice {
             die.roll();
@@ -63,6 +70,7 @@ impl Roll {
             dice,
             modifiers: Vec::new(),
             raw_value: value,
+            timestamp,
             token: None,
             value,
         }

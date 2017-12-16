@@ -37,6 +37,9 @@ pub struct Roll {
     /// The dice that compose this roll
     pub dice: Vec<Die>,
 
+    /// Calculated equation of the roll
+    pub equation: String,
+
     /// Modifiers to apply to the combined value
     pub modifiers: Vec<i16>,
 
@@ -68,6 +71,7 @@ impl Roll {
             _id: Uuid::new_v4().to_string(),
             comment: None,
             dice,
+            equation: "".to_string(), // @refactor ideally we should be setting this on new
             modifiers: Vec::new(),
             raw_value: value,
             timestamp,
@@ -79,6 +83,11 @@ impl Roll {
     /// Associate this roll with a comment
     pub fn add_comment(&mut self, comment: String) {
         self.comment = Some(comment)
+    }
+
+    /// Associate this roll with a comment
+    pub fn add_equation(&mut self, equation: String) {
+        self.equation = equation
     }
 
     /// Associate this roll with a token

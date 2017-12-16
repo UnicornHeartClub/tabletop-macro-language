@@ -412,11 +412,15 @@ pub fn execute_roll (step: &Step, output: &mut Output) -> Roll {
         rr: 0,
     };
 
+    // build the calculated equation to output with our roll
+    let mut equation = "".to_owned();
+
     for arg in &step.args {
         if let &Arg::Roll(RollArg::N(ref value)) = arg {
             match get_arg_value(value, &output) {
                 Some(ArgValue::Number(n)) => {
                     composed_roll.n = n as i16;
+                    equation = equation + &n.to_string();
                 },
                 _ => {}
             }
@@ -435,6 +439,8 @@ pub fn execute_roll (step: &Step, output: &mut Output) -> Roll {
                         4     => DieType::D4,
                         _     => DieType::Other,
                     };
+
+                    equation = equation + &"d" + &n.to_string();
                 },
                 _ => {}
             }
@@ -442,6 +448,7 @@ pub fn execute_roll (step: &Step, output: &mut Output) -> Roll {
             match get_arg_value(value, &output) {
                 Some(ArgValue::Number(n)) => {
                     composed_roll.h = n as i16;
+                    equation = equation + &"kh" + &n.to_string();
                 },
                 _ => {}
             }
@@ -449,6 +456,7 @@ pub fn execute_roll (step: &Step, output: &mut Output) -> Roll {
             match get_arg_value(value, &output) {
                 Some(ArgValue::Number(n)) => {
                     composed_roll.l = n as i16;
+                    equation = equation + &"kl" + &n.to_string();
                 },
                 _ => {}
             }
@@ -456,6 +464,7 @@ pub fn execute_roll (step: &Step, output: &mut Output) -> Roll {
             match get_arg_value(value, &output) {
                 Some(ArgValue::Number(n)) => {
                     composed_roll.gt = n as u16;
+                    equation = equation + &"gt" + &n.to_string();
                 },
                 _ => {}
             }
@@ -463,6 +472,7 @@ pub fn execute_roll (step: &Step, output: &mut Output) -> Roll {
             match get_arg_value(value, &output) {
                 Some(ArgValue::Number(n)) => {
                     composed_roll.gte = n as u16;
+                    equation = equation + &"gte" + &n.to_string();
                 },
                 _ => {}
             }
@@ -470,6 +480,7 @@ pub fn execute_roll (step: &Step, output: &mut Output) -> Roll {
             match get_arg_value(value, &output) {
                 Some(ArgValue::Number(n)) => {
                     composed_roll.lt = n as u16;
+                    equation = equation + &"lt" + &n.to_string();
                 },
                 _ => {}
             }
@@ -477,6 +488,7 @@ pub fn execute_roll (step: &Step, output: &mut Output) -> Roll {
             match get_arg_value(value, &output) {
                 Some(ArgValue::Number(n)) => {
                     composed_roll.lte = n as u16;
+                    equation = equation + &"lte" + &n.to_string();
                 },
                 _ => {}
             }
@@ -484,6 +496,7 @@ pub fn execute_roll (step: &Step, output: &mut Output) -> Roll {
             match get_arg_value(value, &output) {
                 Some(ArgValue::Number(n)) => {
                     composed_roll.rr = n as i16;
+                    equation = equation + &"rr" + &n.to_string();
                 },
                 _ => {}
             }
@@ -491,13 +504,7 @@ pub fn execute_roll (step: &Step, output: &mut Output) -> Roll {
             match get_arg_value(value, &output) {
                 Some(ArgValue::Number(n)) => {
                     composed_roll.ro = n as i16;
-                },
-                _ => {}
-            }
-        } else if let &Arg::Roll(RollArg::RO(ref value)) = arg {
-            match get_arg_value(value, &output) {
-                Some(ArgValue::Number(n)) => {
-                    composed_roll.ro = n as i16;
+                    equation = equation + &"ro" + &n.to_string();
                 },
                 _ => {}
             }
@@ -505,9 +512,11 @@ pub fn execute_roll (step: &Step, output: &mut Output) -> Roll {
             match get_arg_value(value, &output) {
                 Some(ArgValue::Float(n)) => {
                     composed_roll.modifiers.push(n as i16);
+                    equation = equation + &"+" + &n.to_string();
                 },
                 Some(ArgValue::Number(n)) => {
                     composed_roll.modifiers.push(n as i16);
+                    equation = equation + &"+" + &n.to_string();
                 },
                 _ => {}
             }
@@ -515,38 +524,43 @@ pub fn execute_roll (step: &Step, output: &mut Output) -> Roll {
             match get_arg_value(value, &output) {
                 Some(ArgValue::Float(n)) => {
                     composed_roll.modifiers.push(n as i16);
+                    equation = equation + &"-" + &n.to_string();
                 },
                 Some(ArgValue::Number(n)) => {
                     composed_roll.modifiers.push(n as i16 * -1);
+                    equation = equation + &"-" + &n.to_string();
                 },
                 _ => {}
             }
         } else if let &Arg::Roll(RollArg::Max(ref value)) = arg {
             match get_arg_value(value, &output) {
                 Some(ArgValue::Float(n)) => {
-                    composed_roll.modifiers.push(n as i16);
+                    composed_roll.max = n as i16;
+                    equation = equation + &"max" + &n.to_string();
                 },
                 Some(ArgValue::Number(n)) => {
                     composed_roll.max = n as i16;
+                    equation = equation + &"max" + &n.to_string();
                 },
                 _ => {}
             }
         } else if let &Arg::Roll(RollArg::Min(ref value)) = arg {
             match get_arg_value(value, &output) {
                 Some(ArgValue::Float(n)) => {
-                    composed_roll.modifiers.push(n as i16);
+                    composed_roll.min = n as i16;
+                    equation = equation + &"min" + &n.to_string();
                 },
                 Some(ArgValue::Number(n)) => {
                     composed_roll.min = n as i16;
+                    equation = equation + &"min" + &n.to_string();
                 },
                 _ => {}
             }
         } else if let &Arg::Roll(RollArg::Comment(ArgValue::Text(ref n))) = arg {
             composed_roll.comment = Some(n.to_owned());
+            equation = equation + &" '" + &n + &"'";
         }
     }
-
-    // @todo build custom dice always
 
     // Build the custom sided die
     let mut dice = Vec::new();
@@ -558,6 +572,7 @@ pub fn execute_roll (step: &Step, output: &mut Output) -> Roll {
         dice.push(die);
     }
     let mut roll = Roll::new(dice);
+    roll.add_equation(equation);
 
     if composed_roll.modifiers.len() > 0 {
         for i in composed_roll.modifiers.into_iter() {

@@ -373,15 +373,18 @@ fn it_executes_token_macros() {
             },
             "macros": {
                 "test_macro": {
-                    "Text": "!r 1d20+1"
+                    "Text": "!r 1d20+1 >> !say @me \"rolled a \" $1"
                 }
             }
         }
     }"#.to_string().into_bytes();
     let output = execute_macro(input, token_input);
     let rolls = output.rolls;
+    let messages = output.messages;
     assert_eq!(rolls.len(), 1);
     assert_eq!(rolls[0].dice.len(), 1);
     assert_eq!(rolls[0].dice[0].die, DieType::D20);
     assert_eq!(rolls[0].modifiers.len(), 1);
+    assert_eq!(messages.len(), 1);
+    assert_eq!(messages[0].message, "rolled a ".to_owned() + &rolls[0].value.to_string());
 }

@@ -88,6 +88,7 @@ pub fn arguments_roll_p(input: &[u8]) -> IResult<&[u8], Arg> {
         roll_modifier_neg_p |
         map!(quoted_p,        | a | Arg::Roll(RollArg::Comment(ArgValue::Text(a)))) |
         map!(single_quoted_p, | a | Arg::Roll(RollArg::Comment(ArgValue::Text(a)))) |
+        map!(token_p,         | a | Arg::Token(a)) |
         map!(variable_p,      | a | Arg::Variable(a))
     )
 }

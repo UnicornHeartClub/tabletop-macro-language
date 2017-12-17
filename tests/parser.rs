@@ -324,6 +324,14 @@ fn test_arguments_roll_parser() {
         macro_name: None,
     }))));
 
+    // Token argument
+    let (_, result) = arguments_roll_p(b"@me").unwrap();
+    assert_eq!(result, Arg::Token(TokenArg {
+        name: "me".to_string(),
+        attribute: None,
+        macro_name: None,
+    }));
+
     // Variables
 
     // N

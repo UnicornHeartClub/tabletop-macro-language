@@ -414,9 +414,12 @@ pub fn execute_roll (step: &Step, output: &mut Output) -> Roll {
 
     // build the calculated equation to output with our roll
     let mut equation = "".to_owned();
+    let mut token = None;
 
     for arg in &step.args {
-        if let &Arg::Roll(RollArg::N(ref value)) = arg {
+        if let &Arg::Token(ref t) = arg {
+            token = Some(t.name.clone());
+        } else if let &Arg::Roll(RollArg::N(ref value)) = arg {
             match get_arg_value(value, &output) {
                 Some(ArgValue::Number(n)) => {
                     composed_roll.n = n as i16;
@@ -608,8 +611,15 @@ pub fn execute_roll (step: &Step, output: &mut Output) -> Roll {
         roll.keep_low(composed_roll.l as u16);
     }
 
+    // Add a comment
     match composed_roll.comment {
         Some(c) => roll.add_comment(c),
+        None => {}
+    }
+
+    // Associate a token
+    match token {
+        Some(t) => roll.add_token(t),
         None => {}
     }
 

@@ -109,6 +109,27 @@ fn it_executes_simple_input() {
 }
 
 #[test]
+fn it_executes_a_roll_with_token() {
+    let input = "#test !roll @me 1d20".to_string().into_bytes();
+    let token_input = r#"{
+        "me": {
+            "attributes": {
+                "dexterity": {
+                    "Number": 5
+                }
+            },
+            "macros": {}
+        }
+    }"#.to_string().into_bytes();
+
+    let output = execute_macro(input, token_input);
+    let rolls = output.rolls;
+    assert_eq!(rolls[0].dice.len(), 1);
+    assert_eq!(rolls[0].dice[0].die, DieType::D20);
+    assert_eq!(rolls[0].token, Some("me".to_string()));
+}
+
+#[test]
 fn it_executes_positive_modifier() {
     let input = "#test $foo = 10 !r 1d20+$foo".to_string().into_bytes();
     let token_input = r#"{}"#.to_string().into_bytes();

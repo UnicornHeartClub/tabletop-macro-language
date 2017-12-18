@@ -380,6 +380,24 @@ fn it_executes_primitive_operations() {
     let token = tokens.get("me").unwrap();
     let attr = token.attributes.get("bar").unwrap();
     assert_eq!(attr, &StepValue::Float(-250.00));
+
+    // Multiply
+    let input = "#test @me.boo = false".to_string().into_bytes();
+    let token_input = r#"{
+        "me": {
+            "attributes": {
+                "boo": {
+                    "Boolean": true
+                }
+            },
+            "macros": {}
+        }
+    }"#.to_string().into_bytes();
+    let output = execute_macro(input, token_input);
+    let tokens = output.tokens;
+    let token = tokens.get("me").unwrap();
+    let attr = token.attributes.get("boo").unwrap();
+    assert_eq!(attr, &StepValue::Boolean(false));
 }
 
 #[test]

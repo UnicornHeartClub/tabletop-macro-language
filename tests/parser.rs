@@ -668,3 +668,71 @@ fn test_conditional_parser() {
 
     assert_eq!(result, compare);
 }
+
+fn test_conditional_parser_does_assignments() {
+    let (_, result) = arguments_p(b"10 == 10 ? $foo = 1 : $foo = 2").unwrap();
+    let compare = Arg::Conditional(Conditional {
+        left: ArgValue::Number(10),
+        comparison: ComparisonArg::EqualTo,
+        right: ArgValue::Number(10),
+        success: Some(Step {
+            args: vec![
+                Arg::Assign(Assign {
+                    left: ArgValue::Variable("foo".to_string()),
+                    right: vec![ ArgValue::Number(1) ]
+                })
+            ],
+            op: MacroOp::Lambda,
+            result: StepResult::Ignore,
+        }),
+        failure: Some(Step {
+            args: vec![
+                Arg::Assign(Assign {
+                    left: ArgValue::Variable("foo".to_string()),
+                    right: vec![ ArgValue::Number(2) ]
+                })
+            ],
+            op: MacroOp::Lambda,
+            result: StepResult::Ignore,
+        }),
+    });
+
+    assert_eq!(result, compare);
+
+    let (_, result) = arguments_p(b"@me.bar >= @me.foo ? $foo = 1 : $foo = 2").unwrap();
+    let compare = Arg::Conditional(Conditional {
+        left: ArgValue::Token(TokenArg {
+            name: "me".to_string(),
+            attribute: Some("bar".to_string()),
+            macro_name: None,
+        }),
+        comparison: ComparisonArg::GreaterThanOrEqual,
+        right: ArgValue::Token(TokenArg {
+            name: "me".to_string(),
+            attribute: Some("foo".to_string()),
+            macro_name: None,
+        }),
+        success: Some(Step {
+            args: vec![
+                Arg::Assign(Assign {
+                    left: ArgValue::Variable("foo".to_string()),
+                    right: vec![ ArgValue::Number(1) ]
+                })
+            ],
+            op: MacroOp::Lambda,
+            result: StepResult::Ignore,
+        }),
+        failure: Some(Step {
+            args: vec![
+                Arg::Assign(Assign {
+                    left: ArgValue::Variable("foo".to_string()),
+                    right: vec![ ArgValue::Number(2) ]
+                })
+            ],
+            op: MacroOp::Lambda,
+            result: StepResult::Ignore,
+        }),
+    });
+
+    assert_eq!(result, compare);
+}

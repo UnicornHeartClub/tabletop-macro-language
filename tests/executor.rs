@@ -427,3 +427,30 @@ fn it_executes_token_macros() {
     assert_eq!(messages.len(), 1);
     assert_eq!(messages[0].message, "rolled a ".to_owned() + &rolls[0].value.to_string());
 }
+
+#[test]
+fn it_executes_conditional_assignments() {
+    let input = "#test 20 > 5 ? $foo = 1 : $foo = 2".to_string().into_bytes();
+    let token_input = r#"{}"#.to_string().into_bytes();
+    let output = execute_macro(input, token_input);
+    let foo = output.results.get("foo").unwrap();
+    assert_eq!(foo, &StepValue::Float(1.0));
+
+    let input = "#test @me.dexterity_mod > @me.strength_mod ? $foo = 1 : $foo = 2".to_string().into_bytes();
+    let token_input = r#"{
+        "me": {
+            "attributes": {
+                "dexterity_mod": {
+                    "Number": 21
+                },
+                "strength_mod": {
+                    "Number": 15
+                }
+            },
+            "macros": {}
+        }
+    }"#.to_string().into_bytes();
+    let output = execute_macro(input, token_input);
+    let foo = output.results.get("foo").unwrap();
+    assert_eq!(foo, &StepValue::Float(1.0));
+}

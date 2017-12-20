@@ -68,7 +68,6 @@ pub fn execute_macro(input: Vec<u8>, input_tokens: Vec<u8>) -> Output {
 }
 
 pub fn execute_inline_macro(input: String, output: &mut Output) {
-    println!("inline macro is {:?}", input);
     let prog = parse_p(input.as_ref());
 
     if prog.is_err() {

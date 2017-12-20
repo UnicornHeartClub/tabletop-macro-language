@@ -153,6 +153,7 @@ pub fn conditional_p(input: &[u8]) -> IResult<&[u8], Conditional> {
         right: ws!(alt_complete!(
             map!(float_p, | a | ArgValue::Float(a)) |
             map!(num_p, | a | ArgValue::Number(a)) |
+            map!(token_p, | a | ArgValue::Token(a)) |
             map!(variable_reserved_p, | a | ArgValue::VariableReserved(a)) |
             map!(variable_p, | a | ArgValue::Variable(a))
         )) >>

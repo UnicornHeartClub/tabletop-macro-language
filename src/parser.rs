@@ -126,6 +126,7 @@ pub fn boolean_p(input: &[u8]) -> IResult<&[u8], bool> {
 /// Matches any command
 pub fn command_p(input: &[u8]) -> IResult<&[u8], MacroOp> {
     add_return_error!(input, ErrorKind::Custom(2), ws!(alt!(
+        map!(tag!("!exit"),                         |_| MacroOp::Exit)      |
         map!(alt!(tag!("!roll") | tag!("!r")),      |_| MacroOp::Roll)      |
         map!(alt!(tag!("!say") | tag!("!s")),       |_| MacroOp::Say)       |
         map!(alt!(tag!("!whisper") | tag!("!w")),   |_| MacroOp::Whisper)

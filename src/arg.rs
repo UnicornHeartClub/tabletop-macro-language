@@ -59,6 +59,9 @@ pub enum Primitive {
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum MacroOp {
+    /// Exit command
+    Exit,
+    /// Primitive operations
     Primitive,
     /// Lamda (assignment or conditional argument)
     Lambda,

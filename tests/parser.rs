@@ -24,15 +24,22 @@ fn test_simple_parser() {
 
     let program = Program {
         name: MacroOp::Name(String::from("simple-macro-name-2")),
-        steps: vec![Step {
-            args: vec![
-                Arg::Say(SayArg::Message("Hello, world!".to_string())),
-            ],
-            op: MacroOp::Say,
-            result: StepResult::Ignore,
-        }],
+        steps: vec![
+            Step {
+                args: vec![],
+                op: MacroOp::Exit,
+                result: StepResult::Ignore,
+            },
+            Step {
+                args: vec![
+                    Arg::Say(SayArg::Message("Hello, world!".to_string())),
+                ],
+                op: MacroOp::Say,
+                result: StepResult::Ignore,
+            }
+        ],
     };
-    let (_, result) = parse_p(b"#simple-macro-name-2 !say \"Hello, world!\"").unwrap();
+    let (_, result) = parse_p(b"#simple-macro-name-2 !exit !say \"Hello, world!\"").unwrap();
     assert_eq!(result, program);
 }
 

@@ -436,7 +436,7 @@ fn it_executes_conditional_assignments() {
     let foo = output.results.get("foo").unwrap();
     assert_eq!(foo, &StepValue::Float(1.0));
 
-    let input = "#test @me.dexterity_mod > @me.strength_mod ? $foo = 1 : $foo = 2".to_string().into_bytes();
+    let input = "#test @me.dexterity_mod > @me.strength_mod ? $foo = @me.dexterity_mod : $foo = @me.strength_mod !say 'Foo is ' $foo".to_string().into_bytes();
     let token_input = r#"{
         "me": {
             "attributes": {
@@ -452,5 +452,7 @@ fn it_executes_conditional_assignments() {
     }"#.to_string().into_bytes();
     let output = execute_macro(input, token_input);
     let foo = output.results.get("foo").unwrap();
-    assert_eq!(foo, &StepValue::Float(1.0));
+    assert_eq!(foo, &StepValue::Float(21.0));
+
+    assert_eq!(output.messages.len(), 1);
 }

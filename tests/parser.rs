@@ -174,6 +174,54 @@ fn test_complex_parser() {
     };
     let (_, result) = parse_p(b"#test !r 1d20 >> $1 > 10 ? !say \"Success\" :|").unwrap();
     assert_eq!(result, program);
+
+    // Make sure we can set variables on a condition and parse a step after
+    let program = Program {
+        name: MacroOp::Name(String::from("test")),
+        steps: vec![
+            Step {
+                args: vec![
+                    Arg::Conditional(Conditional {
+                        left: ArgValue::Number(5),
+                        comparison: ComparisonArg::LessThan,
+                        right: ArgValue::Number(10),
+                        success: Some(Step {
+                            args: vec![
+                                Arg::Assign(Assign {
+                                    left: ArgValue::Variable("mod".to_string()),
+                                    right: vec![ ArgValue::Number(1) ],
+                                }),
+                            ],
+                            op: MacroOp::Lambda,
+                            result: StepResult::Ignore,
+                        }),
+                        failure: Some(Step {
+                            args: vec![
+                                Arg::Assign(Assign {
+                                    left: ArgValue::Variable("mod".to_string()),
+                                    right: vec![ ArgValue::Number(2) ],
+                                }),
+                            ],
+                            op: MacroOp::Lambda,
+                            result: StepResult::Ignore,
+                        }),
+                    }),
+                ],
+                op: MacroOp::Lambda,
+                result: StepResult::Ignore,
+            },
+            Step {
+                args: vec![
+                    Arg::Say(SayArg::Message("Mod is ".to_string())),
+                    Arg::Variable("mod".to_string()),
+                ],
+                op: MacroOp::Say,
+                result: StepResult::Ignore,
+            },
+        ],
+    };
+    let (_, result) = parse_p(b"#test 5 < 10 ? $mod = 1 : $mod = 2 !say 'Mod is ' $mod").unwrap();
+    assert_eq!(result, program);
 }
 
 #[test]

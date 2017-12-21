@@ -63,7 +63,10 @@ We have a lot to get done but are looking to get it done quick!
   - [ ] Prompt Command _(In Progress)_
 - [ ] Executor _(In Progress)_
   - [x] ~~Tokens~~
-  - [ ] Prompt
+  - [ ] `!prompt`
+  - [ ] `!target`
+  - [ ] `!break` operator
+  - [ ] `!exit` operator
 - [ ] Examples _(In Progress, Needs Updating)_
 - [ ] Documentation _(In Progress)_
 - [ ] Error Handling _(In Progress)_

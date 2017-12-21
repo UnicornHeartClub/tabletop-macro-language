@@ -456,3 +456,37 @@ fn it_executes_conditional_assignments() {
 
     assert_eq!(output.messages.len(), 1);
 }
+
+#[test]
+fn it_executes_inline_arguments() {
+    let input = "#test 20 > 5 ? $foo = 1 : $foo = 2".to_string().into_bytes();
+    let token_input = r#"{}"#.to_string().into_bytes();
+    let output = execute_macro(input, token_input);
+    let foo = output.results.get("foo").unwrap();
+    assert_eq!(foo, &StepValue::Float(1.0));
+
+    let input = "#test @me->smart_mod".to_string().into_bytes();
+    let token_input = r#"{
+        "me": {
+            "attributes": {
+                "dexterity_mod": {
+                    "Number": 21
+                },
+                "strength_mod": {
+                    "Number": 15
+                }
+            },
+            "macros": {
+                "smart_mod": {
+                    "Text": "@me.dexterity_mod > @me.strength_mod ? $foo = @me.dexterity_mod : $foo = @me.strength_mod !say 'Foo is ' $foo"
+                }
+            }
+        }
+    }"#.to_string().into_bytes();
+    let output = execute_macro(input, token_input);
+    let foo = output.results.get("foo").unwrap();
+    assert_eq!(foo, &StepValue::Float(21.0));
+    assert_eq!(output.messages.len(), 1);
+    assert_eq!(output.messages[0].message, "Foo is 21".to_string());
+    println!("output {:#?}", output.messages);
+}

@@ -67,7 +67,7 @@ pub fn execute_macro(input: Vec<u8>, input_tokens: Vec<u8>) -> Output {
     }
 }
 
-pub fn execute_inline_macro(input: String, output: &mut Output) {
+pub fn execute_inline_macro(input: String, mut output: &mut Output) {
     let prog = parse_p(input.as_ref());
 
     if prog.is_err() {
@@ -78,7 +78,7 @@ pub fn execute_inline_macro(input: String, output: &mut Output) {
         let (_, mut program) = prog.unwrap();
 
         for step in &mut program.steps {
-            execute_step(&step, output);
+            execute_step(&step, &mut output);
         };
     }
 }
@@ -205,16 +205,9 @@ pub fn execute_step_lambda(step: &Step, output: &mut Output) {
                             Some(ArgValue::Text(text)) => {
                                 attribute = Some(StepValue::Text(text.to_owned()));
                             },
-                            Some(ArgValue::Token(v)) => {
-                                // not yet implemented
-                            },
-                            Some(ArgValue::Variable(v)) => {
-                                // not yet implemented
-                            },
-                            Some(ArgValue::VariableReserved(v)) => {
-                                // not yet implemented
-                            },
-                            None => {},
+                            _ => {
+                                // Ignore anything else
+                            }
                         }
                     }
 

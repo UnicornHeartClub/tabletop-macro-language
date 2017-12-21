@@ -490,3 +490,12 @@ fn it_executes_inline_arguments() {
     assert_eq!(output.messages[0].message, "Foo is 21".to_string());
     println!("output {:#?}", output.messages);
 }
+
+#[test]
+fn it_exits() {
+    let input = "#test !say 'hello' !exit !r 1d20 !r 1d20 !say 'not here'".to_string().into_bytes();
+    let token_input = r#"{}"#.to_string().into_bytes();
+    let output = execute_macro(input, token_input);
+    assert_eq!(output.messages.len(), 1);
+    assert_eq!(output.rolls.len(), 0);
+}

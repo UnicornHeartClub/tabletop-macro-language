@@ -57,7 +57,14 @@ pub fn execute_macro(input: Vec<u8>, input_tokens: Vec<u8>) -> Output {
         let (_, mut program) = prog.unwrap();
 
         for step in &mut program.steps {
-            execute_step(&step, &mut output);
+            match step.op {
+                MacroOp::Exit => {
+                    break;
+                },
+                _ => {
+                    execute_step(&step, &mut output);
+                }
+            }
         };
 
         output.program = Some(program);

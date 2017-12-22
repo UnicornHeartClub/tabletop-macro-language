@@ -488,7 +488,6 @@ fn it_executes_inline_arguments() {
     assert_eq!(foo, &StepValue::Float(21.0));
     assert_eq!(output.messages.len(), 1);
     assert_eq!(output.messages[0].message, "Foo is 21".to_string());
-    println!("output {:#?}", output.messages);
 }
 
 #[test]

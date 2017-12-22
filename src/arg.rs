@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use step::Step;
 
 // Top-level arguments
@@ -5,8 +6,10 @@ use step::Step;
 pub enum Arg {
     Assign(Assign),
     Conditional(Conditional),
+    Prompt(Prompt),
     Roll(RollArg),
     Say(SayArg),
+    Target(TargetArg),
     Token(TokenArg),
     Unrecognized(String),
     Variable(String),
@@ -49,6 +52,28 @@ pub struct Conditional {
     pub failure: Option<Step>,
 }
 
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub enum MacroOp {
+    /// Exit command
+    Exit,
+    /// Lamda (assignment or conditional argument)
+    Lambda,
+    /// Macro Name
+    Name(String),
+    /// Primitive operations
+    Primitive,
+    /// Prompt (!prompt)
+    Prompt,
+    /// Roll (!roll)
+    Roll,
+    /// Say (!say)
+    Say,
+    /// Target (!target)
+    Target,
+    /// Whisper (!whisper)
+    Whisper,
+}
+
 #[derive(Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub enum Primitive {
     Add,
@@ -58,23 +83,15 @@ pub enum Primitive {
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
-pub enum MacroOp {
-    /// Exit command
-    Exit,
-    /// Primitive operations
-    Primitive,
-    /// Lamda (assignment or conditional argument)
-    Lambda,
-    /// Macro Name
-    Name(String),
-    /// Prompt (!prompt)
-    Prompt,
-    /// Roll (!roll)
-    Roll,
-    /// Say (!say)
-    Say,
-    /// Whisper (!whisper)
-    Whisper,
+pub struct Prompt {
+    pub message: String,
+    pub options: HashMap<String, ArgValue>,
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub struct PromptOption {
+    pub key: String,
+    pub value: ArgValue,
 }
 
 // Arguments for the roll command, used by the parser
@@ -105,6 +122,11 @@ pub enum SayArg {
     Message(String),
     To(TokenArg),
     From(TokenArg),
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub enum TargetArg {
+    Message(String),
 }
 
 #[derive(Debug, PartialEq, PartialOrd, Serialize, Deserialize)]

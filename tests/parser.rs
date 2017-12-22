@@ -2,6 +2,7 @@ extern crate ttml;
 extern crate nom;
 
 use nom::{IResult, ErrorKind};
+use std::collections::HashMap;
 use ttml::arg::*;
 use ttml::parser::*;
 use ttml::step::*;
@@ -266,6 +267,22 @@ fn test_command_parser_roll() {
     assert_eq!(result, MacroOp::Roll);
     let (_, result) = command_p(b"!roll dis").unwrap();
     assert_eq!(result, MacroOp::Roll);
+}
+
+#[test]
+fn test_command_parser_prompt() {
+    let (_, result) = command_p(b"!prompt 'Choose your style' [Style 1, Style 2]").unwrap();
+    assert_eq!(result, MacroOp::Prompt);
+    let (_, result) = command_p(b"!p 'Enter some text'").unwrap();
+    assert_eq!(result, MacroOp::Prompt);
+}
+
+#[test]
+fn test_command_parser_target() {
+    let (_, result) = command_p(b"!target 'Choose a target'").unwrap();
+    assert_eq!(result, MacroOp::Target);
+    let (_, result) = command_p(b"!t 'Choose a target'").unwrap();
+    assert_eq!(result, MacroOp::Target);
 }
 
 #[test]
@@ -629,6 +646,23 @@ fn test_assign_variable_parser() {
     });
 
     assert_eq!(result, assign);
+}
+
+#[test]
+fn test_arguments_prompt_parser() {
+    let (_, result) = arguments_prompt_p(b"'Choose your style' [Label, Label 2, 'Label 3']").unwrap();
+
+    let mut options = HashMap::new();
+    options.insert("Label".to_string(), ArgValue::Text("Label".to_string()));
+    options.insert("Label 2".to_string(), ArgValue::Text("Label 2".to_string()));
+    options.insert("Label 3".to_string(), ArgValue::Text("Label 3".to_string()));
+
+    let prompt = Arg::Prompt(Prompt {
+        message: "Choose your style".to_string(),
+        options,
+    });
+
+    assert_eq!(result, prompt);
 }
 
 #[test]

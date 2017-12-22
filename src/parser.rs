@@ -11,6 +11,7 @@ use nom::{
 };
 use nom::simple_errors::Err;
 use step::*;
+use std::collections::HashMap;
 use std::str;
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -38,7 +39,7 @@ pub fn assignment_p(input: &[u8]) -> IResult<&[u8], Assign> {
             map!(boolean_p, | a | ArgValue::Boolean(a)) |
             map!(float_p, | a | ArgValue::Float(a)) |
             map!(num_p, | a | ArgValue::Number(a)) |
-            map!(string_p, | a | ArgValue::Text(a)) |
+            map!(word_p, | a | ArgValue::Text(a)) |
             map!(quoted_p, | a | ArgValue::Text(a)) |
             map!(single_quoted_p, | a | ArgValue::Text(a)) |
             map!(variable_reserved_p, | a | ArgValue::VariableReserved(a)) |
@@ -60,10 +61,29 @@ pub fn arguments_p(input: &[u8]) -> IResult<&[u8], Arg> {
         map!(assignment_p, | a | Arg::Assign(a)) |
         map!(variable_p, | a | Arg::Variable(a)) |
         map!(token_p, | a | Arg::Token(a)) |
-        map!(string_p, | a | Arg::Unrecognized(a)) |
+        map!(word_p, | a | Arg::Unrecognized(a)) |
         map!(quoted_p, | a | Arg::Unrecognized(a)) |
         map!(single_quoted_p, | a | Arg::Unrecognized(a))
     )
+}
+
+/// Matches !say arguments
+pub fn arguments_prompt_p(input: &[u8]) -> IResult<&[u8], Arg> {
+    let mut options = HashMap::new();
+    add_return_error!(input, ErrorKind::Custom(4), do_parse!(
+        message: ws!(alt_complete!(
+            word_p |
+            quoted_p |
+            single_quoted_p
+        )) >>
+        tag!("[") >>
+        many0!(map!(parse_option_p, |opt| options.insert(opt.key, opt.value))) >>
+        tag!("]") >>
+        (Arg::Prompt(Prompt {
+            message,
+            options,
+        }))
+    ))
 }
 
 /// Matches !roll arguments
@@ -96,7 +116,7 @@ pub fn arguments_roll_p(input: &[u8]) -> IResult<&[u8], Arg> {
 /// Matches !say arguments
 pub fn arguments_say_p(input: &[u8]) -> IResult<&[u8], Arg> {
     alt_complete!(input,
-        map!(string_p, | a | Arg::Say(SayArg::Message(a))) |
+        map!(word_p, | a | Arg::Say(SayArg::Message(a))) |
         map!(quoted_p, | a | Arg::Say(SayArg::Message(a))) |
         map!(single_quoted_p, | a | Arg::Say(SayArg::Message(a))) |
         map!(token_p, | a | Arg::Say(SayArg::From(a))) |
@@ -104,10 +124,19 @@ pub fn arguments_say_p(input: &[u8]) -> IResult<&[u8], Arg> {
     )
 }
 
+/// Matches !say arguments
+pub fn arguments_target_p(input: &[u8]) -> IResult<&[u8], Arg> {
+    alt_complete!(input,
+        map!(word_p, | a | Arg::Target(TargetArg::Message(a))) |
+        map!(quoted_p, | a | Arg::Target(TargetArg::Message(a))) |
+        map!(single_quoted_p, | a | Arg::Target(TargetArg::Message(a)))
+    )
+}
+
 /// Matches !whisper arguments
 pub fn arguments_whisper_p(input: &[u8]) -> IResult<&[u8], Arg> {
     alt_complete!(input,
-        map!(string_p, | a | Arg::Say(SayArg::Message(a))) |
+        map!(word_p, | a | Arg::Say(SayArg::Message(a))) |
         map!(quoted_p, | a | Arg::Say(SayArg::Message(a))) |
         map!(single_quoted_p, | a | Arg::Say(SayArg::Message(a))) |
         map!(token_p, | a | Arg::Say(SayArg::To(a))) |
@@ -127,8 +156,10 @@ pub fn boolean_p(input: &[u8]) -> IResult<&[u8], bool> {
 pub fn command_p(input: &[u8]) -> IResult<&[u8], MacroOp> {
     add_return_error!(input, ErrorKind::Custom(2), ws!(alt!(
         map!(tag!("!exit"),                         |_| MacroOp::Exit)      |
+        map!(alt!(tag!("!prompt") | tag!("!p")),    |_| MacroOp::Prompt)    |
         map!(alt!(tag!("!roll") | tag!("!r")),      |_| MacroOp::Roll)      |
         map!(alt!(tag!("!say") | tag!("!s")),       |_| MacroOp::Say)       |
+        map!(alt!(tag!("!target") | tag!("!t")),    |_| MacroOp::Target)    |
         map!(alt!(tag!("!whisper") | tag!("!w")),   |_| MacroOp::Whisper)
     )))
 }
@@ -223,6 +254,47 @@ pub fn op_p(input: &[u8]) -> IResult<&[u8], MacroOp> {
     )
 }
 
+/// Parse an option string (does not require quotes)
+pub fn option_string_p(input: &[u8]) -> IResult<&[u8], String> {
+    do_parse!(input,
+        word: is_not!("\t\r\n.,?\\=<>|:;@!#$%^&*()+=/-[]{}") >>
+        (String::from_utf8(word.to_vec()).unwrap())
+    )
+}
+
+/// Parses a valid option (e.g. Label 1, "Label 1", 'Label 1', Label:Value)
+pub fn parse_option_p(input: &[u8]) -> IResult<&[u8], PromptOption> {
+    do_parse!(input,
+        key: ws!(alt_complete!(
+            quoted_p |
+            single_quoted_p |
+            option_string_p |
+            word_p
+        )) >>
+        delim: opt!(tag!(":")) >>
+        value: switch!(value!(delim),
+            Some(_) => alt_complete!(
+                map!(boolean_p, | a | ArgValue::Boolean(a)) |
+                map!(float_p, | a | ArgValue::Float(a)) |
+                map!(num_p, | a | ArgValue::Number(a)) |
+                map!(quoted_p, | a | ArgValue::Text(a)) |
+                map!(single_quoted_p, | a | ArgValue::Text(a)) |
+                map!(variable_reserved_p, | a | ArgValue::VariableReserved(a)) |
+                map!(variable_p, | a | ArgValue::Variable(a)) |
+                map!(token_p, | a | ArgValue::Token(a)) |
+                map!(option_string_p, | a | ArgValue::Text(a)) |
+                map!(word_p, | a | ArgValue::Text(a))
+            ) |
+            None => value!(ArgValue::Text(key.clone()))
+        ) >>
+        opt!(tag!(",")) >>
+        (PromptOption {
+            key,
+            value,
+        })
+    )
+}
+
 /// Parse the complete macro
 pub fn parse_p(input: &[u8]) -> IResult<&[u8], Program> {
     do_parse!(input,
@@ -240,6 +312,8 @@ pub fn parse_step_p(input: &[u8]) -> IResult<&[u8], Step> {
     do_parse!(input,
         op_type: op_p >>
         args: many0!(switch!(value!(&op_type),
+            &MacroOp::Prompt => call!(arguments_prompt_p) |
+            &MacroOp::Target => call!(arguments_target_p) |
             &MacroOp::Roll => call!(arguments_roll_p) |
             &MacroOp::Say => call!(arguments_say_p) |
             &MacroOp::Whisper => call!(arguments_whisper_p) |
@@ -451,14 +525,6 @@ pub fn step_result_p(input: &[u8]) -> IResult<&[u8], StepResult> {
     )
 }
 
-/// Match alphanumeric values to strings
-pub fn string_p(input: &[u8]) -> IResult<&[u8], String> {
-    do_parse!(input,
-        word: ws!(alphanumeric) >>
-        (String::from_utf8(word.to_vec()).unwrap())
-    )
-}
-
 /// Matches tokens
 pub fn token_p(input: &[u8]) -> IResult<&[u8], TokenArg> {
     // @todo match that we cannot start with a digit
@@ -500,12 +566,21 @@ pub fn variable_reserved_p(input: &[u8]) -> IResult<&[u8], i16> {
     )
 }
 
+/// Match alphanumeric words to strings
+pub fn word_p(input: &[u8]) -> IResult<&[u8], String> {
+    do_parse!(input,
+        word: ws!(alphanumeric) >>
+        (String::from_utf8(word.to_vec()).unwrap())
+    )
+}
+
 /// Maps error codes to readable strings
 pub fn error_to_string(e: Err) -> String {
     let err = match e {
         ErrorKind::Custom(1)    => "Missing or invalid macro name",
         ErrorKind::Custom(2)    => "Invalid or unrecognized command",
         ErrorKind::Custom(3)    => "Problem parsing conditional statement",
+        ErrorKind::Custom(4)    => "Problem parsing prompt options",
         _                       => "Unknown problem encountered while parsing",
     };
     err.to_string()

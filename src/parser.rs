@@ -321,9 +321,9 @@ pub fn parse_step_p(input: &[u8]) -> IResult<&[u8], Step> {
         )) >>
         result: step_result_p >>
         (Step {
+            args,
             op: op_type,
             result,
-            args,
         })
     )
 }

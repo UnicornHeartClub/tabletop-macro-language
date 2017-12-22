@@ -118,6 +118,7 @@ pub fn execute_step (step: &Step, mut output: &mut Output) {
 
 pub fn execute_step_say(step: &Step, output: &mut Output) {
     let mut message = Message::new("".to_string());
+    message.from = output.run_as.clone();
     for arg in &step.args {
         if let &Arg::Say(SayArg::Message(ref value)) = arg {
             // Concat the message string
@@ -375,6 +376,7 @@ pub fn execute_step_lambda(step: &Step, output: &mut Output) {
                         // combine the name and the macro
                         let space = " ";
                         token_macro = Some("#".to_owned() + &inline_macro_name + space + macro_text);
+                        output.run_as = Some(token.name.clone());
                     }
                 },
                 None => {}
@@ -411,9 +413,11 @@ pub fn execute_roll (step: &Step, output: &mut Output) -> Roll {
         rr: 0,
     };
 
+
+    println!("step is {:#?}", output);
     // build the calculated equation to output with our roll
     let mut equation = "".to_owned();
-    let mut token = None;
+    let mut token = output.run_as.clone();
 
     for arg in &step.args {
         if let &Arg::Token(ref t) = arg {

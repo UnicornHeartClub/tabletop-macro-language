@@ -33,6 +33,9 @@ pub struct Output {
     /// Results
     pub results: HashMap<String, StepValue>,
 
+    /// Impersonate a token
+    pub run_as: Option<String>,
+
     /// Tokens
     pub tokens: HashMap<String, Token>,
  
@@ -52,6 +55,7 @@ impl Output {
             messages: Vec::new(),
             program: None,
             rolls: Vec::new(),
+            run_as: None,
             tokens: HashMap::new(),
             results: HashMap::new(),
             version,

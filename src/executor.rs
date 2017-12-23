@@ -407,7 +407,6 @@ pub fn execute_roll (step: &Step, output: &mut Output) -> Roll {
     };
 
 
-    println!("step is {:#?}", output);
     // build the calculated equation to output with our roll
     let mut equation = "".to_owned();
     let mut token = output.run_as.clone();

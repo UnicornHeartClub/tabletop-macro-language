@@ -650,8 +650,7 @@ fn test_assign_variable_parser() {
 
 #[test]
 fn test_arguments_prompt_parser() {
-    let (_, result) = arguments_prompt_p(b"'Choose your style' [Label, Label 2, 'Label 3']").unwrap();
-
+    // with options
     let mut options = HashMap::new();
     options.insert("Label".to_string(), ArgValue::Text("Label".to_string()));
     options.insert("Label 2".to_string(), ArgValue::Text("Label 2".to_string()));
@@ -661,8 +660,40 @@ fn test_arguments_prompt_parser() {
         message: "Choose your style".to_string(),
         options,
     });
-
+    let (_, result) = arguments_prompt_p(b"'Choose your style' [Label, Label 2, 'Label 3']").unwrap();
     assert_eq!(result, prompt);
+
+    // with options and values
+    let mut options = HashMap::new();
+    options.insert("foo".to_string(), ArgValue::Text("bar".to_string()));
+    options.insert("1".to_string(), ArgValue::Token(TokenArg {
+        name: "me".to_string(),
+        attribute: Some("attribute".to_string()),
+        macro_name: None,
+    }));
+    options.insert("baz".to_string(), ArgValue::Text("boo".to_string()));
+
+    let prompt = Arg::Prompt(Prompt {
+        message: "Choose your thing".to_string(),
+        options,
+    });
+    let (_, result) = arguments_prompt_p(b"\"Choose your thing\" [foo:bar, @me.attribute, 'baz':\"boo\"]").unwrap();
+    assert_eq!(result, prompt);
+
+    // // no options
+    // let prompt = Arg::Prompt(Prompt {
+        // message: "Choose your style".to_string(),
+        // options: HashMap::new(),
+    // });
+    // let (_, result) = arguments_prompt_p(b"'Choose your style' []").unwrap();
+    // assert_eq!(result, prompt);
+
+    // let prompt = Arg::Prompt(Prompt {
+        // message: "What's your beef?".to_string(),
+        // options: HashMap::new(),
+    // });
+    // let (_, result) = arguments_prompt_p(b"\"What's your beef?\"").unwrap();
+    // assert_eq!(&result, &prompt);
 }
 
 #[test]
@@ -758,6 +789,7 @@ fn test_conditional_parser() {
     assert_eq!(result, compare);
 }
 
+#[test]
 fn test_conditional_parser_does_assignments() {
     let (_, result) = arguments_p(b"10 == 10 ? $foo = 1 : $foo = 2").unwrap();
     let compare = Arg::Conditional(Conditional {

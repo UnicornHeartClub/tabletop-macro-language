@@ -69,20 +69,39 @@ pub fn arguments_p(input: &[u8]) -> IResult<&[u8], Arg> {
 
 /// Matches !say arguments
 pub fn arguments_prompt_p(input: &[u8]) -> IResult<&[u8], Arg> {
-    let mut options = HashMap::new();
     add_return_error!(input, ErrorKind::Custom(4), do_parse!(
         message: ws!(alt_complete!(
             word_p |
             quoted_p |
             single_quoted_p
         )) >>
-        tag!("[") >>
-        many0!(map!(parse_option_p, |opt| options.insert(opt.key, opt.value))) >>
-        tag!("]") >>
+        options: switch!(options_p,
+            Some(opts) => value!(opts) |
+            _ => value!(HashMap::new())
+        ) >>
         (Arg::Prompt(Prompt {
             message,
             options,
         }))
+    ))
+}
+
+/// Matches an optional list of options
+pub fn options_p(input: &[u8]) -> IResult<&[u8], Option<HashMap<String, ArgValue>>> {
+    let mut options = HashMap::new();
+    opt!(input, do_parse!(
+        tag!("[") >>
+        many0!(map!(parse_option_p, |opt| {
+            match opt.key {
+                Some(key) => options.insert(key, opt.value),
+                None => {
+                    let len = options.len();
+                    options.insert(len.to_string(), opt.value)
+                }
+            }
+        })) >>
+        tag!("]") >>
+        (options)
     ))
 }
 
@@ -257,22 +276,29 @@ pub fn op_p(input: &[u8]) -> IResult<&[u8], MacroOp> {
 /// Parse an option string (does not require quotes)
 pub fn option_string_p(input: &[u8]) -> IResult<&[u8], String> {
     do_parse!(input,
-        word: is_not!("\t\r\n.,?\\=<>|:;@!#$%^&*()+=/-[]{}") >>
+        word: is_not!("\t\r\n,?\\=<>|:;!#%^&*()+=/-[]{}") >>
         (String::from_utf8(word.to_vec()).unwrap())
     )
 }
 
 /// Parses a valid option (e.g. Label 1, "Label 1", 'Label 1', Label:Value)
 pub fn parse_option_p(input: &[u8]) -> IResult<&[u8], PromptOption> {
+    // do not parse the key right away because
     do_parse!(input,
-        key: ws!(alt_complete!(
-            quoted_p |
-            single_quoted_p |
-            option_string_p |
-            word_p
+        label: ws!(alt_complete!(
+            map!(boolean_p, | a | ArgValue::Boolean(a)) |
+            map!(float_p, | a | ArgValue::Float(a)) |
+            map!(num_p, | a | ArgValue::Number(a)) |
+            map!(quoted_p, | a | ArgValue::Text(a)) |
+            map!(single_quoted_p, | a | ArgValue::Text(a)) |
+            map!(variable_reserved_p, | a | ArgValue::VariableReserved(a)) |
+            map!(variable_p, | a | ArgValue::Variable(a)) |
+            map!(token_p, | a | ArgValue::Token(a)) |
+            map!(option_string_p, | a | ArgValue::Text(a)) |
+            map!(word_p, | a | ArgValue::Text(a))
         )) >>
-        delim: opt!(tag!(":")) >>
-        value: switch!(value!(delim),
+        value: switch!(opt!(tag!(":")),
+            // If we have a delim, parse the value
             Some(_) => alt_complete!(
                 map!(boolean_p, | a | ArgValue::Boolean(a)) |
                 map!(float_p, | a | ArgValue::Float(a)) |
@@ -285,9 +311,17 @@ pub fn parse_option_p(input: &[u8]) -> IResult<&[u8], PromptOption> {
                 map!(option_string_p, | a | ArgValue::Text(a)) |
                 map!(word_p, | a | ArgValue::Text(a))
             ) |
-            None => value!(ArgValue::Text(key.clone()))
+            None => value!(label.clone())
         ) >>
         opt!(tag!(",")) >>
+        key: switch!(value!(label),
+            ArgValue::Boolean(v) => value!(Some(v.to_string())) |
+            ArgValue::Float(v) => value!(Some(v.to_string())) |
+            ArgValue::Number(v) => value!(Some(v.to_string())) |
+            ArgValue::Text(v) => value!(Some(v)) |
+            _ => value!(None)
+
+        ) >>
         (PromptOption {
             key,
             value,

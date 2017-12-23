@@ -1,5 +1,6 @@
 extern crate ttml;
 
+// use std::collections::HashMap;
 use ttml::arg::*;
 use ttml::step::*;
 use ttml::output::Output;
@@ -518,3 +519,28 @@ fn it_exits() {
     assert_eq!(output.messages.len(), 1);
     assert_eq!(output.rolls.len(), 0);
 }
+
+// #[test]
+// fn it_executes_a_prompt() {
+    // let mut options = HashMap::new();
+    // options.insert("Yes".to_string(), ArgValue::Text("Yes".to_string()));
+
+    // let step = Step {
+        // args: vec![
+            // Arg::Prompt(Prompt {
+                // message: "Do you think you can default my style?",
+                // options,
+            // }),
+        // ],
+        // op: MacroOp::Prompt,
+        // result: StepResult::Save,
+    // };
+
+    // let mut output = Output::new("#test".to_string());
+    // let roll = execute_roll(&step, &mut output);
+
+    // assert!(roll.value >= 1);
+    // assert!(roll.value <= 20);
+    // assert_eq!(roll.dice.len(), 1);
+// }
+

@@ -16,7 +16,7 @@ pub enum Arg {
 }
 
 // Command-level arguments
-#[derive(Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub enum ArgValue {
     Boolean(bool),
     Float(f32),
@@ -74,7 +74,7 @@ pub enum MacroOp {
     Whisper,
 }
 
-#[derive(Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub enum Primitive {
     Add,
     Divide,
@@ -90,7 +90,7 @@ pub struct Prompt {
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct PromptOption {
-    pub key: String,
+    pub key: Option<String>,
     pub value: ArgValue,
 }
 
@@ -129,7 +129,7 @@ pub enum TargetArg {
     Message(String),
 }
 
-#[derive(Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub struct TokenArg {
     pub name: String,
     pub attribute: Option<String>,

@@ -1,7 +1,6 @@
 extern crate ttml;
 
 use ttml::arg::*;
-use ttml::parser::*;
 use ttml::step::*;
 use ttml::output::Output;
 use ttml::die::DieType;

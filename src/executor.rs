@@ -10,7 +10,6 @@ use arg::{
     Primitive,
     RollArg,
     SayArg,
-    TokenArg,
 };
 use step::{
     Step,
@@ -291,16 +290,10 @@ pub fn execute_step_lambda(step: &Step, output: &mut Output) {
                                     Some(ArgValue::Text(text)) => {
                                         attribute = Some(StepValue::Text(text.to_owned()));
                                     },
-                                    Some(ArgValue::Token(v)) => {
-                                        // not yet implemented
-                                    },
-                                    Some(ArgValue::Variable(v)) => {
-                                        // not yet implemented
-                                    },
-                                    Some(ArgValue::VariableReserved(v)) => {
-                                        // not yet implemented
-                                    },
-                                    None => {}
+                                    _ => {
+                                        // we should not get a return value from anything else
+                                        // throw error here?
+                                    }
                                 }
                             }
 

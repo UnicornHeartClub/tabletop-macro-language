@@ -20,7 +20,7 @@ fn safe_string(input: *mut c_char) -> Vec<u8> {
         
 /// Run input and return a typed array for use in javascript
 #[no_mangle]
-pub fn run_macro(raw_input: *mut c_char, raw_tokens: *mut c_char) -> *mut c_char {
+pub extern "C" fn run_macro(raw_input: *mut c_char, raw_tokens: *mut c_char) -> *mut c_char {
     // Parse the input
     let input = safe_string(raw_input);
 

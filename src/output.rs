@@ -36,6 +36,9 @@ pub struct Output {
     /// Impersonate a token
     pub run_as: Option<String>,
 
+    /// Target Token
+    pub target: Option<String>,
+
     /// Tokens
     pub tokens: HashMap<String, Token>,
  
@@ -56,6 +59,7 @@ impl Output {
             program: None,
             rolls: Vec::new(),
             run_as: None,
+            target: None,
             tokens: HashMap::new(),
             results: HashMap::new(),
             version,

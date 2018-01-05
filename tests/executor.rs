@@ -550,7 +550,7 @@ fn it_executes_a_prompt() {
 
 #[test]
 fn it_executes_a_target() {
-    let input = "#test !target 'Select a target' >> !r 1d20+@target.dexterity_mod".to_string().into_bytes();
+    let input = "#test !target 'Select a target' >> @target.dexterity_mod = @target.dexterity_mod + 5".to_string().into_bytes();
     let token_input = r#"{
         "test_id": {
             "attributes": {
@@ -575,7 +575,7 @@ fn it_executes_a_target() {
 
     // Make sure a target is set
     let tokens = output.tokens;
-    let token = tokens.get("target").unwrap();
+    let token = tokens.get("test_id").unwrap();
     let attr = token.attributes.get("dexterity_mod").unwrap();
-    assert_eq!(attr, &StepValue::Number(21));
+    assert_eq!(attr, &StepValue::Float(26.0));
 }

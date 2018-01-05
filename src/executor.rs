@@ -120,20 +120,11 @@ pub fn execute_step (step: &Step, mut output: &mut Output) {
 
 pub fn execute_step_target(step: &Step, output: &mut Output) {
     let arg = &step.args[0];
-    let tokens = output.tokens.clone(); // @todo, is it bad to copy the whole token hashmap?
     match arg {
         &Arg::Target(TargetArg::Message(ref message)) => {
             // Get the token id from the user
-            let token_id = target(&message);
-
-            // Get the token from the hashmap, assume we always have it
-            let target_token = tokens.get(token_id).unwrap();
-
-            // Insert the target token
-            output.tokens.insert("target".to_string(), Token {
-                attributes: target_token.attributes.clone(),
-                macros: target_token.macros.clone(),
-            });
+            let token_id = target(message);
+            output.target = Some(token_id);
         },
         _ => {
             // we shouldn't be here
@@ -260,10 +251,14 @@ pub fn execute_step_lambda(step: &Step, output: &mut Output) {
                     }
                 },
                 ArgValue::Token(ref t) => {
+                    let ref target = output.target;
                     // Insert our token if it doesn't exist, new scope because of the borrow checker
                     {
-                        let name = t.name.clone();
-                        output.tokens.entry(name).or_insert(Token {
+                        let token_id = match target {
+                            &Some(ref id) => id.clone(),
+                            &None => t.name.clone(),
+                        };
+                        output.tokens.entry(token_id).or_insert(Token {
                             attributes: HashMap::new(),
                             macros: HashMap::new(),
                         });
@@ -334,7 +329,11 @@ pub fn execute_step_lambda(step: &Step, output: &mut Output) {
                                 }
                             }
 
-                            if let Some(token) = output.tokens.get_mut(&t.name) {
+                            let token_id = match target {
+                                &Some(ref id) => id,
+                                &None => &t.name,
+                            };
+                            if let Some(token) = output.tokens.get_mut(token_id) {
                                 if let Some(attr) = attribute {
                                     token.attributes.insert(a.to_owned(), attr);
                                 }
@@ -668,6 +667,7 @@ pub fn execute_step_roll (step: &Step, output: &mut Output) {
 pub fn get_arg_value (value: &ArgValue, output: &Output) -> Option<ArgValue> {
     let ref results = output.results;
     let ref tokens = output.tokens;
+    let target = &output.target;
 
     match value {
         &ArgValue::Boolean(ref n) => {
@@ -683,7 +683,12 @@ pub fn get_arg_value (value: &ArgValue, output: &Output) -> Option<ArgValue> {
             Some(ArgValue::Text(n.clone()))
         },
         &ArgValue::Token(ref token) => {
-            let token_result = tokens.get(&token.name).unwrap();
+            // If we have the target token, find the actual token
+            let token_id = match target {
+                &Some(ref id) => id,
+                &None => &token.name,
+            };
+            let token_result = tokens.get(token_id).unwrap();
             let token_attr = token.attribute.clone();
             match token_attr {
                 Some(a) => {

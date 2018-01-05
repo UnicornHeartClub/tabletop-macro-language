@@ -11,7 +11,7 @@ pub fn prompt (input: &str) {
     }
 }
 
-pub fn target (input: &str) -> &str {
+pub fn target (input: &str) -> String {
     stdweb::initialize();
 
     let result = js! {
@@ -21,5 +21,5 @@ pub fn target (input: &str) -> &str {
     };
 
     // return the value as a str
-    result.as_str().unwrap()
+    result.as_str().unwrap().to_string()
 }

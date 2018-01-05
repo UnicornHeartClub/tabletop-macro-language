@@ -10,6 +10,7 @@ use arg::{
     Primitive,
     RollArg,
     SayArg,
+    TargetArg,
 };
 use step::{
     Step,
@@ -26,6 +27,12 @@ use std::collections::HashMap;
 use std::str;
 use std::time::Instant;
 use token::Token;
+
+#[cfg(feature = "web")]
+use wasm::{prompt, target};
+
+#[cfg(not(feature = "web"))]
+use stub::{prompt, target};
 
 /// Executes macro input and outputs a completed program
 pub fn execute_macro(input: Vec<u8>, input_tokens: Vec<u8>) -> Output {
@@ -111,8 +118,36 @@ pub fn execute_step (step: &Step, mut output: &mut Output) {
             // push to the tracked rolls
             output.rolls.push(roll);
         },
+        MacroOp::Prompt => {
+            execute_step_prompt(&step, &mut output);
+        },
+        MacroOp::Target => {
+            execute_step_target(&step, &mut output);
+        },
         _ => println!("Not yet implemented {:?}", step.op)
     }
+}
+
+pub fn execute_step_target(step: &Step, output: &mut Output) {
+    let arg = &step.args[0];
+    match arg {
+        &Arg::Target(TargetArg::Message(ref message)) => { target(&message) },
+        _ => {
+            // we shouldn't be here
+        }
+    };
+
+}
+
+pub fn execute_step_prompt(step: &Step, output: &mut Output) {
+    let arg = &step.args[0];
+    match arg {
+        &Arg::Prompt(ref p) => { prompt(&p.message) },
+        _ => {
+            // we shouldn't be here
+        }
+    };
+
 }
 
 pub fn execute_step_say(step: &Step, output: &mut Output) {

@@ -8,19 +8,19 @@ extern crate uuid;
 
 pub mod arg;
 pub mod die;
-// pub mod dom;
 pub mod errors;
-pub mod message;
 pub mod executor;
+pub mod message;
 pub mod output;
 pub mod parser;
 pub mod roll;
 pub mod step;
+pub mod stub;
 pub mod token;
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-    }
-}
+// Compiling for the web requires some extra modules
+#[cfg(feature = "web")]
+#[macro_use] extern crate stdweb;
+
+#[cfg(feature = "web")]
+pub mod wasm;

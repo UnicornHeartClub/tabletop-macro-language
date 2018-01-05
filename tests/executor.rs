@@ -1,6 +1,6 @@
 extern crate ttml;
 
-// use std::collections::HashMap;
+use std::collections::HashMap;
 use ttml::arg::*;
 use ttml::step::*;
 use ttml::output::Output;
@@ -520,27 +520,27 @@ fn it_exits() {
     assert_eq!(output.rolls.len(), 0);
 }
 
-// #[test]
-// fn it_executes_a_prompt() {
-    // let mut options = HashMap::new();
-    // options.insert("Yes".to_string(), ArgValue::Text("Yes".to_string()));
+#[test]
+fn it_executes_a_prompt() {
+    let mut options = HashMap::new();
+    options.insert("Yes".to_string(), ArgValue::Text("Yes".to_string()));
+    options.insert("No".to_string(), ArgValue::Text("No".to_string()));
 
-    // let step = Step {
-        // args: vec![
-            // Arg::Prompt(Prompt {
-                // message: "Do you think you can default my style?",
-                // options,
-            // }),
-        // ],
-        // op: MacroOp::Prompt,
-        // result: StepResult::Save,
-    // };
+    let step = Step {
+        args: vec![
+            Arg::Prompt(Prompt {
+                message: "Do you think you can defeat my style?".to_string(),
+                options,
+            }),
+        ],
+        op: MacroOp::Prompt,
+        result: StepResult::Ignore,
+    };
 
-    // let mut output = Output::new("#test".to_string());
-    // let roll = execute_roll(&step, &mut output);
-
-    // assert!(roll.value >= 1);
-    // assert!(roll.value <= 20);
-    // assert_eq!(roll.dice.len(), 1);
-// }
+    let input = "#test !prompt 'Do you think you can defeat my style?' [Yes, No]".to_string().into_bytes();
+    let token_input = r#"{}"#.to_string().into_bytes();
+    let output = execute_macro(input, token_input);
+    let program = output.program.unwrap();
+    assert_eq!(program.steps[0], step);
+}
 

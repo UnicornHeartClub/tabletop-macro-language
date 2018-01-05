@@ -16,6 +16,8 @@ const webpack = require('webpack');
          use: {
            loader: 'rust-wasm-loader',
            options: {
+             args: '--features web',
+             wasmBinaryFile: '/macro.wasm',
              release: true,
              path: 'dist',
            },
@@ -37,8 +39,9 @@ const webpack = require('webpack');
    externals: {
      'fs': true,
      'path': true,
+     'window': 'window',
    },
 
    // devtool: 'source-map',
-   target: 'node',
+   target: 'web',
  };

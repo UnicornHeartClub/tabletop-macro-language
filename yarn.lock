@@ -2304,9 +2304,9 @@ ripemd160@^2.0.0, ripemd160@^2.0.1:
     hash-base "^2.0.0"
     inherits "^2.0.1"
 
-rust-wasm-loader@^0.1.2:
+rust-wasm-loader@UnicornHeartClub/rust-wasm-loader:
   version "0.1.2"
-  resolved "https://registry.yarnpkg.com/rust-wasm-loader/-/rust-wasm-loader-0.1.2.tgz#995366b30195f5f079dd2f5dcbef136f13940fd7"
+  resolved "https://codeload.github.com/UnicornHeartClub/rust-wasm-loader/tar.gz/f6e86df1efa1c34ed8a4295a0fa57dc55283a5c5"
   dependencies:
     loader-utils "^1.0.3"
     toml "^2.3.2"

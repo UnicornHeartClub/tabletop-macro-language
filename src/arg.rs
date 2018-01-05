@@ -135,3 +135,21 @@ pub struct TokenArg {
     pub attribute: Option<String>,
     pub macro_name: Option<String>,
 }
+
+impl TokenArg {
+    pub fn to_string(&self) -> String {
+        let mut string = "@".to_string() + &self.name;
+
+        match &self.attribute {
+            &Some(ref name) => { string = string + "." + name; },
+            &None => {},
+        }
+
+        match &self.macro_name {
+            &Some(ref name) => { string = string + "->" + name; },
+            &None => {},
+        }
+
+        string.to_string()
+    }
+}

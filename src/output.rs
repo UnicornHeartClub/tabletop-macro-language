@@ -1,10 +1,10 @@
+use arg::ArgValue;
 use chrono::DateTime;
 use chrono::prelude::Utc;
 use message::Message;
 use parser::Program;
 use roll::Roll;
 use std::collections::HashMap;
-use step::StepValue;
 use token::Token;
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -31,7 +31,7 @@ pub struct Output {
     pub rolls: Vec<Roll>,
 
     /// Results
-    pub results: HashMap<String, StepValue>,
+    pub results: HashMap<String, ArgValue>,
 
     /// Impersonate a token
     pub run_as: Option<String>,

@@ -80,7 +80,7 @@ fn it_uses_variables() {
     };
 
     let mut output = Output::new("#test".to_string());
-    output.results.insert("1".to_string(), StepValue::Number(5));
+    output.results.insert("1".to_string(), ArgValue::Number(5));
     execute_step_roll(&step, &mut output);
     let roll = &output.rolls[0];
 
@@ -187,7 +187,7 @@ fn it_assigns_and_updates_token_attributes() {
     let tokens = output.tokens;
     let token = tokens.get("me").unwrap();
     let attr = token.attributes.get("dexterity").unwrap();
-    assert_eq!(attr, &StepValue::Float(25.00));
+    assert_eq!(attr, &ArgValue::Float(25.00));
 
     // test assigning a variable
     let input = "#test !roll 1d20 >> @me.dexterity = $1".to_string().into_bytes();
@@ -205,7 +205,7 @@ fn it_assigns_and_updates_token_attributes() {
     let tokens = output.tokens;
     let token = tokens.get("me").unwrap();
     let attr = token.attributes.get("dexterity").unwrap();
-    assert_ne!(attr, &StepValue::Number(21));
+    assert_ne!(attr, &ArgValue::Number(21));
 
     // assign booleans
     let input = "#test !r 1d20 >> @me.is_test = true".to_string().into_bytes();
@@ -228,8 +228,8 @@ fn it_assigns_and_updates_token_attributes() {
     let token = tokens.get("me").unwrap();
     let is_test = token.attributes.get("is_test").unwrap();
     let is_not_test = token.attributes.get("is_not_test").unwrap();
-    assert_eq!(is_test, &StepValue::Boolean(true));
-    assert_eq!(is_not_test, &StepValue::Boolean(false));
+    assert_eq!(is_test, &ArgValue::Boolean(true));
+    assert_eq!(is_not_test, &ArgValue::Boolean(false));
 }
 
 #[test]
@@ -324,7 +324,7 @@ fn it_executes_primitive_operations() {
     let tokens = output.tokens;
     let token = tokens.get("me").unwrap();
     let attr = token.attributes.get("hp").unwrap();
-    assert_eq!(attr, &StepValue::Float(55.00));
+    assert_eq!(attr, &ArgValue::Float(55.00));
 
     // Divide
     let input = "#test @me.foo = @me.bar / 10".to_string().into_bytes();
@@ -345,9 +345,9 @@ fn it_executes_primitive_operations() {
     let tokens = output.tokens;
     let token = tokens.get("me").unwrap();
     let attr = token.attributes.get("foo").unwrap();
-    assert_eq!(attr, &StepValue::Float(5.00));
+    assert_eq!(attr, &ArgValue::Float(5.00));
     let attr = token.attributes.get("bar").unwrap();
-    assert_eq!(attr, &StepValue::Number(50));
+    assert_eq!(attr, &ArgValue::Number(50));
 
     // Subtract
     let input = "#test @me.hp = @me.hp - 5".to_string().into_bytes();
@@ -365,7 +365,7 @@ fn it_executes_primitive_operations() {
     let tokens = output.tokens;
     let token = tokens.get("me").unwrap();
     let attr = token.attributes.get("hp").unwrap();
-    assert_eq!(attr, &StepValue::Float(45.00));
+    assert_eq!(attr, &ArgValue::Float(45.00));
 
     // Multiply
     let input = "#test @me.bar = @me.hp * -2.5".to_string().into_bytes();
@@ -383,7 +383,7 @@ fn it_executes_primitive_operations() {
     let tokens = output.tokens;
     let token = tokens.get("me").unwrap();
     let attr = token.attributes.get("bar").unwrap();
-    assert_eq!(attr, &StepValue::Float(-250.00));
+    assert_eq!(attr, &ArgValue::Float(-250.00));
 
     // Multiply
     let input = "#test @me.boo = false".to_string().into_bytes();
@@ -401,7 +401,7 @@ fn it_executes_primitive_operations() {
     let tokens = output.tokens;
     let token = tokens.get("me").unwrap();
     let attr = token.attributes.get("boo").unwrap();
-    assert_eq!(attr, &StepValue::Boolean(false));
+    assert_eq!(attr, &ArgValue::Boolean(false));
 }
 
 #[test]
@@ -438,7 +438,7 @@ fn it_executes_conditional_assignments() {
     let token_input = r#"{}"#.to_string().into_bytes();
     let output = execute_macro(input, token_input);
     let foo = output.results.get("foo").unwrap();
-    assert_eq!(foo, &StepValue::Float(1.0));
+    assert_eq!(foo, &ArgValue::Float(1.0));
 
     let input = "#test @me.dexterity_mod > @me.strength_mod ? $foo = @me.dexterity_mod : $foo = @me.strength_mod !say 'Foo is ' $foo".to_string().into_bytes();
     let token_input = r#"{
@@ -456,7 +456,7 @@ fn it_executes_conditional_assignments() {
     }"#.to_string().into_bytes();
     let output = execute_macro(input, token_input);
     let foo = output.results.get("foo").unwrap();
-    assert_eq!(foo, &StepValue::Float(21.0));
+    assert_eq!(foo, &ArgValue::Float(21.0));
 
     assert_eq!(output.messages.len(), 1);
 
@@ -484,7 +484,7 @@ fn it_executes_inline_arguments() {
     }"#.to_string().into_bytes();
     let output = execute_macro(input, token_input);
     let foo = output.results.get("foo").unwrap();
-    assert_eq!(foo, &StepValue::Float(21.0));
+    assert_eq!(foo, &ArgValue::Float(21.0));
     assert_eq!(output.messages.len(), 1);
     assert_eq!(output.messages[0].message, "Foo is 21".to_string());
     assert_eq!(output.messages[0].from, Some("me".to_string()));
@@ -509,7 +509,7 @@ fn it_executes_inline_arguments() {
     }"#.to_string().into_bytes();
     let output = execute_macro(input, token_input);
     let foo = output.results.get("foo").unwrap();
-    assert_eq!(foo, &StepValue::Float(15.0));
+    assert_eq!(foo, &ArgValue::Float(15.0));
     assert_eq!(output.rolls.len(), 1);
     assert_eq!(output.rolls[0].token, Some("me".to_string()));
     assert_eq!(output.rolls[0].modifiers.len(), 1);
@@ -529,6 +529,7 @@ fn it_executes_a_prompt() {
     let mut options = HashMap::new();
     options.insert("Yes".to_string(), ArgValue::Text("Yes".to_string()));
     options.insert("No".to_string(), ArgValue::Text("No".to_string()));
+    options.insert("test_value".to_string(), ArgValue::Text("test_value".to_string()));
 
     let step = Step {
         args: vec![
@@ -541,7 +542,7 @@ fn it_executes_a_prompt() {
         result: StepResult::Ignore,
     };
 
-    let input = "#test !prompt 'Do you think you can defeat my style?' [Yes, No]".to_string().into_bytes();
+    let input = "#test !prompt 'Do you think you can defeat my style?' [Yes, No, test_value]".to_string().into_bytes();
     let token_input = r#"{}"#.to_string().into_bytes();
     let output = execute_macro(input, token_input);
     let program = output.program.unwrap();
@@ -581,7 +582,7 @@ fn it_executes_a_target() {
     let tokens = output.tokens;
     let token = tokens.get("test_id").unwrap();
     let attr = token.attributes.get("dexterity_mod").unwrap();
-    assert_eq!(attr, &StepValue::Float(26.0));
+    assert_eq!(attr, &ArgValue::Float(26.0));
 
     // Make sure we said something under the right name
     assert_eq!(output.messages[0].from, Some("test_id".to_string()));

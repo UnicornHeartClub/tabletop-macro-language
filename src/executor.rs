@@ -15,7 +15,6 @@ use arg::{
 use step::{
     Step,
     StepResult,
-    StepValue,
 };
 use parser::{
     error_to_string,
@@ -27,12 +26,7 @@ use std::collections::HashMap;
 use std::str;
 use std::time::Instant;
 use token::Token;
-
-#[cfg(feature = "web")]
 use wasm::{prompt, target};
-
-#[cfg(not(feature = "web"))]
-use stub::{prompt, target};
 
 /// Executes macro input and outputs a completed program
 pub fn execute_macro(input: Vec<u8>, input_tokens: Vec<u8>) -> Output {
@@ -135,7 +129,18 @@ pub fn execute_step_target(step: &Step, output: &mut Output) {
 pub fn execute_step_prompt(step: &Step, output: &mut Output) {
     let arg = &step.args[0];
     match arg {
-        &Arg::Prompt(ref p) => { prompt(&p.message) },
+        &Arg::Prompt(ref p) => {
+            let result = prompt(&p.message, &p.options);
+
+            // Lookup the result in the hashmap
+            let value = &p.options.get(&result).unwrap();
+
+            // pass the result if needed
+            if step.result == StepResult::Save {
+                let index = output.results.len() + 1;
+                output.results.insert(index.to_string(), value.clone().to_owned());
+            }
+        },
         _ => {
             // we shouldn't be here
         }
@@ -154,17 +159,17 @@ pub fn execute_step_say(step: &Step, output: &mut Output) {
             message.message = original_message;
         } else if let &Arg::Variable(ref var) = arg {
             match output.results.get(&var.to_string()) {
-                Some(&StepValue::Text(ref value)) => {
+                Some(&ArgValue::Text(ref value)) => {
                     let mut original_message = message.message.clone();
                     original_message.push_str(value);
                     message.message = original_message;
                 },
-                Some(&StepValue::Number(ref value)) => {
+                Some(&ArgValue::Number(ref value)) => {
                     let mut original_message = message.message.clone();
                     original_message.push_str(&value.to_string());
                     message.message = original_message;
                 },
-                Some(&StepValue::Float(ref value)) => {
+                Some(&ArgValue::Float(ref value)) => {
                     let mut original_message = message.message.clone();
                     original_message.push_str(&value.to_string());
                     message.message = original_message;
@@ -187,58 +192,58 @@ pub fn execute_step_lambda(step: &Step, output: &mut Output) {
                 ArgValue::Variable(ref k) => {
                     let ref right = assign.right;
                     let mut operator = None;
-                    let mut attribute: Option<StepValue> = None;
+                    let mut attribute: Option<ArgValue> = None;
 
                     for ref right_arg in right.into_iter() {
                         match get_arg_value(right_arg, &output) {
                             Some(ArgValue::Boolean(boolean)) => {
-                                attribute = Some(StepValue::Boolean(boolean));
+                                attribute = Some(ArgValue::Boolean(boolean));
                             },
                             Some(ArgValue::Float(v)) => {
                                 let current_value = v.to_owned();
 
                                 if let Some(op) = operator {
-                                    if let Some(StepValue::Float(last_value)) = attribute {
+                                    if let Some(ArgValue::Float(last_value)) = attribute {
                                         let new_value = match op {
                                             Primitive::Add => last_value + current_value,
                                             Primitive::Subtract => last_value - current_value,
                                             Primitive::Divide => last_value / current_value,
                                             Primitive::Multiply => last_value * current_value,
                                         };
-                                        attribute = Some(StepValue::Float(new_value));
+                                        attribute = Some(ArgValue::Float(new_value));
                                     } else {
-                                        attribute = Some(StepValue::Float(current_value));
+                                        attribute = Some(ArgValue::Float(current_value));
                                     }
                                     operator = None;
                                 } else {
-                                    attribute = Some(StepValue::Float(current_value));
+                                    attribute = Some(ArgValue::Float(current_value));
                                 }
                             },
                             Some(ArgValue::Number(v)) => {
                                 let current_value = v.to_owned();
 
                                 if let Some(op) = operator {
-                                    if let Some(StepValue::Float(last_value)) = attribute {
+                                    if let Some(ArgValue::Float(last_value)) = attribute {
                                         let new_value = match op {
                                             Primitive::Add => (last_value as i32) + current_value,
                                             Primitive::Subtract => (last_value as i32) - current_value,
                                             Primitive::Divide => (last_value as i32) / current_value,
                                             Primitive::Multiply => (last_value as i32) * current_value,
                                         };
-                                        attribute = Some(StepValue::Float(new_value as f32));
+                                        attribute = Some(ArgValue::Float(new_value as f32));
                                     } else {
-                                        attribute = Some(StepValue::Float(current_value as f32));
+                                        attribute = Some(ArgValue::Float(current_value as f32));
                                     }
                                     operator = None;
                                 } else {
-                                    attribute = Some(StepValue::Float(current_value as f32));
+                                    attribute = Some(ArgValue::Float(current_value as f32));
                                 }
                             },
                             Some(ArgValue::Primitive(primitive)) => {
                                 operator = Some(primitive);
                             },
                             Some(ArgValue::Text(text)) => {
-                                attribute = Some(StepValue::Text(text.to_owned()));
+                                attribute = Some(ArgValue::Text(text.to_owned()));
                             },
                             _ => {
                                 // Ignore anything else
@@ -269,58 +274,58 @@ pub fn execute_step_lambda(step: &Step, output: &mut Output) {
                     match attr {
                         Some(a) => {
                             let mut operator = None;
-                            let mut attribute: Option<StepValue> = None;
+                            let mut attribute: Option<ArgValue> = None;
 
                             for ref right_arg in right.into_iter() {
                                 match get_arg_value(right_arg, &output) {
                                     Some(ArgValue::Boolean(boolean)) => {
-                                        attribute = Some(StepValue::Boolean(boolean));
+                                        attribute = Some(ArgValue::Boolean(boolean));
                                     },
                                     Some(ArgValue::Float(v)) => {
                                         let current_value = v.to_owned();
 
                                         if let Some(op) = operator {
-                                            if let Some(StepValue::Float(last_value)) = attribute {
+                                            if let Some(ArgValue::Float(last_value)) = attribute {
                                                 let new_value = match op {
                                                     Primitive::Add => last_value + current_value,
                                                     Primitive::Subtract => last_value - current_value,
                                                     Primitive::Divide => last_value / current_value,
                                                     Primitive::Multiply => last_value * current_value,
                                                 };
-                                                attribute = Some(StepValue::Float(new_value));
+                                                attribute = Some(ArgValue::Float(new_value));
                                             } else {
-                                                attribute = Some(StepValue::Float(current_value));
+                                                attribute = Some(ArgValue::Float(current_value));
                                             }
                                             operator = None;
                                         } else {
-                                            attribute = Some(StepValue::Float(current_value));
+                                            attribute = Some(ArgValue::Float(current_value));
                                         }
                                     },
                                     Some(ArgValue::Number(v)) => {
                                         let current_value = v.to_owned();
 
                                         if let Some(op) = operator {
-                                            if let Some(StepValue::Float(last_value)) = attribute {
+                                            if let Some(ArgValue::Float(last_value)) = attribute {
                                                 let new_value = match op {
                                                     Primitive::Add => (last_value as i32) + current_value,
                                                     Primitive::Subtract => (last_value as i32) - current_value,
                                                     Primitive::Divide => (last_value as i32) / current_value,
                                                     Primitive::Multiply => (last_value as i32) * current_value,
                                                 };
-                                                attribute = Some(StepValue::Float(new_value as f32));
+                                                attribute = Some(ArgValue::Float(new_value as f32));
                                             } else {
-                                                attribute = Some(StepValue::Float(current_value as f32));
+                                                attribute = Some(ArgValue::Float(current_value as f32));
                                             }
                                             operator = None;
                                         } else {
-                                            attribute = Some(StepValue::Float(current_value as f32));
+                                            attribute = Some(ArgValue::Float(current_value as f32));
                                         }
                                     },
                                     Some(ArgValue::Primitive(primitive)) => {
                                         operator = Some(primitive);
                                     },
                                     Some(ArgValue::Text(text)) => {
-                                        attribute = Some(StepValue::Text(text.to_owned()));
+                                        attribute = Some(ArgValue::Text(text.to_owned()));
                                     },
                                     _ => {
                                         // we should not get a return value from anything else
@@ -407,7 +412,7 @@ pub fn execute_step_lambda(step: &Step, output: &mut Output) {
                     let token_result = output.tokens.get(token_id).unwrap();
 
                     // Lookup the macro in the attributes
-                    if let Some(&StepValue::Text(ref macro_text)) = token_result.macros.get(&inline_macro_name) {
+                    if let Some(&ArgValue::Text(ref macro_text)) = token_result.macros.get(&inline_macro_name) {
                         // combine the name and the macro
                         let space = " ";
                         token_macro = Some("#".to_owned() + &inline_macro_name + space + macro_text);
@@ -662,7 +667,7 @@ pub fn execute_step_roll (step: &Step, output: &mut Output) {
     // pass the result if needed
     if step.result == StepResult::Save {
         let index = output.results.len() + 1;
-        output.results.insert(index.to_string(), StepValue::Number(roll.value));
+        output.results.insert(index.to_string(), ArgValue::Number(roll.value));
     }
 
     // push to the tracked rolls
@@ -700,16 +705,16 @@ pub fn get_arg_value (value: &ArgValue, output: &Output) -> Option<ArgValue> {
                 Some(a) => {
                     let attr = token_result.attributes.get(&a);
                     match attr {
-                        Some(&StepValue::Boolean(n)) => {
+                        Some(&ArgValue::Boolean(n)) => {
                             Some(ArgValue::Boolean(n.clone()))
                         },
-                        Some(&StepValue::Number(n)) => {
+                        Some(&ArgValue::Number(n)) => {
                             Some(ArgValue::Number(n.clone()))
                         },
-                        Some(&StepValue::Float(n)) => {
+                        Some(&ArgValue::Float(n)) => {
                             Some(ArgValue::Float(n.clone()))
                         },
-                        Some(&StepValue::Text(ref n)) => {
+                        Some(&ArgValue::Text(ref n)) => {
                             Some(ArgValue::Text(n.clone()))
                         },
                         _ => {
@@ -734,38 +739,38 @@ pub fn get_arg_value (value: &ArgValue, output: &Output) -> Option<ArgValue> {
         },
         &ArgValue::Variable(ref var) => {
             match results.get(&var.to_string()) {
-                Some(&StepValue::Boolean(n)) => {
+                Some(&ArgValue::Boolean(n)) => {
                     Some(ArgValue::Boolean(n.clone()))
                 },
-                Some(&StepValue::Number(n)) => {
+                Some(&ArgValue::Number(n)) => {
                     Some(ArgValue::Number(n))
                 },
-                Some(&StepValue::Float(n)) => {
+                Some(&ArgValue::Float(n)) => {
                     Some(ArgValue::Float(n.clone()))
                 },
-                Some(&StepValue::Text(ref n)) => {
+                Some(&ArgValue::Text(ref n)) => {
                     Some(ArgValue::Text(n.clone()))
                 },
-                None => {
+                _ => {
                     None
                 }
             }
         },
         &ArgValue::VariableReserved(ref var) => {
             match results.get(&var.to_string()) {
-                Some(&StepValue::Boolean(n)) => {
+                Some(&ArgValue::Boolean(n)) => {
                     Some(ArgValue::Boolean(n.clone()))
                 },
-                Some(&StepValue::Float(n)) => {
+                Some(&ArgValue::Float(n)) => {
                     Some(ArgValue::Float(n.clone()))
                 },
-                Some(&StepValue::Number(n)) => {
+                Some(&ArgValue::Number(n)) => {
                     Some(ArgValue::Number(n.clone()))
                 },
-                Some(&StepValue::Text(ref n)) => {
+                Some(&ArgValue::Text(ref n)) => {
                     Some(ArgValue::Text(n.clone()))
                 },
-                None => {
+                _ => {
                     None
                 }
             }

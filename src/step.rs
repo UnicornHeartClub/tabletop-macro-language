@@ -7,7 +7,7 @@ pub struct Step {
     pub result: StepResult,
 }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum StepValue {
     Boolean(bool),
     Number(i32),

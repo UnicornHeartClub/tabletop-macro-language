@@ -106,17 +106,7 @@ pub fn execute_step (step: &Step, mut output: &mut Output) {
             execute_step_say(&step, &mut output);
         },
         MacroOp::Roll => {
-            // execute the roll and update the step value
-            let roll = execute_roll(&step, output);
-
-            // pass the result if needed
-            if step.result == StepResult::Save {
-                let index = output.results.len() + 1;
-                output.results.insert(index.to_string(), StepValue::Number(roll.value));
-            }
-
-            // push to the tracked rolls
-            output.rolls.push(roll);
+            execute_step_roll(&step, &mut output);
         },
         MacroOp::Prompt => {
             execute_step_prompt(&step, &mut output);
@@ -130,13 +120,25 @@ pub fn execute_step (step: &Step, mut output: &mut Output) {
 
 pub fn execute_step_target(step: &Step, output: &mut Output) {
     let arg = &step.args[0];
+    let tokens = output.tokens.clone(); // @todo, is it bad to copy the whole token hashmap?
     match arg {
-        &Arg::Target(TargetArg::Message(ref message)) => { target(&message) },
+        &Arg::Target(TargetArg::Message(ref message)) => {
+            // Get the token id from the user
+            let token_id = target(&message);
+
+            // Get the token from the hashmap, assume we always have it
+            let target_token = tokens.get(token_id).unwrap();
+
+            // Insert the target token
+            output.tokens.insert("target".to_string(), Token {
+                attributes: target_token.attributes.clone(),
+                macros: target_token.macros.clone(),
+            });
+        },
         _ => {
             // we shouldn't be here
         }
     };
-
 }
 
 pub fn execute_step_prompt(step: &Step, output: &mut Output) {
@@ -418,7 +420,7 @@ pub fn execute_step_lambda(step: &Step, output: &mut Output) {
     };
 }
 
-pub fn execute_roll (step: &Step, output: &mut Output) -> Roll {
+pub fn execute_step_roll (step: &Step, output: &mut Output) {
     // Compose the roll
     let mut composed_roll = ComposedRoll {
         advantage: false,
@@ -440,7 +442,6 @@ pub fn execute_roll (step: &Step, output: &mut Output) -> Roll {
         ro: 0,
         rr: 0,
     };
-
 
     // build the calculated equation to output with our roll
     let mut equation = "".to_owned();
@@ -653,7 +654,14 @@ pub fn execute_roll (step: &Step, output: &mut Output) -> Roll {
         None => {}
     }
 
-    roll
+    // pass the result if needed
+    if step.result == StepResult::Save {
+        let index = output.results.len() + 1;
+        output.results.insert(index.to_string(), StepValue::Number(roll.value));
+    }
+
+    // push to the tracked rolls
+    output.rolls.push(roll);
 }
 
 /// Gets the value of the argvalue, whether from a variable, token, etc.

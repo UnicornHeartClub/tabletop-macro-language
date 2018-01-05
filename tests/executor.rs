@@ -5,7 +5,7 @@ use ttml::arg::*;
 use ttml::step::*;
 use ttml::output::Output;
 use ttml::die::DieType;
-use ttml::executor::{execute_macro, execute_roll};
+use ttml::executor::{execute_macro, execute_step_roll};
 
 #[test]
 fn it_returns_a_roll() {
@@ -19,7 +19,8 @@ fn it_returns_a_roll() {
     };
 
     let mut output = Output::new("#test".to_string());
-    let roll = execute_roll(&step, &mut output);
+    execute_step_roll(&step, &mut output);
+    let roll = &output.rolls[0];
 
     assert!(roll.value >= 1);
     assert!(roll.value <= 20);
@@ -40,7 +41,8 @@ fn it_executes_roll_with_min_max_flags() {
     };
 
     let mut output = Output::new("#test".to_string());
-    let roll = execute_roll(&step, &mut output);
+    execute_step_roll(&step, &mut output);
+    let roll = &output.rolls[0];
 
     assert!(roll.value >= 2);
     assert!(roll.value <= 3);
@@ -58,7 +60,8 @@ fn it_executes_roll_with_min_max_flags() {
     };
 
     let mut output = Output::new("#test".to_string());
-    let roll = execute_roll(&step, &mut output);
+    execute_step_roll(&step, &mut output);
+    let roll = &output.rolls[0];
 
     assert!(roll.value >= 200);
     assert!(roll.value <= 300);
@@ -78,7 +81,8 @@ fn it_uses_variables() {
 
     let mut output = Output::new("#test".to_string());
     output.results.insert("1".to_string(), StepValue::Number(5));
-    let roll = execute_roll(&step, &mut output);
+    execute_step_roll(&step, &mut output);
+    let roll = &output.rolls[0];
 
     assert!(roll.value >= 5);
     assert!(roll.value <= 100);
@@ -544,3 +548,34 @@ fn it_executes_a_prompt() {
     assert_eq!(program.steps[0], step);
 }
 
+#[test]
+fn it_executes_a_target() {
+    let input = "#test !target 'Select a target' >> !r 1d20+@target.dexterity_mod".to_string().into_bytes();
+    let token_input = r#"{
+        "test_id": {
+            "attributes": {
+                "dexterity_mod": {
+                    "Number": 21
+                }
+            },
+            "macros": {}
+        }
+    }"#.to_string().into_bytes();
+    let output = execute_macro(input, token_input);
+    let program = output.program.unwrap();
+
+    // Make sure we properly parse the target
+    assert_eq!(program.steps[0], Step {
+        args: vec![
+            Arg::Target(TargetArg::Message("Select a target".to_string())),
+        ],
+        op: MacroOp::Target,
+        result: StepResult::Save,
+    });
+
+    // Make sure a target is set
+    let tokens = output.tokens;
+    let token = tokens.get("target").unwrap();
+    let attr = token.attributes.get("dexterity_mod").unwrap();
+    assert_eq!(attr, &StepValue::Number(21));
+}

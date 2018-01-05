@@ -550,7 +550,7 @@ fn it_executes_a_prompt() {
 
 #[test]
 fn it_executes_a_target() {
-    let input = "#test !target 'Select a target' >> @target.dexterity_mod = @target.dexterity_mod + 5".to_string().into_bytes();
+    let input = "#test !target 'Select a target' >> @target.dexterity_mod = @target.dexterity_mod + 5 >> @target->test".to_string().into_bytes();
     let token_input = r#"{
         "test_id": {
             "attributes": {
@@ -558,7 +558,11 @@ fn it_executes_a_target() {
                     "Number": 21
                 }
             },
-            "macros": {}
+            "macros": {
+                "test": {
+                    "Text": "!say 'hello' !r 1d20"
+                }
+            }
         }
     }"#.to_string().into_bytes();
     let output = execute_macro(input, token_input);
@@ -578,4 +582,9 @@ fn it_executes_a_target() {
     let token = tokens.get("test_id").unwrap();
     let attr = token.attributes.get("dexterity_mod").unwrap();
     assert_eq!(attr, &StepValue::Float(26.0));
+
+    // Make sure we said something under the right name
+    assert_eq!(output.messages[0].from, Some("test_id".to_string()));
+
+    assert_eq!(output.rolls[0].token, Some("test_id".to_string()));
 }

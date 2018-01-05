@@ -396,16 +396,22 @@ pub fn execute_step_lambda(step: &Step, output: &mut Output) {
             // Let's run a token macro
             let token_macro_name = token.macro_name.clone();
             let mut token_macro = None;
+
             match token_macro_name {
                 Some(inline_macro_name) => {
-                    let token_result = output.tokens.get(&token.name).unwrap();
+                    let ref target = output.target;
+                    let token_id = match target {
+                        &Some(ref id) => id,
+                        &None => &token.name,
+                    };
+                    let token_result = output.tokens.get(token_id).unwrap();
 
                     // Lookup the macro in the attributes
                     if let Some(&StepValue::Text(ref macro_text)) = token_result.macros.get(&inline_macro_name) {
                         // combine the name and the macro
                         let space = " ";
                         token_macro = Some("#".to_owned() + &inline_macro_name + space + macro_text);
-                        output.run_as = Some(token.name.clone());
+                        output.run_as = Some(token_id.clone());
                     }
                 },
                 None => {}

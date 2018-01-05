@@ -539,14 +539,35 @@ fn it_executes_a_prompt() {
             }),
         ],
         op: MacroOp::Prompt,
-        result: StepResult::Ignore,
+        result: StepResult::Save,
     };
 
-    let input = "#test !prompt 'Do you think you can defeat my style?' [Yes, No, test_value]".to_string().into_bytes();
+    let input = "#test !prompt 'Do you think you can defeat my style?' [Yes, No, test_value] >> !say 'value is ' $1".to_string().into_bytes();
     let token_input = r#"{}"#.to_string().into_bytes();
     let output = execute_macro(input, token_input);
     let program = output.program.unwrap();
     assert_eq!(program.steps[0], step);
+
+    // Make sure we set the variable
+    assert_eq!(output.messages[0].message, "value is test_value");
+
+    let input = "#test !prompt 'Choose attribute' [@test.foo, test_value:@test.bar] >> !r 1d20+$1".to_string().into_bytes();
+    let token_input = r#"{
+        "test": {
+            "attributes": {
+                "foo": {
+                    "Number": 1
+                },
+                "bar": {
+                    "Number": 2
+                }
+            },
+            "macros": {}
+        }
+    }"#.to_string().into_bytes();
+    let output = execute_macro(input, token_input);
+    println!("output {:?}", output.results);
+    assert_eq!(output.rolls[0].modifiers, vec![ 2 ]);
 }
 
 #[test]

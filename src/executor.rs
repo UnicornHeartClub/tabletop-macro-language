@@ -133,13 +133,16 @@ pub fn execute_step_prompt(step: &Step, output: &mut Output) {
             let result = prompt(&p.message, &p.options);
 
             // Lookup the result in the hashmap
-            let value = &p.options.get(&result).unwrap();
-
-            // pass the result if needed
-            if step.result == StepResult::Save {
-                let index = output.results.len() + 1;
-                output.results.insert(index.to_string(), value.clone().to_owned());
-            }
+            match p.options.get(&result) {
+                Some(value) => {
+                    // pass the result if needed
+                    if step.result == StepResult::Save {
+                        let index = output.results.len() + 1;
+                        output.results.insert(index.to_string(), value.clone().to_owned());
+                    }
+                },
+                None => {},
+            };
         },
         _ => {
             // we shouldn't be here
@@ -769,6 +772,9 @@ pub fn get_arg_value (value: &ArgValue, output: &Output) -> Option<ArgValue> {
                 },
                 Some(&ArgValue::Text(ref n)) => {
                     Some(ArgValue::Text(n.clone()))
+                },
+                Some(arg_value) => {
+                    get_arg_value(arg_value, output)
                 },
                 _ => {
                     None

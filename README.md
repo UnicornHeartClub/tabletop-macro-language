@@ -6,7 +6,7 @@
 
 A language and parser to add advanced functionality to tabletop role-playing games.
 
-- :notebook: [API](API.md) - A full reference on the TableTop Macro Language (TTML)
+- :notebook: [API](https://wiki.poweredvtt.com/macros) - A full reference on the TableTop Macro Language (TTML)
 - :books: [Documentation](DOCUMENTATION.md) - How the program works behind-the-scenes
 - :package: [Installation](#installation) - Use TTML for your own projects
 - :star: [Contributing](#contributing) - Help us make the language better
@@ -36,8 +36,7 @@ first but generally any new functionality should adhere to the tests.
 ## Development
 
 Looking to get setup on your local machine? You will need
-[emscripten](https://github.com/kripken/emscripten), [Rust](https://www.rust-lang.org/) and 
-[Node.js](https://nodejs.org).
+[Rust (nightly)](https://www.rust-lang.org/) and [Node.js](https://nodejs.org).
 
 ```bash
 # Install dependencies
@@ -47,29 +46,8 @@ yarn
 cargo test
 
 # Compile wasm/javascript library
-yarn compile
-
-# Run local playground (http://localhost:8080)
-yarn serve
+yarn build
 ```
-
-## Roadmap
-
-We have a lot to get done but are looking to get it done quick!
-
-- [ ] Clean up
-- [ ] JavaScript Library _(In Progress)_
-- [ ] Macro Parser _(In Progress)_
-  - [ ] Prompt Command _(In Progress)_
-- [ ] Executor _(In Progress)_
-  - [x] ~~Tokens~~
-  - [ ] `!prompt`
-  - [ ] `!target`
-  - [ ] `!break` operator
-  - [ ] `!exit` operator
-- [ ] Examples _(In Progress, Needs Updating)_
-- [ ] Documentation _(In Progress)_
-- [ ] Error Handling _(In Progress)_
 
 # License
 

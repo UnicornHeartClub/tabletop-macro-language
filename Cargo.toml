@@ -1,5 +1,5 @@
 [package]
-name = "macro"
+name = "ttml"
 version = "0.3.0"
 authors = ["Thomas Lackemann <tommylackemann@gmail.com>"]
 
@@ -8,7 +8,7 @@ name = "ttml"
 path = "src/lib.rs"
 
 [[bin]]
-name = "macro"
+name = "ttml"
 path = "src/main.rs"
 
 [dependencies]

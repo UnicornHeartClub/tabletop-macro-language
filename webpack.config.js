@@ -1,5 +1,6 @@
 const path = require('path');
 const webpack = require('webpack');
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin')
 
  module.exports = {
    entry: `${__dirname}/index.js`,
@@ -17,9 +18,10 @@ const webpack = require('webpack');
            loader: 'rust-wasm-loader',
            options: {
              args: '--features web',
-             wasmBinaryFile: '/macro.wasm',
-             release: true,
+             nightly: true,
              path: 'dist',
+             release: true,
+             wasmBinaryFile: '/macro.wasm',
            },
          },
        },
@@ -35,6 +37,18 @@ const webpack = require('webpack');
        },
      ],
    },
+
+   plugins: [
+     new UglifyJsPlugin({
+       uglifyOptions: {
+         ie8: false,
+         emca: 8,
+         output: {
+           beautify: false,
+         },
+       },
+     }),
+   ],
 
    externals: {
      'fs': true,

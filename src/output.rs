@@ -34,10 +34,10 @@ pub struct Output {
     pub results: HashMap<String, ArgValue>,
 
     /// Impersonate a token
-    pub run_as: Option<String>,
+    pub run_as: Option<String>, // @todo make this private and access through method
 
     /// Target Token
-    pub target: Option<String>,
+    pub target: Option<String>, // @todo make this private and access through method 
 
     /// Tokens
     pub tokens: HashMap<String, Token>,

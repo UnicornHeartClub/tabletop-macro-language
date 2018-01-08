@@ -1,4 +1,6 @@
-// #[macro_use] extern crate error_chain;
+#[cfg(feature = "web")]
+extern crate stdweb;
+
 extern crate serde;
 extern crate serde_json;
 extern crate ttml;
@@ -8,14 +10,13 @@ use std::ffi::CString;
 use std::os::raw::c_char;
 use ttml::executor::execute_macro;
 
+// Initialize stdweb here since main() is called once on instantiation from JS-land
 fn main() {
-    // IGNORE ME!
-}
+    #[cfg(feature = "web")]
+    stdweb::initialize();
 
-fn safe_string(input: *mut c_char) -> Vec<u8> {
-    unsafe {
-        CStr::from_ptr(input).to_bytes().to_owned()
-    }
+    #[cfg(feature = "web")]
+    stdweb::event_loop();
 }
         
 /// Run input and return a typed array for use in javascript
@@ -33,4 +34,10 @@ pub extern "C" fn run_macro(raw_input: *mut c_char, raw_tokens: *mut c_char) -> 
     // Return as JSON
     let json = serde_json::to_string(&output).unwrap();
     CString::new(json).unwrap().into_raw()
+}
+
+fn safe_string(input: *mut c_char) -> Vec<u8> {
+    unsafe {
+        CStr::from_ptr(input).to_bytes().to_owned()
+    }
 }

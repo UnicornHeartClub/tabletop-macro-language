@@ -15,14 +15,13 @@
     "url": "https://github.com/UnicornHeartClub/tabletop-macro-language/issues"
   },
   "homepage": "https://github.com/UnicornHeartClub/tabletop-macro-language#readme",
+  "dependencies": {},
   "devDependencies": {
-    "babel-core": "^6.26.0",
-    "babel-loader": "^7.1.2",
-    "babel-preset-env": "^1.6.1",
-    "http-server": "^0.10.0",
-    "rust-wasm-loader": "UnicornHeartClub/rust-wasm-loader",
+    "@babel/core": "^7.0.0-beta.37",
+    "@babel/preset-env": "^7.0.0-beta.37",
+    "babel-loader": "8.0.0-beta.0",
+    "babel-polyfill": "^6.26.0",
     "uglifyjs-webpack-plugin": "^1.1.6",
-    "webpack": "^3.8.1"
-  },
-  "dependencies": {}
+    "webpack": "^3.10.0"
+  }
 }

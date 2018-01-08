@@ -4,7 +4,9 @@
   "description": "A language and parser to add advanced functionality to tabletop role-playing games.",
   "main": "dist/bundle.js",
   "scripts": {
-    "build": "webpack --profile --colors",
+    "build": "npm run build:app && npm run build:lib",
+    "build:app": "cargo +nightly build --target wasm32-unknown-unknown --release && wasm-gc target/wasm32-unknown-unknown/release/macro.wasm dist/macro.wasm",
+    "build:lib": "webpack --profile --colors",
     "serve": "http-server",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

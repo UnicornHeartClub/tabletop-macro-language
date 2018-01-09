@@ -4,18 +4,10 @@ version = "0.3.2"
 authors = ["Thomas Lackemann <tommylackemann@gmail.com>"]
 
 [lib]
-name = "ttml"
-path = "src/lib.rs"
-
-[[bin]]
-name = "ttml"
-path = "src/main.rs"
+# crate-type = ["cdylib"]
 
 [dependencies]
 nom = "^4.0.0-alpha1"
 serde = "1.0.16"
 serde_derive = "1.0.16"
 serde_json = "1.0.4"
-
-[profile.release]
-opt-level = "s"

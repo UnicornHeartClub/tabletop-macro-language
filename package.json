@@ -5,10 +5,13 @@
   "main": "dist/bundle.js",
   "scripts": {
     "build": "npm run build:app && npm run build:lib",
-    "build:app": "cargo +nightly build --target wasm32-unknown-unknown --release && wasm-gc target/wasm32-unknown-unknown/release/ttml.wasm dist/ttml.wasm",
+    "build:app": "cargo +nightly build --target wasm32-unknown-unknown --release && wasm-gc target/wasm32-unknown-unknown/release/libttml.wasm dist/ttml.wasm",
     "build:lib": "webpack --profile --colors",
     "serve": "http-server",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npm run test:app && npm run test:lib",
+    "test:app": "cargo test",
+    "test:lib": "ava -s",
+    "test:lib:watch": "ava -s --watch"
   },
   "repository": "git+https://github.com/UnicornHeartClub/tabletop-macro-language.git",
   "author": "Unicorn Heart Club",
@@ -21,9 +24,28 @@
   "devDependencies": {
     "@babel/core": "^7.0.0-beta.37",
     "@babel/preset-env": "^7.0.0-beta.37",
+    "ava": "^0.24.0",
     "babel-loader": "8.0.0-beta.0",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "babel-polyfill": "^6.26.0",
+    "bluebird": "^3.5.1",
+    "sinon": "^4.1.4",
     "uglifyjs-webpack-plugin": "^1.1.6",
     "webpack": "^3.10.0"
+  },
+  "babel": {
+    "presets": [
+      "@ava/stage-4",
+      "@ava/transform-test-files"
+    ]
+  },
+  "ava": {
+    "files": [
+      "lib/test.js"
+    ],
+    "require": [
+      "babel-register"
+    ],
+    "babel": "inherit"
   }
 }

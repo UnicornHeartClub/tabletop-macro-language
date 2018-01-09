@@ -3,13 +3,11 @@
 
 use arg::*;
 use nom::{
-    ErrorKind,
     IResult,
     alphanumeric,
     digit,
     float,
 };
-use nom::simple_errors::Err;
 use step::*;
 use std::collections::HashMap;
 use std::str;
@@ -608,14 +606,14 @@ pub fn word_p(input: &[u8]) -> IResult<&[u8], String> {
     )
 }
 
-/// Maps error codes to readable strings
-pub fn error_to_string(e: Err) -> String {
-    let err = match e {
-        ErrorKind::Custom(1)    => "Missing or invalid macro name",
-        ErrorKind::Custom(2)    => "Invalid or unrecognized command",
-        ErrorKind::Custom(3)    => "Problem parsing conditional statement",
-        ErrorKind::Custom(4)    => "Problem parsing prompt options",
-        _                       => "Unknown problem encountered while parsing",
-    };
-    err.to_string()
-}
+// /// Maps error codes to readable strings
+// pub fn error_to_string(e: Err) -> String {
+    // let err = match e {
+        // ErrorKind::Custom(1)    => "Missing or invalid macro name",
+        // ErrorKind::Custom(2)    => "Invalid or unrecognized command",
+        // ErrorKind::Custom(3)    => "Problem parsing conditional statement",
+        // ErrorKind::Custom(4)    => "Problem parsing prompt options",
+        // _                       => "Unknown problem encountered while parsing",
+    // };
+    // err.to_string()
+// }

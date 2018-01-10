@@ -6,6 +6,7 @@ use step::Step;
 pub enum Arg {
     Assign(Assign),
     Conditional(Conditional),
+    Input(String),
     Prompt(Prompt),
     Roll(RollArg),
     Say(SayArg),
@@ -56,6 +57,8 @@ pub struct Conditional {
 pub enum MacroOp {
     /// Exit command
     Exit,
+    /// Input command
+    Input,
     /// Lamda (assignment or conditional argument)
     Lambda,
     /// Macro Name

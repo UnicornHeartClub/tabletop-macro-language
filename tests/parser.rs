@@ -286,6 +286,14 @@ fn test_command_parser_target() {
 }
 
 #[test]
+fn test_command_parser_input() {
+    let (_, result) = command_p(b"!input 'Type your input'").unwrap();
+    assert_eq!(result, MacroOp::Input);
+    let (_, result) = command_p(b"!i 'Enter some text'").unwrap();
+    assert_eq!(result, MacroOp::Input);
+}
+
+#[test]
 fn test_op_parser() {
     let (_, result) = op_p(b"    #test-macro   ").unwrap();
     assert_eq!(result, MacroOp::Name(String::from("test-macro")));

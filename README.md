@@ -42,8 +42,8 @@ Looking to get setup on your local machine? You will need
 # Install dependencies
 yarn
 
-# Test Rust
-cargo test
+# Test
+yarn test
 
 # Compile wasm/javascript library
 yarn build

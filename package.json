@@ -5,7 +5,7 @@
   "main": "dist/bundle.js",
   "scripts": {
     "build": "npm run build:app && npm run build:lib",
-    "build:app": "cargo +nightly build --target wasm32-unknown-unknown --release && wasm-gc target/wasm32-unknown-unknown/release/libttml.wasm dist/ttml.wasm",
+    "build:app": "cargo +nightly build --target wasm32-unknown-unknown --release && wasm-gc target/wasm32-unknown-unknown/release/ttml.wasm dist/ttml.wasm",
     "build:lib": "webpack --profile --colors",
     "serve": "http-server",
     "test": "npm run test:app && npm run test:lib",

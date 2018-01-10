@@ -4,7 +4,7 @@ version = "0.3.2"
 authors = ["Thomas Lackemann <tommylackemann@gmail.com>"]
 
 [lib]
-# crate-type = ["cdylib"]
+crate-type = ["cdylib"]
 
 [dependencies]
 nom = "^4.0.0-alpha1"

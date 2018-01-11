@@ -135,7 +135,11 @@ pub fn arguments_roll_p(input: &[u8]) -> IResult<&[u8], Arg> {
 
 /// Matches a custom side
 pub fn roll_side_p(input: &[u8]) -> IResult<&[u8], Vec<ArgValue>> {
-    delimited!(input, tag!("["), separated_list!(tag!(","), roll_flag_var_p), tag!("]"))
+    delimited!(input,
+        tag!("["),
+        separated_list!(tag!(","), alt_complete!(roll_flag_var_p | map!(num_p, |n| ArgValue::Number(n)))),
+        tag!("]")
+    )
 }
 
 /// Matches !say arguments

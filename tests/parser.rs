@@ -354,12 +354,12 @@ fn test_step_result_parser() {
 
 #[test]
 fn test_roll_parse_step_p () {
-    let (_, result) = parse_step_p(b"!r 1d[1,2,3,7,9]").unwrap();
+    let (_, result) = parse_step_p(b"!r 1d[-1,2,3,7,9]").unwrap();
     assert_eq!(result, Step {
         args: vec![
             Arg::Roll(RollArg::N(ArgValue::Number(1))),
             Arg::Roll(RollArg::Sides(vec![
-                ArgValue::Number(1),
+                ArgValue::Number(-1),
                 ArgValue::Number(2),
                 ArgValue::Number(3),
                 ArgValue::Number(7),

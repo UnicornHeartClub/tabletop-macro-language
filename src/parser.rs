@@ -9,7 +9,6 @@ use nom::{
     float,
 };
 use step::*;
-use std::collections::HashMap;
 use std::str;
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -87,7 +86,7 @@ pub fn arguments_prompt_p(input: &[u8]) -> IResult<&[u8], Arg> {
         )) >>
         options: switch!(options_p,
             Some(opts) => value!(opts) |
-            _ => value!(HashMap::new())
+            _ => value!(vec![])
         ) >>
         (Arg::Prompt(Prompt {
             message,
@@ -97,19 +96,10 @@ pub fn arguments_prompt_p(input: &[u8]) -> IResult<&[u8], Arg> {
 }
 
 /// Matches an optional list of options
-pub fn options_p(input: &[u8]) -> IResult<&[u8], Option<HashMap<String, ArgValue>>> {
-    let mut options = HashMap::new();
+pub fn options_p(input: &[u8]) -> IResult<&[u8], Option<Vec<PromptOption>>> {
     opt!(input, do_parse!(
         tag!("[") >>
-        many0!(map!(parse_option_p, |opt| {
-            match opt.key {
-                Some(key) => options.insert(key, opt.value),
-                None => {
-                    let len = options.len();
-                    options.insert(len.to_string(), opt.value)
-                }
-            }
-        })) >>
+        options: many0!(parse_option_p) >>
         tag!("]") >>
         (options)
     ))

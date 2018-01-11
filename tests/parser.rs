@@ -2,7 +2,6 @@ extern crate ttml;
 extern crate nom;
 
 use nom::{IResult, ErrorKind};
-use std::collections::HashMap;
 use ttml::arg::*;
 use ttml::parser::*;
 use ttml::step::*;
@@ -663,10 +662,11 @@ fn test_assign_variable_parser() {
 #[test]
 fn test_arguments_prompt_parser() {
     // with options
-    let mut options = HashMap::new();
-    options.insert("Label".to_string(), ArgValue::Text("Label".to_string()));
-    options.insert("Label 2".to_string(), ArgValue::Text("Label 2".to_string()));
-    options.insert("Label 3".to_string(), ArgValue::Text("Label 3".to_string()));
+    let options = vec![
+        PromptOption { key: Some("Label".to_string()), value: ArgValue::Text("Label".to_string()) },
+        PromptOption { key: Some("Label 2".to_string()), value: ArgValue::Text("Label 2".to_string()) },
+        PromptOption { key: Some("Label 3".to_string()), value: ArgValue::Text("Label 3".to_string()) },
+    ];
 
     let prompt = Arg::Prompt(Prompt {
         message: "Choose your style".to_string(),
@@ -676,14 +676,18 @@ fn test_arguments_prompt_parser() {
     assert_eq!(result, prompt);
 
     // with options and values
-    let mut options = HashMap::new();
-    options.insert("foo".to_string(), ArgValue::Text("bar".to_string()));
-    options.insert("1".to_string(), ArgValue::Token(TokenArg {
-        name: "me".to_string(),
-        attribute: Some("attribute".to_string()),
-        macro_name: None,
-    }));
-    options.insert("baz".to_string(), ArgValue::Text("boo".to_string()));
+    let options = vec![
+        PromptOption { key: Some("foo".to_string()), value: ArgValue::Text("bar".to_string()) },
+        PromptOption {
+            key: None,
+            value: ArgValue::Token(TokenArg {
+                name: "me".to_string(),
+                attribute: Some("attribute".to_string()),
+                macro_name: None,
+            })
+        },
+        PromptOption { key: Some("baz".to_string()), value: ArgValue::Text("boo".to_string()) },
+    ];
 
     let prompt = Arg::Prompt(Prompt {
         message: "Choose your thing".to_string(),

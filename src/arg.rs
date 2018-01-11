@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use step::Step;
 
 // Top-level arguments
@@ -88,7 +87,7 @@ pub enum Primitive {
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Prompt {
     pub message: String,
-    pub options: HashMap<String, ArgValue>,
+    pub options: Vec<PromptOption>,
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]

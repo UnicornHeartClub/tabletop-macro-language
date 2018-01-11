@@ -117,6 +117,7 @@ pub enum RollArg {
     N(ArgValue), // e.g. 1 (part of 1d20)
     RO(ArgValue),
     RR(ArgValue),
+    Sides(Vec<ArgValue>),
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]

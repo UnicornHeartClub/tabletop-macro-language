@@ -111,6 +111,7 @@ pub fn arguments_roll_p(input: &[u8]) -> IResult<&[u8], Arg> {
         advantage_p |
         disadvantage_p |
         roll_num_p |
+        // before checking the 'd' value, check if we provided custom sides
         roll_die_p |
         roll_flag_e_p |
         roll_flag_gt_p |
@@ -125,11 +126,16 @@ pub fn arguments_roll_p(input: &[u8]) -> IResult<&[u8], Arg> {
         roll_flag_rr_p |
         roll_modifier_pos_p |
         roll_modifier_neg_p |
-        map!(quoted_p,        | a | Arg::Roll(RollArg::Comment(ArgValue::Text(a)))) |
-        map!(single_quoted_p, | a | Arg::Roll(RollArg::Comment(ArgValue::Text(a)))) |
-        map!(token_p,         | a | Arg::Token(a)) |
-        map!(variable_p,      | a | Arg::Variable(a))
+        map!(quoted_p,              | a | Arg::Roll(RollArg::Comment(ArgValue::Text(a)))) |
+        map!(single_quoted_p,       | a | Arg::Roll(RollArg::Comment(ArgValue::Text(a)))) |
+        map!(token_p,               | a | Arg::Token(a)) |
+        map!(variable_p,            | a | Arg::Variable(a))
     )
+}
+
+/// Matches a custom side
+pub fn roll_side_p(input: &[u8]) -> IResult<&[u8], Vec<ArgValue>> {
+    delimited!(input, tag!("["), separated_list!(tag!(","), roll_flag_var_p), tag!("]"))
 }
 
 /// Matches !say arguments
@@ -539,8 +545,11 @@ pub fn roll_num_p(input: &[u8]) -> IResult<&[u8], Arg> {
 pub fn roll_die_p(input: &[u8]) -> IResult<&[u8], Arg> {
     // @todo @error if string/invalid throw error
     do_parse!(input,
-        var: ws!(preceded!(tag!("d"), roll_flag_var_p)) >>
-        (Arg::Roll(RollArg::D(var)))
+        var: ws!(preceded!(tag!("d"), alt_complete!(
+            map!(roll_flag_var_p, | a | Arg::Roll(RollArg::D(a))) |
+            map!(roll_side_p,  | a | Arg::Roll(RollArg::Sides(a)))
+        ))) >>
+        (var)
     )
 }
 

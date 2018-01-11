@@ -111,7 +111,6 @@ pub fn arguments_roll_p(input: &[u8]) -> IResult<&[u8], Arg> {
         advantage_p |
         disadvantage_p |
         roll_num_p |
-        // before checking the 'd' value, check if we provided custom sides
         roll_die_p |
         roll_flag_e_p |
         roll_flag_gt_p |
@@ -137,7 +136,7 @@ pub fn arguments_roll_p(input: &[u8]) -> IResult<&[u8], Arg> {
 pub fn roll_side_p(input: &[u8]) -> IResult<&[u8], Vec<ArgValue>> {
     delimited!(input,
         tag!("["),
-        separated_list!(tag!(","), alt_complete!(roll_flag_var_p | map!(num_p, |n| ArgValue::Number(n)))),
+        ws!(separated_list!(tag!(","), alt_complete!(roll_flag_var_p | map!(num_p, |n| ArgValue::Number(n))))),
         tag!("]")
     )
 }

@@ -51,6 +51,16 @@ fn test_complex_parser() {
         steps: vec![
             Step {
                 args: vec![
+                    Arg::Assign(Assign {
+                        left: ArgValue::Variable("foo".to_string()),
+                        right: vec![ ArgValue::Number(1) ],
+                    }),
+                ],
+                op: MacroOp::Lambda,
+                result: StepResult::Save,
+            },
+            Step {
+                args: vec![
                     Arg::Roll(RollArg::N(ArgValue::Number(1))),
                     Arg::Roll(RollArg::D(ArgValue::Number(20))),
                 ],
@@ -59,8 +69,8 @@ fn test_complex_parser() {
             },
             Step {
                 args: vec![
-                    Arg::Roll(RollArg::N(ArgValue::VariableReserved(1))),
-                    Arg::Roll(RollArg::D(ArgValue::Number(8))),
+                    Arg::Roll(RollArg::N(ArgValue::Variable("foo".to_string()))),
+                    Arg::Roll(RollArg::D(ArgValue::VariableReserved(1))),
                     Arg::Roll(RollArg::Comment(ArgValue::Text("A cool roll comment".to_string()))),
                 ],
                 op: MacroOp::Roll,
@@ -75,7 +85,7 @@ fn test_complex_parser() {
             },
         ],
     };
-    let (_, result) = parse_p(b"#complex-macro-name !r 1d20 >> !roll $1d8 \"A cool roll comment\" !say \"Smite!\"").unwrap();
+    let (_, result) = parse_p(b"#complex-macro-name $foo = 1 >> !r 1d20 >> !roll ${foo}d$1 \"A cool roll comment\" !say \"Smite!\"").unwrap();
     assert_eq!(result, program);
 
     let program = Program {
@@ -393,7 +403,7 @@ fn test_arguments_roll_parser() {
     let (_, result) = arguments_roll_p(b"lt$1").unwrap();
     assert_eq!(result, Arg::Roll(RollArg::LT(ArgValue::VariableReserved(1))));
 
-    let (_, result) = arguments_roll_p(b"lte$foo").unwrap();
+    let (_, result) = arguments_roll_p(b"lte${foo}").unwrap();
     assert_eq!(result, Arg::Roll(RollArg::LTE(ArgValue::Variable("foo".to_string()))));
 
     // Token Modifier
@@ -506,6 +516,9 @@ fn test_variable_parser() {
 
     let (_, result) = variable_p(b"$foo_bar").unwrap();
     assert_eq!(result, "foo_bar".to_string());
+
+    let (_, result) = variable_p(b"${foobar}").unwrap();
+    assert_eq!(result, "foobar".to_string());
 }
 
 #[test]

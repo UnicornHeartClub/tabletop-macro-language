@@ -146,8 +146,8 @@ pub fn roll_side_p(input: &[u8]) -> IResult<&[u8], Vec<ArgValue>> {
 pub fn arguments_say_p(input: &[u8]) -> IResult<&[u8], Arg> {
     alt_complete!(input,
         map!(word_p, | a | Arg::Say(SayArg::Message(a))) |
-        map!(quoted_p, | a | Arg::Say(SayArg::Message(a))) |
-        map!(single_quoted_p, | a | Arg::Say(SayArg::Message(a))) |
+        map!(ws!(quoted_p), | a | Arg::Say(SayArg::Message(a))) |
+        map!(ws!(single_quoted_p), | a | Arg::Say(SayArg::Message(a))) |
         map!(token_p, | a | Arg::Say(SayArg::From(a))) |
         map!(variable_p, | a | Arg::Variable(a))
     )
@@ -166,8 +166,8 @@ pub fn arguments_target_p(input: &[u8]) -> IResult<&[u8], Arg> {
 pub fn arguments_whisper_p(input: &[u8]) -> IResult<&[u8], Arg> {
     alt_complete!(input,
         map!(word_p, | a | Arg::Say(SayArg::Message(a))) |
-        map!(quoted_p, | a | Arg::Say(SayArg::Message(a))) |
-        map!(single_quoted_p, | a | Arg::Say(SayArg::Message(a))) |
+        map!(ws!(quoted_p), | a | Arg::Say(SayArg::Message(a))) |
+        map!(ws!(single_quoted_p), | a | Arg::Say(SayArg::Message(a))) |
         map!(token_p, | a | Arg::Say(SayArg::To(a))) |
         map!(variable_p, | a | Arg::Variable(a))
     )
@@ -387,7 +387,7 @@ pub fn primitive_p(input: &[u8]) -> IResult<&[u8], ArgValue> {
 /// Matches arguments in quotes ("")
 pub fn quoted_p(input: &[u8]) -> IResult<&[u8], String> {
     do_parse!(input,
-        word: ws!(delimited!(tag!("\""),take_until!("\""), tag!("\""))) >>
+        word: delimited!(tag!("\""),take_until!("\""), tag!("\"")) >>
         (String::from_utf8(word.to_vec()).unwrap())
     )
 }
@@ -560,7 +560,7 @@ pub fn roll_die_p(input: &[u8]) -> IResult<&[u8], Arg> {
 /// Matches arguments in quotes ('')
 pub fn single_quoted_p(input: &[u8]) -> IResult<&[u8], String> {
     do_parse!(input,
-        word: ws!(delimited!(tag!("'"),take_until!("'"), tag!("'"))) >>
+        word: delimited!(tag!("'"),take_until!("'"), tag!("'")) >>
         (String::from_utf8(word.to_vec()).unwrap())
     )
 }

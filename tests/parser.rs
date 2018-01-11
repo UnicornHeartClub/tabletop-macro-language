@@ -231,13 +231,14 @@ fn test_complex_parser() {
                 args: vec![
                     Arg::Say(SayArg::Message("Mod is ".to_string())),
                     Arg::Variable("mod".to_string()),
+                    Arg::Say(SayArg::Message(" trailing space test".to_string())),
                 ],
                 op: MacroOp::Say,
                 result: StepResult::Ignore,
             },
         ],
     };
-    let (_, result) = parse_p(b"#test 5 < 10 ? $mod = 1 : $mod = 2 !say 'Mod is ' $mod").unwrap();
+    let (_, result) = parse_p(b"#test 5 < 10 ? $mod = 1 : $mod = 2 !say 'Mod is ' $mod ' trailing space test'").unwrap();
     assert_eq!(result, program);
 }
 
@@ -321,7 +322,7 @@ fn test_arguments_parser() {
     let (_, result) = arguments_p(b"   Hello  ").unwrap();
     assert_eq!(result, Arg::Unrecognized(String::from("Hello")));
     let (_, result) = arguments_p(b"'   Single String Args'").unwrap();
-    assert_eq!(result, Arg::Unrecognized(String::from("Single String Args")));
+    assert_eq!(result, Arg::Unrecognized(String::from("   Single String Args")));
 }
 
 #[test]
@@ -329,7 +330,7 @@ fn test_quoted_parser() {
     let (_, result) = quoted_p(b"\"hello\"").unwrap();
     assert_eq!(result, String::from("hello"));
     let (_, result) = quoted_p(b"\"   Hello  \"").unwrap();
-    assert_eq!(result, String::from("Hello  "));
+    assert_eq!(result, String::from("   Hello  "));
 }
 
 #[test]
@@ -337,7 +338,7 @@ fn test_single_quoted_parser() {
     let (_, result) = single_quoted_p(b"'test 123'").unwrap();
     assert_eq!(result, String::from("test 123"));
     let (_, result) = single_quoted_p(b"'   Single String Args'").unwrap();
-    assert_eq!(result, String::from("Single String Args"));
+    assert_eq!(result, String::from("   Single String Args"));
 }
 
 #[test]
@@ -495,11 +496,11 @@ fn test_arguments_whisper_parser() {
     assert_eq!(result, Arg::Variable("var".to_string()));
 
     // we should be able to combine strings
-    let (_, result) = parse_p(b"#whisper !w 'Rolled a ' $foo @npc1").unwrap();
+    let (_, result) = parse_p(b"#whisper !w @npc1 'Rolled a ' $foo").unwrap();
     let steps = result.steps;
-    assert_eq!(steps[0].args[0], Arg::Say(SayArg::Message("Rolled a ".to_string())));
-    assert_eq!(steps[0].args[1], Arg::Variable("foo".to_string()));
-    assert_eq!(steps[0].args[2], Arg::Say(SayArg::To(TokenArg {
+    assert_eq!(steps[0].args[1], Arg::Say(SayArg::Message("Rolled a ".to_string())));
+    assert_eq!(steps[0].args[2], Arg::Variable("foo".to_string()));
+    assert_eq!(steps[0].args[0], Arg::Say(SayArg::To(TokenArg {
         name: "npc1".to_string(),
         attribute: None,
         macro_name: None,

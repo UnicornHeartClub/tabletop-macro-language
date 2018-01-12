@@ -158,7 +158,7 @@ pub fn arguments_say_p(input: &[u8]) -> IResult<&[u8], Arg> {
 pub fn arguments_target_p(input: &[u8]) -> IResult<&[u8], Arg> {
     alt_complete!(input,
         map!(quoted_interpolated_p, | a | Arg::Target(TargetArg::Message(a))) |
-        map!(single_quoted_p, | a | Arg::Say(SayArg::Message(TextInterpolated {
+        map!(single_quoted_p, | a | Arg::Target(TargetArg::Message(TextInterpolated {
             parts: vec![ ArgValue::Text(a) ],
         })))
     )

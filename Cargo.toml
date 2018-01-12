@@ -1,10 +1,10 @@
 [package]
 name = "ttml"
-version = "0.5.3"
+version = "0.6.0"
 authors = ["Thomas Lackemann <tommylackemann@gmail.com>"]
 
 [lib]
-# crate-type = ["cdylib"]
+crate-type = ["cdylib"]
 
 [dependencies]
 nom = "^4.0.0-alpha1"

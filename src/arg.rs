@@ -23,6 +23,7 @@ pub enum ArgValue {
     Number(i32),
     Primitive(Primitive),
     Text(String),
+    TextInterpolated(TextInterpolated),
     Token(TokenArg),
     Variable(String),
     VariableReserved(i16),
@@ -130,6 +131,11 @@ pub enum SayArg {
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum TargetArg {
     Message(String),
+}
+
+#[derive(Clone, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
+pub struct TextInterpolated {
+    pub parts: Vec<ArgValue>,
 }
 
 #[derive(Clone, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]

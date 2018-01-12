@@ -329,8 +329,49 @@ fn test_arguments_parser() {
 fn test_quoted_parser() {
     let (_, result) = quoted_p(b"\"hello\"").unwrap();
     assert_eq!(result, String::from("hello"));
+
     let (_, result) = quoted_p(b"\"   Hello  \"").unwrap();
     assert_eq!(result, String::from("   Hello  "));
+}
+
+#[test]
+fn test_quoted_interpolated_parser() {
+    let (_, result) = quoted_interpolated_p(b"\"Hello @{token}.attribute, it's good to see you\"").unwrap();
+    assert_eq!(result, TextInterpolated {
+        parts: vec![
+            ArgValue::Text("Hello ".to_string()),
+            ArgValue::Token(TokenArg {
+                name: "token".to_string(),
+                attribute: Some("attribute".to_string()),
+                macro_name: None,
+            }),
+            ArgValue::Text(", it's good to see you".to_string())
+        ],
+    });
+
+    let (_, result) = quoted_interpolated_p(b"\"There is activity at $place bar\"").unwrap();
+    assert_eq!(result, TextInterpolated {
+        parts: vec![
+            ArgValue::Text("There is activity at ".to_string()),
+            ArgValue::Variable("place".to_string()),
+            ArgValue::Text("bar".to_string())
+        ],
+    });
+
+    let (_, result) = quoted_interpolated_p(b"\"Hey bartender, @{bartender}.name! Get me an ale of ${beer}!\"").unwrap();
+    assert_eq!(result, TextInterpolated {
+        parts: vec![
+            ArgValue::Text("Hey bartender, ".to_string()),
+            ArgValue::Token(TokenArg {
+                name: "bartender".to_string(),
+                attribute: Some("name".to_string()),
+                macro_name: None,
+            }),
+            ArgValue::Text("! Get me an ale of ".to_string()),
+            ArgValue::Variable("beer".to_string()),
+            ArgValue::Text("!".to_string()),
+        ],
+    });
 }
 
 #[test]
@@ -511,6 +552,9 @@ fn test_arguments_whisper_parser() {
 fn test_token_parser() {
     let (_, result) = token_p(b"@foo").unwrap();
     assert_eq!(result, TokenArg { name: "foo".to_string(), attribute: None, macro_name: None });
+
+    let (_, result) = token_p(b"@{faz}").unwrap();
+    assert_eq!(result, TokenArg { name: "faz".to_string(), attribute: None, macro_name: None });
 
     let (_, result) = token_p(b"@foo123bar.baz").unwrap();
     assert_eq!(result, TokenArg { name: "foo123bar".to_string(), attribute: Some("baz".to_string()), macro_name: None });

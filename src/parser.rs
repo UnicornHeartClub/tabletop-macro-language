@@ -391,6 +391,23 @@ pub fn quoted_p(input: &[u8]) -> IResult<&[u8], String> {
     )
 }
 
+/// Matches arguments in any type of quotes with variable interpolation
+pub fn quoted_interpolated_p(input: &[u8]) -> IResult<&[u8], TextInterpolated> {
+    do_parse!(input,
+        tag!("\"") >>
+        parts: many0!(alt_complete!(
+            map!(variable_reserved_p, | a | ArgValue::VariableReserved(a)) |
+            map!(variable_p, | a | ArgValue::Variable(a)) |
+            map!(token_p, | a | ArgValue::Token(a)) |
+            map!(is_not!("@$\""), | a | ArgValue::Text(String::from_utf8(a.to_vec()).unwrap()))
+        )) >>
+        tag!("\"") >>
+        (TextInterpolated {
+            parts,
+        })
+    )
+}
+
 /// Matches digits for "D" and parses to i32
 pub fn roll_digit_p(input: &[u8]) -> IResult<&[u8], i32> {
     do_parse!(input,

@@ -32,7 +32,11 @@ fn test_simple_parser() {
             },
             Step {
                 args: vec![
-                    Arg::Say(SayArg::Message("Hello, world!".to_string())),
+                    Arg::Say(SayArg::Message(TextInterpolated {
+                        parts: vec! [
+                            ArgValue::Text("Hello, world!".to_string()),
+                        ],
+                    })),
                 ],
                 op: MacroOp::Say,
                 result: StepResult::Ignore,
@@ -70,14 +74,20 @@ fn test_complex_parser() {
                 args: vec![
                     Arg::Roll(RollArg::N(ArgValue::Variable("foo".to_string()))),
                     Arg::Roll(RollArg::D(ArgValue::VariableReserved(1))),
-                    Arg::Roll(RollArg::Comment(ArgValue::Text("A cool roll comment".to_string()))),
+                    Arg::Roll(RollArg::Comment(ArgValue::TextInterpolated(TextInterpolated {
+                        parts: vec![ ArgValue::Text("A cool roll comment".to_string()) ],
+                    }))),
                 ],
                 op: MacroOp::Roll,
                 result: StepResult::Ignore,
             },
             Step {
                 args: vec![
-                    Arg::Say(SayArg::Message("Smite!".to_string())),
+                    Arg::Say(SayArg::Message(TextInterpolated {
+                        parts: vec! [
+                            ArgValue::Text("Smite!".to_string()),
+                        ],
+                    })),
                 ],
                 op: MacroOp::Say,
                 result: StepResult::Ignore,
@@ -103,7 +113,11 @@ fn test_complex_parser() {
             },
             Step {
                 args: vec![
-                    Arg::Say(SayArg::Message("Smite!".to_string())),
+                    Arg::Say(SayArg::Message(TextInterpolated {
+                        parts: vec! [
+                            ArgValue::Text("Smite!".to_string()),
+                        ],
+                    })),
                 ],
                 op: MacroOp::Say,
                 result: StepResult::Ignore,
@@ -120,15 +134,19 @@ fn test_complex_parser() {
             },
             Step {
                 args: vec![
-                    Arg::Say(SayArg::Message("I rolled a ".to_string())),
-                    Arg::Variable("1".to_string()),
+                    Arg::Say(SayArg::Message(TextInterpolated {
+                        parts: vec! [
+                            ArgValue::Text("I rolled a ".to_string()),
+                            ArgValue::VariableReserved(1),
+                        ],
+                    })),
                 ],
                 op: MacroOp::Say,
                 result: StepResult::Ignore,
             },
         ],
     };
-    let (_, result) = parse_p(b"#complex-macro-name-2 !roll 3d8min8max16+3 !say \"Smite!\" !roll 2d20-5kh1 >> !say \"I rolled a \" $1").unwrap();
+    let (_, result) = parse_p(b"#complex-macro-name-2 !roll 3d8min8max16+3 !say \"Smite!\" !roll 2d20-5kh1 >> !say \"I rolled a $1\"").unwrap();
     assert_eq!(result, program);
 
     let program = Program {
@@ -176,7 +194,11 @@ fn test_complex_parser() {
                         right: ArgValue::Number(10),
                         success: Some(Step {
                             args: vec![
-                                Arg::Say(SayArg::Message("Success".to_string())),
+                                Arg::Say(SayArg::Message(TextInterpolated {
+                                    parts: vec![
+                                        ArgValue::Text("Success".to_string()),
+                                    ],
+                                })),
                             ],
                             op: MacroOp::Say,
                             result: StepResult::Ignore,
@@ -229,16 +251,20 @@ fn test_complex_parser() {
             },
             Step {
                 args: vec![
-                    Arg::Say(SayArg::Message("Mod is ".to_string())),
-                    Arg::Variable("mod".to_string()),
-                    Arg::Say(SayArg::Message(" trailing space test".to_string())),
+                    Arg::Say(SayArg::Message(TextInterpolated {
+                        parts: vec![
+                            ArgValue::Text("Mod is ".to_string()),
+                            ArgValue::Variable("mod".to_string()),
+                            ArgValue::Text(" trailing space test  ".to_string()),
+                        ],
+                    })),
                 ],
                 op: MacroOp::Say,
                 result: StepResult::Ignore,
             },
         ],
     };
-    let (_, result) = parse_p(b"#test 5 < 10 ? $mod = 1 : $mod = 2 !say 'Mod is ' $mod ' trailing space test'").unwrap();
+    let (_, result) = parse_p(b"#test 5 < 10 ? $mod = 1 : $mod = 2 !say \"Mod is $mod trailing space test  \"").unwrap();
     assert_eq!(result, program);
 }
 
@@ -318,20 +344,15 @@ fn test_op_parser() {
 #[test]
 fn test_arguments_parser() {
     let (_, result) = arguments_p(b"\"hello\"").unwrap();
-    assert_eq!(result, Arg::Unrecognized(String::from("hello")));
+    assert_eq!(result, Arg::Unrecognized(ArgValue::TextInterpolated(TextInterpolated {
+        parts: vec![ ArgValue::Text("hello".to_string()) ],
+    })));
+
     let (_, result) = arguments_p(b"   Hello  ").unwrap();
-    assert_eq!(result, Arg::Unrecognized(String::from("Hello")));
+    assert_eq!(result, Arg::Unrecognized(ArgValue::Text("Hello".to_string())));
+
     let (_, result) = arguments_p(b"'   Single String Args'").unwrap();
-    assert_eq!(result, Arg::Unrecognized(String::from("   Single String Args")));
-}
-
-#[test]
-fn test_quoted_parser() {
-    let (_, result) = quoted_p(b"\"hello\"").unwrap();
-    assert_eq!(result, String::from("hello"));
-
-    let (_, result) = quoted_p(b"\"   Hello  \"").unwrap();
-    assert_eq!(result, String::from("   Hello  "));
+    assert_eq!(result, Arg::Unrecognized(ArgValue::Text("   Single String Args".to_string())));
 }
 
 #[test]
@@ -354,7 +375,7 @@ fn test_quoted_interpolated_parser() {
         parts: vec![
             ArgValue::Text("There is activity at ".to_string()),
             ArgValue::Variable("place".to_string()),
-            ArgValue::Text("bar".to_string())
+            ArgValue::Text(" bar".to_string())
         ],
     });
 
@@ -444,7 +465,9 @@ fn test_arguments_roll_parser() {
 
     // Comment
     let (_, result) = arguments_roll_p(b"\"I am a comment\"").unwrap();
-    assert_eq!(result, Arg::Roll(RollArg::Comment(ArgValue::Text("I am a comment".to_string()))));
+    assert_eq!(result, Arg::Roll(RollArg::Comment(ArgValue::TextInterpolated(TextInterpolated {
+        parts: vec![ ArgValue::Text("I am a comment".to_string()) ],
+    }))));
 
     // Modifier
     let (_, result) = arguments_roll_p(b"+5").unwrap();
@@ -524,7 +547,11 @@ fn test_arguments_roll_parses_token_attributes() {
 #[test]
 fn test_arguments_whisper_parser() {
     let (_, result) = arguments_whisper_p(b"\"I am a message\"").unwrap();
-    assert_eq!(result, Arg::Say(SayArg::Message("I am a message".to_string())));
+    assert_eq!(result, Arg::Say(SayArg::Message(TextInterpolated {
+        parts: vec![
+            ArgValue::Text("I am a message".to_string()),
+        ],
+    })));
 
     let (_, result) = arguments_whisper_p(b"@me").unwrap();
     assert_eq!(result, Arg::Say(SayArg::To(TokenArg {
@@ -533,18 +560,19 @@ fn test_arguments_whisper_parser() {
         macro_name: None,
     })));
 
-    let (_, result) = arguments_whisper_p(b"$var").unwrap();
-    assert_eq!(result, Arg::Variable("var".to_string()));
-
     // we should be able to combine strings
-    let (_, result) = parse_p(b"#whisper !w @npc1 'Rolled a ' $foo").unwrap();
+    let (_, result) = parse_p(b"#whisper !w @npc1 \"Rolled a ${foo}\"").unwrap();
     let steps = result.steps;
-    assert_eq!(steps[0].args[1], Arg::Say(SayArg::Message("Rolled a ".to_string())));
-    assert_eq!(steps[0].args[2], Arg::Variable("foo".to_string()));
     assert_eq!(steps[0].args[0], Arg::Say(SayArg::To(TokenArg {
         name: "npc1".to_string(),
         attribute: None,
         macro_name: None,
+    })));
+    assert_eq!(steps[0].args[1], Arg::Say(SayArg::Message(TextInterpolated {
+        parts: vec! [
+            ArgValue::Text("Rolled a ".to_string()),
+            ArgValue::Variable("foo".to_string()),
+        ],
     })));
 }
 
@@ -615,7 +643,9 @@ fn test_assign_token_parser() {
             attribute: Some("test".to_string()),
             macro_name: None,
         }),
-        right: vec![ ArgValue::Text("foo".to_string()) ],
+        right: vec![ ArgValue::TextInterpolated(TextInterpolated {
+            parts: vec! [ ArgValue::Text("foo".to_string()) ],
+        }) ],
     });
 
     assert_eq!(result, assign);
@@ -678,7 +708,13 @@ fn test_assign_variable_parser() {
     let (_, result) = arguments_p(b" $foo  =   \"foo\"   ").unwrap();
     let assign = Arg::Assign(Assign {
         left: ArgValue::Variable("foo".to_string()),
-        right: vec![ ArgValue::Text("foo".to_string()) ],
+        right: vec![
+            ArgValue::TextInterpolated(TextInterpolated {
+                parts: vec![
+                    ArgValue::Text("foo".to_string()),
+                ],
+            }),
+        ],
     });
 
     assert_eq!(result, assign);
@@ -733,7 +769,11 @@ fn test_arguments_prompt_parser() {
     ];
 
     let prompt = Arg::Prompt(Prompt {
-        message: "Choose your style".to_string(),
+        message: TextInterpolated {
+            parts: vec![
+                ArgValue::Text("Choose your style".to_string()),
+            ],
+        },
         options,
     });
     let (_, result) = arguments_prompt_p(b"'Choose your style' [Label, Label 2, 'Label 3']").unwrap();
@@ -750,11 +790,20 @@ fn test_arguments_prompt_parser() {
                 macro_name: None,
             })
         },
-        PromptOption { key: Some("baz".to_string()), value: ArgValue::Text("boo".to_string()) },
+        PromptOption {
+            key: Some("baz".to_string()),
+            value: ArgValue::TextInterpolated(TextInterpolated {
+                parts: vec![ ArgValue::Text("boo".to_string()) ],
+            }),
+        },
     ];
 
     let prompt = Arg::Prompt(Prompt {
-        message: "Choose your thing".to_string(),
+        message: TextInterpolated {
+            parts: vec![
+                ArgValue::Text("Choose your thing".to_string()),
+            ],
+        },
         options,
     });
     let (_, result) = arguments_prompt_p(b"\"Choose your thing\" [foo:bar, @me.attribute, 'baz':\"boo\"]").unwrap();

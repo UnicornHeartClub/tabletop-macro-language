@@ -37,7 +37,7 @@ pub fn assignment_p(input: &[u8]) -> IResult<&[u8], Assign> {
             map!(float_p, | a | ArgValue::Float(a)) |
             map!(num_p, | a | ArgValue::Number(a)) |
             map!(word_p, | a | ArgValue::Text(a)) |
-            map!(quoted_p, | a | ArgValue::Text(a)) |
+            map!(quoted_interpolated_p, | a | ArgValue::TextInterpolated(a)) |
             map!(single_quoted_p, | a | ArgValue::Text(a)) |
             map!(variable_reserved_p, | a | ArgValue::VariableReserved(a)) |
             map!(variable_p, | a | ArgValue::Variable(a)) |
@@ -58,20 +58,21 @@ pub fn arguments_p(input: &[u8]) -> IResult<&[u8], Arg> {
         map!(assignment_p, | a | Arg::Assign(a)) |
         map!(variable_p, | a | Arg::Variable(a)) |
         map!(token_p, | a | Arg::Token(a)) |
-        map!(word_p, | a | Arg::Unrecognized(a)) |
-        map!(quoted_p, | a | Arg::Unrecognized(a)) |
-        map!(single_quoted_p, | a | Arg::Unrecognized(a))
+        map!(quoted_interpolated_p, | a | Arg::Unrecognized(ArgValue::TextInterpolated(a))) |
+        map!(single_quoted_p, | a | Arg::Unrecognized(ArgValue::Text(a))) |
+        map!(ws!(word_p), | a | Arg::Unrecognized(ArgValue::Text(a)))
     )
 }
 
 /// Matches !input arguments
 pub fn arguments_input_p(input: &[u8]) -> IResult<&[u8], Arg> {
     add_return_error!(input, ErrorKind::Custom(5), do_parse!(
-        message: ws!(alt_complete!(
-            word_p |
-            quoted_p |
-            single_quoted_p
-        )) >>
+        message: alt_complete!(
+            quoted_interpolated_p |
+            map!(single_quoted_p, |quote| TextInterpolated {
+                parts: vec![ ArgValue::Text(quote) ],
+            })
+        ) >>
         (Arg::Input(message))
     ))
 }
@@ -80,9 +81,10 @@ pub fn arguments_input_p(input: &[u8]) -> IResult<&[u8], Arg> {
 pub fn arguments_prompt_p(input: &[u8]) -> IResult<&[u8], Arg> {
     add_return_error!(input, ErrorKind::Custom(4), do_parse!(
         message: ws!(alt_complete!(
-            word_p |
-            quoted_p |
-            single_quoted_p
+            quoted_interpolated_p |
+            map!(single_quoted_p, |quote| TextInterpolated {
+                parts: vec![ ArgValue::Text(quote) ],
+            })
         )) >>
         options: switch!(options_p,
             Some(opts) => value!(opts) |
@@ -125,7 +127,7 @@ pub fn arguments_roll_p(input: &[u8]) -> IResult<&[u8], Arg> {
         roll_flag_rr_p |
         roll_modifier_pos_p |
         roll_modifier_neg_p |
-        map!(quoted_p,              | a | Arg::Roll(RollArg::Comment(ArgValue::Text(a)))) |
+        map!(quoted_interpolated_p, | a | Arg::Roll(RollArg::Comment(ArgValue::TextInterpolated(a)))) |
         map!(single_quoted_p,       | a | Arg::Roll(RollArg::Comment(ArgValue::Text(a)))) |
         map!(token_p,               | a | Arg::Token(a)) |
         map!(variable_p,            | a | Arg::Variable(a))
@@ -144,31 +146,32 @@ pub fn roll_side_p(input: &[u8]) -> IResult<&[u8], Vec<ArgValue>> {
 /// Matches !say arguments
 pub fn arguments_say_p(input: &[u8]) -> IResult<&[u8], Arg> {
     alt_complete!(input,
-        map!(word_p, | a | Arg::Say(SayArg::Message(a))) |
-        map!(ws!(quoted_p), | a | Arg::Say(SayArg::Message(a))) |
-        map!(ws!(single_quoted_p), | a | Arg::Say(SayArg::Message(a))) |
-        map!(token_p, | a | Arg::Say(SayArg::From(a))) |
-        map!(variable_p, | a | Arg::Variable(a))
+        map!(quoted_interpolated_p, | a | Arg::Say(SayArg::Message(a))) |
+        map!(single_quoted_p, | a | Arg::Say(SayArg::Message(TextInterpolated {
+            parts: vec![ ArgValue::Text(a) ],
+        }))) |
+        map!(token_p, | a | Arg::Say(SayArg::From(a)))
     )
 }
 
-/// Matches !say arguments
+/// Matches !target arguments
 pub fn arguments_target_p(input: &[u8]) -> IResult<&[u8], Arg> {
     alt_complete!(input,
-        map!(word_p, | a | Arg::Target(TargetArg::Message(a))) |
-        map!(quoted_p, | a | Arg::Target(TargetArg::Message(a))) |
-        map!(single_quoted_p, | a | Arg::Target(TargetArg::Message(a)))
+        map!(quoted_interpolated_p, | a | Arg::Target(TargetArg::Message(a))) |
+        map!(single_quoted_p, | a | Arg::Say(SayArg::Message(TextInterpolated {
+            parts: vec![ ArgValue::Text(a) ],
+        })))
     )
 }
 
 /// Matches !whisper arguments
 pub fn arguments_whisper_p(input: &[u8]) -> IResult<&[u8], Arg> {
     alt_complete!(input,
-        map!(word_p, | a | Arg::Say(SayArg::Message(a))) |
-        map!(ws!(quoted_p), | a | Arg::Say(SayArg::Message(a))) |
-        map!(ws!(single_quoted_p), | a | Arg::Say(SayArg::Message(a))) |
-        map!(token_p, | a | Arg::Say(SayArg::To(a))) |
-        map!(variable_p, | a | Arg::Variable(a))
+        map!(quoted_interpolated_p, | a | Arg::Say(SayArg::Message(a))) |
+        map!(single_quoted_p, | a | Arg::Say(SayArg::Message(TextInterpolated {
+            parts: vec![ ArgValue::Text(a) ],
+        }))) |
+        map!(token_p, | a | Arg::Say(SayArg::To(a)))
     )
 }
 
@@ -299,7 +302,7 @@ pub fn parse_option_p(input: &[u8]) -> IResult<&[u8], PromptOption> {
             map!(boolean_p, | a | ArgValue::Boolean(a)) |
             map!(float_p, | a | ArgValue::Float(a)) |
             map!(num_p, | a | ArgValue::Number(a)) |
-            map!(quoted_p, | a | ArgValue::Text(a)) |
+            map!(quoted_interpolated_p, | a | ArgValue::TextInterpolated(a)) |
             map!(single_quoted_p, | a | ArgValue::Text(a)) |
             map!(variable_reserved_p, | a | ArgValue::VariableReserved(a)) |
             map!(variable_p, | a | ArgValue::Variable(a)) |
@@ -313,7 +316,7 @@ pub fn parse_option_p(input: &[u8]) -> IResult<&[u8], PromptOption> {
                 map!(boolean_p, | a | ArgValue::Boolean(a)) |
                 map!(float_p, | a | ArgValue::Float(a)) |
                 map!(num_p, | a | ArgValue::Number(a)) |
-                map!(quoted_p, | a | ArgValue::Text(a)) |
+                map!(quoted_interpolated_p, | a | ArgValue::TextInterpolated(a)) |
                 map!(single_quoted_p, | a | ArgValue::Text(a)) |
                 map!(variable_reserved_p, | a | ArgValue::VariableReserved(a)) |
                 map!(variable_p, | a | ArgValue::Variable(a)) |
@@ -381,14 +384,6 @@ pub fn primitive_p(input: &[u8]) -> IResult<&[u8], ArgValue> {
         map!(tag!("/"), |_| ArgValue::Primitive(Primitive::Divide)) |
         map!(tag!("*"), |_| ArgValue::Primitive(Primitive::Multiply))
     ))
-}
-
-/// Matches arguments in quotes ("")
-pub fn quoted_p(input: &[u8]) -> IResult<&[u8], String> {
-    do_parse!(input,
-        word: delimited!(tag!("\""),take_until!("\""), tag!("\"")) >>
-        (String::from_utf8(word.to_vec()).unwrap())
-    )
 }
 
 /// Matches arguments in any type of quotes with variable interpolation
@@ -611,8 +606,8 @@ pub fn token_p(input: &[u8]) -> IResult<&[u8], TokenArg> {
 /// Matches a valid variable name
 pub fn variable_name_p(input: &[u8]) -> IResult<&[u8], &[u8]> {
     alt_complete!(input,
-        ws!(delimited!(tag!("{"), is_not!(" \t\r\n.,?\\=<>|:;@!#$%^&*()+=/-[]{}"), tag!("}"))) |
-        ws!(is_not!(" \t\r\n.,?\\=<>|:;@!#$%^&*()+=/-[]{}"))
+        delimited!(tag!("{"), is_not!(" \t\r\n.,?\\=<>|:;@!#$%^&*()+=/-[]{}"), tag!("}")) |
+        is_not!(" \t\r\n.,?\\=<>|:;@!#$%^&*()+=/-[]{}")
     )
 }
 
@@ -637,7 +632,7 @@ pub fn variable_reserved_p(input: &[u8]) -> IResult<&[u8], i16> {
 /// Match alphanumeric words to strings
 pub fn word_p(input: &[u8]) -> IResult<&[u8], String> {
     do_parse!(input,
-        word: ws!(alphanumeric) >>
+        word: alphanumeric >>
         (String::from_utf8(word.to_vec()).unwrap())
     )
 }

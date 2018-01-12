@@ -5,13 +5,13 @@ use step::Step;
 pub enum Arg {
     Assign(Assign),
     Conditional(Conditional),
-    Input(String),
+    Input(TextInterpolated),
     Prompt(Prompt),
     Roll(RollArg),
     Say(SayArg),
     Target(TargetArg),
     Token(TokenArg),
-    Unrecognized(String),
+    Unrecognized(ArgValue),
     Variable(String),
 }
 
@@ -87,7 +87,7 @@ pub enum Primitive {
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Prompt {
-    pub message: String,
+    pub message: TextInterpolated,
     pub options: Vec<PromptOption>,
 }
 
@@ -123,14 +123,14 @@ pub enum RollArg {
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum SayArg {
-    Message(String),
+    Message(TextInterpolated),
     To(TokenArg),
     From(TokenArg),
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum TargetArg {
-    Message(String),
+    Message(TextInterpolated),
 }
 
 #[derive(Clone, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]

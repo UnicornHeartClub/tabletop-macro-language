@@ -1,6 +1,6 @@
 [package]
 name = "ttml"
-version = "0.6.0"
+version = "0.6.1"
 authors = ["Thomas Lackemann <tommylackemann@gmail.com>"]
 
 [lib]

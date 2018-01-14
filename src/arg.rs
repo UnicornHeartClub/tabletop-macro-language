@@ -1,4 +1,5 @@
 use step::Step;
+use std::collections::HashMap;
 
 // Top-level arguments
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -16,11 +17,13 @@ pub enum Arg {
 }
 
 // Command-level arguments
-#[derive(Clone, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ArgValue {
+    Array(Vec<ArgValue>),
     Boolean(bool),
     Float(f32),
     Number(i32),
+    Object(HashMap<String, ArgValue>),
     Primitive(Primitive),
     Text(String),
     TextInterpolated(TextInterpolated),
@@ -77,7 +80,7 @@ pub enum MacroOp {
     Whisper,
 }
 
-#[derive(Clone, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Primitive {
     Add,
     Divide,
@@ -133,12 +136,12 @@ pub enum TargetArg {
     Message(TextInterpolated),
 }
 
-#[derive(Clone, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TextInterpolated {
     pub parts: Vec<ArgValue>,
 }
 
-#[derive(Clone, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TokenArg {
     pub name: String,
     pub attribute: Option<String>,

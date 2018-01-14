@@ -2,6 +2,7 @@ extern crate ttml;
 extern crate nom;
 
 use nom::{IResult, ErrorKind};
+use std::collections::HashMap;
 use ttml::arg::*;
 use ttml::parser::*;
 use ttml::step::*;
@@ -986,3 +987,43 @@ fn test_conditional_parser_does_assignments() {
 
     assert_eq!(result, compare);
 }
+
+#[test]
+fn test_json_parser() {
+    let (_, result) = json_p(r#"{
+        'foo': @me.attribute,
+        "bar": 'Single quoted string',
+        baz: "String interpolated",
+        boo: -45.2,
+        far: {
+            out: $var_name
+        },
+        arr: [
+            11,
+            $1
+        ]
+    }"#.as_bytes()).unwrap();
+
+    let mut object = HashMap::new();
+    let mut nested_object = HashMap::new();
+    nested_object.insert("out".to_string(), ArgValue::Variable("var_name".to_string()));
+
+    object.insert("foo".to_string(), ArgValue::Token(TokenArg {
+        name: "me".to_string(),
+        attribute: Some("attribute".to_string()),
+        macro_name: None,
+    }));
+    object.insert("bar".to_string(), ArgValue::Text("Single quoted string".to_string()));
+    object.insert("baz".to_string(), ArgValue::TextInterpolated(TextInterpolated {
+        parts: vec![ ArgValue::Text("String interpolated".to_string()) ],
+    }));
+    object.insert("boo".to_string(), ArgValue::Float(-45.2));
+    object.insert("far".to_string(), ArgValue::Object(nested_object));
+    object.insert("arr".to_string(), ArgValue::Array(vec![
+        ArgValue::Number(11),
+        ArgValue::VariableReserved(1),
+    ]));
+
+    assert_eq!(result, ArgValue::Object(object));
+}
+

@@ -9,6 +9,7 @@ use nom::{
     float,
 };
 use step::*;
+use std::collections::HashMap;
 use std::str;
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -246,9 +247,77 @@ pub fn disadvantage_p(input: &[u8]) -> IResult<&[u8], Arg> {
     map!(input, alt_complete!(tag!("disadvantage") | tag!("dis")), |_| Arg::Roll(RollArg::Disadvantage))
 }
 
+/// Matches arguments in double quotes ("") - no interpolation
+pub fn double_quoted_p(input: &[u8]) -> IResult<&[u8], String> {
+    do_parse!(input,
+        word: delimited!(tag!("\""),take_until!("\""), tag!("\"")) >>
+        (String::from_utf8(word.to_vec()).unwrap())
+    )
+}
+
 /// Match floats to argument strings
 pub fn float_p(input: &[u8]) -> IResult<&[u8], f32> {
     ws!(input, float)
+}
+
+/// Matches "json" objects
+pub fn json_p(input: &[u8]) -> IResult<&[u8], ArgValue> {
+    ws!(input,
+        alt!(
+            json_hash_p            => { | a | ArgValue::Object(a)           } |
+            json_array_p           => { | a | ArgValue::Array(a)            } |
+            boolean_p              => { | a | ArgValue::Boolean(a)          } |
+            float_p                => { | a | ArgValue::Float(a)            } |
+            num_p                  => { | a | ArgValue::Number(a)           } |
+            quoted_interpolated_p  => { | a | ArgValue::TextInterpolated(a) } |
+            single_quoted_p        => { | a | ArgValue::Text(a)             } |
+            variable_reserved_p    => { | a | ArgValue::VariableReserved(a) } |
+            variable_p             => { | a | ArgValue::Variable(a)         } |
+            token_p                => { | a | ArgValue::Token(a)            } |
+            option_string_p        => { | a | ArgValue::Text(a)             } |
+            word_p                 => { | a | ArgValue::Text(a)             }
+        )
+    )
+}
+
+
+pub fn json_array_p(input: &[u8]) -> IResult<&[u8], Vec<ArgValue>> {
+    ws!(input,
+        delimited!(
+            tag!("["),
+            separated_list!(tag!(","), json_p),
+            tag!("]")
+        )
+    )
+}
+
+pub fn json_hash_p(input: &[u8]) -> IResult<&[u8], HashMap<String, ArgValue>> {
+    ws!(input,
+        map!(
+            delimited!(
+                tag!("{"),
+                separated_list!(tag!(","), json_key_value_p),
+                tag!("}")
+            ),
+            |tuple_vec| {
+                let mut h: HashMap<String, ArgValue> = HashMap::new();
+                for (k, v) in tuple_vec {
+                    h.insert(k, v);
+                }
+                h
+            }
+        )
+    )
+}
+
+pub fn json_key_value_p(input: &[u8]) -> IResult<&[u8], (String, ArgValue)> {
+    ws!(input,
+        separated_pair!(
+            alt_complete!(word_p | single_quoted_p | double_quoted_p),
+            tag!(":"),
+            json_p
+        )
+    )
 }
 
 /// Matches a macro name

@@ -323,6 +323,12 @@ fn test_command_parser_target() {
 }
 
 #[test]
+fn test_command_parser_template() {
+    let (_, result) = command_p(b"!template 'template_name'").unwrap();
+    assert_eq!(result, MacroOp::Template);
+}
+
+#[test]
 fn test_command_parser_input() {
     let (_, result) = command_p(b"!input 'Type your input'").unwrap();
     assert_eq!(result, MacroOp::Input);
@@ -1027,3 +1033,32 @@ fn test_json_parser() {
     assert_eq!(result, ArgValue::Object(object));
 }
 
+#[test]
+fn test_template_parser() {
+    let (_, result) = arguments_template_p(b"'template_name'").unwrap();
+    assert_eq!(result, Arg::Template(TemplateArg::Name("template_name".to_string())));
+
+    let mut attributes = HashMap::new();
+    attributes.insert("foo".to_string(), ArgValue::TextInterpolated(TextInterpolated {
+        parts: vec![
+            ArgValue::Text("bar".to_string()),
+        ],
+    }));
+    let (_, result) = arguments_template_p(r#" {
+        foo: "bar"
+    }"#.as_bytes()).unwrap();
+    assert_eq!(result, Arg::Template(TemplateArg::Attributes(ArgValue::Object(attributes))));
+
+    let (_, result) = parse_p(r#"#test !template 'template_name' {
+        "foo": 'bar'
+    }"#.as_bytes()).unwrap();
+
+    let mut object = HashMap::new();
+    object.insert("foo".to_string(), ArgValue::Text("bar".to_string()));
+    let step = &result.steps[0];
+    assert_eq!(step.op, MacroOp::Template);
+    assert_eq!(step.args, vec![
+        Arg::Template(TemplateArg::Name("template_name".to_string())),
+        Arg::Template(TemplateArg::Attributes(ArgValue::Object(object))),
+    ]);
+}

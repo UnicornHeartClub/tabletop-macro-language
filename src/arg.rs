@@ -11,6 +11,7 @@ pub enum Arg {
     Roll(RollArg),
     Say(SayArg),
     Target(TargetArg),
+    Template(TemplateArg),
     Token(TokenArg),
     Unrecognized(ArgValue),
     Variable(String),
@@ -76,6 +77,8 @@ pub enum MacroOp {
     Say,
     /// Target (!target)
     Target,
+    /// Template (!template)
+    Template,
     /// Whisper (!whisper)
     Whisper,
 }
@@ -139,6 +142,12 @@ pub enum TargetArg {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TextInterpolated {
     pub parts: Vec<ArgValue>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum TemplateArg {
+    Name(String),
+    Attributes(ArgValue),
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

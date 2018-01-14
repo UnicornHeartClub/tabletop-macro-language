@@ -165,6 +165,15 @@ pub fn arguments_target_p(input: &[u8]) -> IResult<&[u8], Arg> {
     )
 }
 
+/// Matches !template arguments
+pub fn arguments_template_p(input: &[u8]) -> IResult<&[u8], Arg> {
+    alt_complete!(input,
+        map!(single_quoted_p, | a | Arg::Template(TemplateArg::Name(a))) |
+        map!(double_quoted_p, | a | Arg::Template(TemplateArg::Name(a))) |
+        map!(json_hash_p, | a | Arg::Template(TemplateArg::Attributes(ArgValue::Object(a))))
+    )
+}
+
 /// Matches !whisper arguments
 pub fn arguments_whisper_p(input: &[u8]) -> IResult<&[u8], Arg> {
     alt_complete!(input,
@@ -188,6 +197,7 @@ pub fn boolean_p(input: &[u8]) -> IResult<&[u8], bool> {
 pub fn command_p(input: &[u8]) -> IResult<&[u8], MacroOp> {
     add_return_error!(input, ErrorKind::Custom(2), ws!(alt!(
         map!(tag!("!exit"),                         |_| MacroOp::Exit)      |
+        map!(tag!("!template"),                     |_| MacroOp::Template)  |
         map!(alt!(tag!("!input") | tag!("!i")),     |_| MacroOp::Input)     |
         map!(alt!(tag!("!prompt") | tag!("!p")),    |_| MacroOp::Prompt)    |
         map!(alt!(tag!("!roll") | tag!("!r")),      |_| MacroOp::Roll)      |
@@ -433,6 +443,7 @@ pub fn parse_step_p(input: &[u8]) -> IResult<&[u8], Step> {
             &MacroOp::Roll => call!(arguments_roll_p) |
             &MacroOp::Say => call!(arguments_say_p) |
             &MacroOp::Target => call!(arguments_target_p) |
+            &MacroOp::Template => call!(arguments_template_p) |
             &MacroOp::Whisper => call!(arguments_whisper_p) |
             _ => call!(arguments_p)
         )) >>

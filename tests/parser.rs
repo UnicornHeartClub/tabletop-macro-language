@@ -291,6 +291,15 @@ fn test_name_parser() {
 }
 
 #[test]
+fn test_command_parser_test() {
+    let (_, result) = command_p(b"!test true").unwrap();
+    assert_eq!(result, MacroOp::TestMode);
+
+    let (_, result) = command_p(b"!test false").unwrap();
+    assert_eq!(result, MacroOp::TestMode);
+}
+
+#[test]
 fn test_command_parser_roll() {
     let (_, result) = command_p(b"!roll 1d20").unwrap();
     assert_eq!(result, MacroOp::Roll);
@@ -549,6 +558,17 @@ fn test_arguments_roll_parses_token_attributes() {
             macro_name: None,
         })))
     );
+}
+
+#[test]
+fn test_arguments_test_mode_parser() {
+    let (_, result) = parse_p(b"#test !test true").unwrap();
+    let arg = &result.steps[0].args[0];
+    assert_eq!(arg, &Arg::TestMode(true));
+
+    let (_, result) = parse_p(b"#test !test false").unwrap();
+    let arg = &result.steps[0].args[0];
+    assert_eq!(arg, &Arg::TestMode(false));
 }
 
 #[test]

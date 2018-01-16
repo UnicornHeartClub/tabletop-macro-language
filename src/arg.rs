@@ -12,6 +12,7 @@ pub enum Arg {
     Say(SayArg),
     Target(TargetArg),
     Template(TemplateArg),
+    TestMode(bool),
     Token(TokenArg),
     Unrecognized(ArgValue),
     Variable(String),
@@ -79,6 +80,8 @@ pub enum MacroOp {
     Target,
     /// Template (!template)
     Template,
+    /// Test Mode (!test)
+    TestMode,
     /// Whisper (!whisper)
     Whisper,
 }

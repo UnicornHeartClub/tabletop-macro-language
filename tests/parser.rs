@@ -1,3 +1,8 @@
+// @todo
+// These tests are written like junk
+// I want to refactor this to use a more elegant Rust testing framework where I can write scenarios
+// such as "it_parses_a_complete_say_command", "it_parses_say_command_arguments", etc
+
 extern crate ttml;
 extern crate nom;
 
@@ -569,6 +574,23 @@ fn test_arguments_test_mode_parser() {
     let (_, result) = parse_p(b"#test !test false").unwrap();
     let arg = &result.steps[0].args[0];
     assert_eq!(arg, &Arg::TestMode(false));
+}
+
+#[test]
+fn it_parses_a_complete_say_command() {
+    // we should be able to combine strings
+    let (_, result) = parse_p(b"#test !say \"@{target}.name's AC\"").unwrap();
+    let steps = result.steps;
+    assert_eq!(steps[0].args[0], Arg::Say(SayArg::Message(TextInterpolated {
+        parts: vec! [
+            ArgValue::Token(TokenArg {
+                name: "target".to_string(),
+                attribute: Some("name".to_string()),
+                macro_name: None,
+            }),
+            ArgValue::Text("'s AC".to_string()),
+        ],
+    })));
 }
 
 #[test]

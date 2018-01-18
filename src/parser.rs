@@ -693,8 +693,8 @@ pub fn token_p(input: &[u8]) -> IResult<&[u8], TokenArg> {
 /// Matches a valid variable name
 pub fn variable_name_p(input: &[u8]) -> IResult<&[u8], &[u8]> {
     alt_complete!(input,
-        delimited!(tag!("{"), is_not!(" \t\r\n.,?\\=<>|:;@!#$%^&*()+=/-[]{}"), tag!("}")) |
-        is_not!(" \t\r\n.,?\\=<>|:;@!#$%^&*()+=/-[]{}")
+        delimited!(tag!("{"), is_not!(" \t\r\n.,?\\=<>|:;@!#$%^&*()+=/-[]{}'\""), tag!("}")) |
+        is_not!(" \t\r\n.,?\\=<>|:;@!#$%^&*()+=/-[]{}'\"")
     )
 }
 

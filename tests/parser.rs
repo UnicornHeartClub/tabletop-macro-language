@@ -490,6 +490,24 @@ fn test_arguments_roll_parser() {
         parts: vec![ ArgValue::Text("I am a comment".to_string()) ],
     }))));
 
+    let (_, result) = arguments_roll_p(b"[I am also a comment]").unwrap();
+    assert_eq!(result, Arg::Roll(RollArg::Comment(ArgValue::Text("I am also a comment".to_string()))));
+
+    let (_, result) = arguments_roll_p(b"['I am a comment in single quotes']").unwrap();
+    assert_eq!(result, Arg::Roll(RollArg::Comment(ArgValue::Text("I am a comment in single quotes".to_string()))));
+
+    let (_, result) = arguments_roll_p(b"[\"Interpolated @{me}.attribute\"]").unwrap();
+    assert_eq!(result, Arg::Roll(RollArg::Comment(ArgValue::TextInterpolated(TextInterpolated {
+        parts: vec![
+            ArgValue::Text("Interpolated ".to_string()),
+            ArgValue::Token(TokenArg {
+                name: "me".to_string(),
+                attribute: Some("attribute".to_string()),
+                macro_name: None,
+            }),
+        ],
+    }))));
+
     // Modifier
     let (_, result) = arguments_roll_p(b"+5").unwrap();
     assert_eq!(result, Arg::Roll(RollArg::ModifierPos(ArgValue::Number(5))));
@@ -591,6 +609,29 @@ fn it_parses_a_complete_say_command() {
             ArgValue::Text("'s AC".to_string()),
         ],
     })));
+}
+
+#[test]
+fn it_parses_a_complete_roll_command() {
+    // we should be able to combine strings
+    let (_, result) = parse_p(b"#test !roll 1d20+4[Comment] + 4d8-@me.dexterity_mod [Second Comment]").unwrap();
+    let steps = result.steps;
+
+    assert_eq!(steps[0].args, vec![
+        Arg::Roll(RollArg::N(ArgValue::Number(1))),
+        Arg::Roll(RollArg::D(ArgValue::Number(20))),
+        Arg::Roll(RollArg::ModifierPos(ArgValue::Number(4))),
+        Arg::Roll(RollArg::Comment(ArgValue::Text("Comment".to_string()))),
+        Arg::Roll(RollArg::Primitive(Primitive::Add)),
+        Arg::Roll(RollArg::N(ArgValue::Number(4))),
+        Arg::Roll(RollArg::D(ArgValue::Number(8))),
+        Arg::Roll(RollArg::ModifierNeg(ArgValue::Token(TokenArg {
+            name: "me".to_string(),
+            attribute: Some("dexterity_mod".to_string()),
+            macro_name: None,
+        }))),
+        Arg::Roll(RollArg::Comment(ArgValue::Text("Second Comment".to_string()))),
+    ]);
 }
 
 #[test]

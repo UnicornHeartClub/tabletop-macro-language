@@ -43,7 +43,7 @@ pub fn assignment_p(input: &[u8]) -> IResult<&[u8], Assign> {
             map!(variable_reserved_p, | a | ArgValue::VariableReserved(a)) |
             map!(variable_p, | a | ArgValue::Variable(a)) |
             map!(token_p, | a | ArgValue::Token(a)) |
-            primitive_p
+            map!(primitive_p, | a | ArgValue::Primitive(a))
         )) >>
         (Assign {
             left,
@@ -130,8 +130,18 @@ pub fn arguments_roll_p(input: &[u8]) -> IResult<&[u8], Arg> {
         roll_modifier_neg_p |
         map!(quoted_interpolated_p, | a | Arg::Roll(RollArg::Comment(ArgValue::TextInterpolated(a)))) |
         map!(single_quoted_p,       | a | Arg::Roll(RollArg::Comment(ArgValue::Text(a)))) |
+        ws!(delimited!(
+            tag!("["),
+            alt_complete!(
+                map!(string_with_spaces_p, | a | Arg::Roll(RollArg::Comment(ArgValue::Text(a)))) |
+                map!(quoted_interpolated_p, | a | Arg::Roll(RollArg::Comment(ArgValue::TextInterpolated(a)))) |
+                map!(single_quoted_p,       | a | Arg::Roll(RollArg::Comment(ArgValue::Text(a))))
+            ),
+            tag!("]")
+        )) |
         map!(token_p,               | a | Arg::Token(a)) |
-        map!(variable_p,            | a | Arg::Variable(a))
+        map!(variable_p,            | a | Arg::Variable(a)) |
+        map!(primitive_p,           | a | Arg::Roll(RollArg::Primitive(a)))
     )
 }
 
@@ -290,7 +300,7 @@ pub fn json_p(input: &[u8]) -> IResult<&[u8], ArgValue> {
             variable_reserved_p    => { | a | ArgValue::VariableReserved(a) } |
             variable_p             => { | a | ArgValue::Variable(a)         } |
             token_p                => { | a | ArgValue::Token(a)            } |
-            option_string_p        => { | a | ArgValue::Text(a)             } |
+            string_with_spaces_p   => { | a | ArgValue::Text(a)             } |
             word_p                 => { | a | ArgValue::Text(a)             }
         )
     )
@@ -372,9 +382,9 @@ pub fn op_p(input: &[u8]) -> IResult<&[u8], MacroOp> {
 }
 
 /// Parse an option string (does not require quotes)
-pub fn option_string_p(input: &[u8]) -> IResult<&[u8], String> {
+pub fn string_with_spaces_p(input: &[u8]) -> IResult<&[u8], String> {
     do_parse!(input,
-        word: is_not!("\t\r\n,?\\=<>|:;!#%^&*()+=/-[]{}") >>
+        word: is_not!("\t\r\n,?\\=<>|:;!#%^&*()+=/-[]{}'\"") >>
         (String::from_utf8(word.to_vec()).unwrap())
     )
 }
@@ -392,7 +402,7 @@ pub fn parse_option_p(input: &[u8]) -> IResult<&[u8], PromptOption> {
             map!(variable_reserved_p, | a | ArgValue::VariableReserved(a)) |
             map!(variable_p, | a | ArgValue::Variable(a)) |
             map!(token_p, | a | ArgValue::Token(a)) |
-            map!(option_string_p, | a | ArgValue::Text(a)) |
+            map!(string_with_spaces_p, | a | ArgValue::Text(a)) |
             map!(word_p, | a | ArgValue::Text(a))
         )) >>
         value: switch!(opt!(tag!(":")),
@@ -406,7 +416,7 @@ pub fn parse_option_p(input: &[u8]) -> IResult<&[u8], PromptOption> {
                 map!(variable_reserved_p, | a | ArgValue::VariableReserved(a)) |
                 map!(variable_p, | a | ArgValue::Variable(a)) |
                 map!(token_p, | a | ArgValue::Token(a)) |
-                map!(option_string_p, | a | ArgValue::Text(a)) |
+                map!(string_with_spaces_p, | a | ArgValue::Text(a)) |
                 map!(word_p, | a | ArgValue::Text(a))
             ) |
             None => value!(label.clone())
@@ -464,12 +474,12 @@ pub fn parse_step_p(input: &[u8]) -> IResult<&[u8], Step> {
 }
 
 /// Matches primitive operations (starts with a number)
-pub fn primitive_p(input: &[u8]) -> IResult<&[u8], ArgValue> {
+pub fn primitive_p(input: &[u8]) -> IResult<&[u8], Primitive> {
     ws!(input, alt_complete!(
-        map!(tag!("+"), |_| ArgValue::Primitive(Primitive::Add)) |
-        map!(tag!("-"), |_| ArgValue::Primitive(Primitive::Subtract)) |
-        map!(tag!("/"), |_| ArgValue::Primitive(Primitive::Divide)) |
-        map!(tag!("*"), |_| ArgValue::Primitive(Primitive::Multiply))
+        map!(tag!("+"), |_| Primitive::Add) |
+        map!(tag!("-"), |_| Primitive::Subtract) |
+        map!(tag!("/"), |_| Primitive::Divide) |
+        map!(tag!("*"), |_| Primitive::Multiply)
     ))
 }
 
@@ -611,7 +621,7 @@ pub fn roll_flag_var_p(input: &[u8]) -> IResult<&[u8], ArgValue> {
 /// Matches + modifiers
 pub fn roll_modifier_neg_p(input: &[u8]) -> IResult<&[u8], Arg> {
     do_parse!(input,
-        var: ws!(preceded!(tag!("-"), roll_modifier_var_p)) >>
+        var: preceded!(tag!("-"), roll_modifier_var_p) >>
         (Arg::Roll(RollArg::ModifierNeg(var)))
     )
 }
@@ -619,7 +629,7 @@ pub fn roll_modifier_neg_p(input: &[u8]) -> IResult<&[u8], Arg> {
 /// Matches - modifiers
 pub fn roll_modifier_pos_p(input: &[u8]) -> IResult<&[u8], Arg> {
     do_parse!(input,
-        var: ws!(preceded!(tag!("+"), roll_modifier_var_p)) >>
+        var: preceded!(tag!("+"), roll_modifier_var_p) >>
         (Arg::Roll(RollArg::ModifierPos(var)))
     )
 }

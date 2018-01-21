@@ -635,6 +635,39 @@ fn it_parses_a_complete_roll_command() {
 }
 
 #[test]
+fn it_parses_a_complete_hidden_roll_command() {
+    // we should be able to combine strings
+    let (_, result) = parse_p(b"#test !hroll 4d20+2").unwrap();
+    let steps = result.steps;
+
+    assert_eq!(steps[0].op, MacroOp::RollHidden);
+    assert_eq!(steps[0].args, vec![
+        Arg::Roll(RollArg::N(ArgValue::Number(4))),
+        Arg::Roll(RollArg::D(ArgValue::Number(20))),
+        Arg::Roll(RollArg::ModifierPos(ArgValue::Number(2))),
+    ]);
+}
+
+#[test]
+fn it_parses_a_complete_whisper_roll_command() {
+    // we should be able to combine strings
+    let (_, result) = parse_p(b"#test !wroll @gm 4d20+2").unwrap();
+    let steps = result.steps;
+
+    assert_eq!(steps[0].op, MacroOp::RollWhisper);
+    assert_eq!(steps[0].args, vec![
+        Arg::Token(TokenArg {
+            name: "gm".to_string(),
+            attribute: None,
+            macro_name: None,
+        }),
+        Arg::Roll(RollArg::N(ArgValue::Number(4))),
+        Arg::Roll(RollArg::D(ArgValue::Number(20))),
+        Arg::Roll(RollArg::ModifierPos(ArgValue::Number(2))),
+    ]);
+}
+
+#[test]
 fn test_arguments_whisper_parser() {
     let (_, result) = arguments_whisper_p(b"\"I am a message\"").unwrap();
     assert_eq!(result, Arg::Say(SayArg::Message(TextInterpolated {

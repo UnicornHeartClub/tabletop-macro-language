@@ -211,14 +211,16 @@ pub fn boolean_p(input: &[u8]) -> IResult<&[u8], bool> {
 /// Matches any command
 pub fn command_p(input: &[u8]) -> IResult<&[u8], MacroOp> {
     add_return_error!(input, ErrorKind::Custom(2), ws!(alt!(
-        map!(tag!("!exit"),                         |_| MacroOp::Exit)      |
-        map!(tag!("!template"),                     |_| MacroOp::Template)  |
-        map!(tag!("!test"),                         |_| MacroOp::TestMode)  |
-        map!(alt!(tag!("!input") | tag!("!i")),     |_| MacroOp::Input)     |
-        map!(alt!(tag!("!prompt") | tag!("!p")),    |_| MacroOp::Prompt)    |
-        map!(alt!(tag!("!roll") | tag!("!r")),      |_| MacroOp::Roll)      |
-        map!(alt!(tag!("!say") | tag!("!s")),       |_| MacroOp::Say)       |
-        map!(alt!(tag!("!target") | tag!("!t")),    |_| MacroOp::Target)    |
+        map!(tag!("!exit"),                         |_| MacroOp::Exit)          |
+        map!(tag!("!template"),                     |_| MacroOp::Template)      |
+        map!(tag!("!test"),                         |_| MacroOp::TestMode)      |
+        map!(tag!("!hroll"),                        |_| MacroOp::RollHidden)    |
+        map!(tag!("!wroll"),                        |_| MacroOp::RollWhisper)   |
+        map!(alt!(tag!("!input") | tag!("!i")),     |_| MacroOp::Input)         |
+        map!(alt!(tag!("!prompt") | tag!("!p")),    |_| MacroOp::Prompt)        |
+        map!(alt!(tag!("!roll") | tag!("!r")),      |_| MacroOp::Roll)          |
+        map!(alt!(tag!("!say") | tag!("!s")),       |_| MacroOp::Say)           |
+        map!(alt!(tag!("!target") | tag!("!t")),    |_| MacroOp::Target)        |
         map!(alt!(tag!("!whisper") | tag!("!w")),   |_| MacroOp::Whisper)
     )))
 }
@@ -454,15 +456,17 @@ pub fn parse_step_p(input: &[u8]) -> IResult<&[u8], Step> {
     do_parse!(input,
         op_type: op_p >>
         args: many0!(switch!(value!(&op_type),
-            &MacroOp::Input => call!(arguments_input_p) |
-            &MacroOp::Prompt => call!(arguments_prompt_p) |
-            &MacroOp::Roll => call!(arguments_roll_p) |
-            &MacroOp::Say => call!(arguments_say_p) |
-            &MacroOp::Target => call!(arguments_target_p) |
-            &MacroOp::Template => call!(arguments_template_p) |
-            &MacroOp::TestMode => call!(arguments_test_mode_p) |
-            &MacroOp::Whisper => call!(arguments_whisper_p) |
-            _ => call!(arguments_p)
+            &MacroOp::Input         => call!(arguments_input_p) |
+            &MacroOp::Prompt        => call!(arguments_prompt_p) |
+            &MacroOp::Roll          => call!(arguments_roll_p) |
+            &MacroOp::RollHidden    => call!(arguments_roll_p) |
+            &MacroOp::RollWhisper   => call!(arguments_roll_p) |
+            &MacroOp::Say           => call!(arguments_say_p) |
+            &MacroOp::Target        => call!(arguments_target_p) |
+            &MacroOp::Template      => call!(arguments_template_p) |
+            &MacroOp::TestMode      => call!(arguments_test_mode_p) |
+            &MacroOp::Whisper       => call!(arguments_whisper_p) |
+            _                       => call!(arguments_p)
         )) >>
         result: step_result_p >>
         (Step {

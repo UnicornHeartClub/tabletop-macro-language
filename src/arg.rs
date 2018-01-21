@@ -74,6 +74,10 @@ pub enum MacroOp {
     Prompt,
     /// Roll (!roll)
     Roll,
+    /// Hidden Roll (!hroll)
+    RollHidden,
+    /// Whisper Roll (!wroll)
+    RollWhisper,
     /// Say (!say)
     Say,
     /// Target (!target)

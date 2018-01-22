@@ -614,7 +614,7 @@ fn it_parses_a_complete_say_command() {
 #[test]
 fn it_parses_a_complete_roll_command() {
     // we should be able to combine strings
-    let (_, result) = parse_p(b"#test !roll 1d20+4[Comment] + 4d8-@me.dexterity_mod [Second Comment]").unwrap();
+    let (_, result) = parse_p(b"#test !roll 1d20 + 4 [Comment]").unwrap();
     let steps = result.steps;
 
     assert_eq!(steps[0].args, vec![
@@ -622,15 +622,6 @@ fn it_parses_a_complete_roll_command() {
         Arg::Roll(RollArg::D(ArgValue::Number(20))),
         Arg::Roll(RollArg::ModifierPos(ArgValue::Number(4))),
         Arg::Roll(RollArg::Comment(ArgValue::Text("Comment".to_string()))),
-        Arg::Roll(RollArg::Primitive(Primitive::Add)),
-        Arg::Roll(RollArg::N(ArgValue::Number(4))),
-        Arg::Roll(RollArg::D(ArgValue::Number(8))),
-        Arg::Roll(RollArg::ModifierNeg(ArgValue::Token(TokenArg {
-            name: "me".to_string(),
-            attribute: Some("dexterity_mod".to_string()),
-            macro_name: None,
-        }))),
-        Arg::Roll(RollArg::Comment(ArgValue::Text("Second Comment".to_string()))),
     ]);
 }
 

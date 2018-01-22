@@ -140,8 +140,8 @@ pub fn arguments_roll_p(input: &[u8]) -> IResult<&[u8], Arg> {
             tag!("]")
         )) |
         map!(token_p,               | a | Arg::Token(a)) |
-        map!(variable_p,            | a | Arg::Variable(a)) |
-        map!(primitive_p,           | a | Arg::Roll(RollArg::Primitive(a)))
+        map!(variable_p,            | a | Arg::Variable(a))
+        // map!(primitive_p,           | a | Arg::Roll(RollArg::Primitive(a)))
     )
 }
 
@@ -625,7 +625,7 @@ pub fn roll_flag_var_p(input: &[u8]) -> IResult<&[u8], ArgValue> {
 /// Matches + modifiers
 pub fn roll_modifier_neg_p(input: &[u8]) -> IResult<&[u8], Arg> {
     do_parse!(input,
-        var: preceded!(tag!("-"), roll_modifier_var_p) >>
+        var: ws!(preceded!(tag!("-"), roll_modifier_var_p)) >>
         (Arg::Roll(RollArg::ModifierNeg(var)))
     )
 }
@@ -633,7 +633,7 @@ pub fn roll_modifier_neg_p(input: &[u8]) -> IResult<&[u8], Arg> {
 /// Matches - modifiers
 pub fn roll_modifier_pos_p(input: &[u8]) -> IResult<&[u8], Arg> {
     do_parse!(input,
-        var: preceded!(tag!("+"), roll_modifier_var_p) >>
+        var: ws!(preceded!(tag!("+"), roll_modifier_var_p)) >>
         (Arg::Roll(RollArg::ModifierPos(var)))
     )
 }

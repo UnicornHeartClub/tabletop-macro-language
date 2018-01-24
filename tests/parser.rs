@@ -637,6 +637,21 @@ fn it_parses_a_complete_hidden_roll_command() {
         Arg::Roll(RollArg::D(ArgValue::Number(20))),
         Arg::Roll(RollArg::ModifierPos(ArgValue::Number(2))),
     ]);
+
+    let (_, result) = parse_p(b"#test !hr ${foo}d4+@{me}.dexterity [Comment with spaces]").unwrap();
+    let steps = result.steps;
+
+    assert_eq!(steps[0].op, MacroOp::RollHidden);
+    assert_eq!(steps[0].args, vec![
+        Arg::Roll(RollArg::N(ArgValue::Variable("foo".to_string()))),
+        Arg::Roll(RollArg::D(ArgValue::Number(4))),
+        Arg::Roll(RollArg::ModifierPos(ArgValue::Token(TokenArg {
+            name: "me".to_string(),
+            attribute: Some("dexterity".to_string()),
+            macro_name: None,
+        }))),
+        Arg::Roll(RollArg::Comment(ArgValue::Text("Comment with spaces".to_string())))
+    ]);
 }
 
 #[test]

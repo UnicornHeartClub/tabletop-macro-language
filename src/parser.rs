@@ -214,13 +214,13 @@ pub fn command_p(input: &[u8]) -> IResult<&[u8], MacroOp> {
         map!(tag!("!exit"),                         |_| MacroOp::Exit)          |
         map!(tag!("!template"),                     |_| MacroOp::Template)      |
         map!(tag!("!test"),                         |_| MacroOp::TestMode)      |
-        map!(tag!("!hroll"),                        |_| MacroOp::RollHidden)    |
-        map!(tag!("!wroll"),                        |_| MacroOp::RollWhisper)   |
+        map!(alt!(tag!("!hroll") | tag!("!hr")),    |_| MacroOp::RollHidden)    |
         map!(alt!(tag!("!input") | tag!("!i")),     |_| MacroOp::Input)         |
         map!(alt!(tag!("!prompt") | tag!("!p")),    |_| MacroOp::Prompt)        |
         map!(alt!(tag!("!roll") | tag!("!r")),      |_| MacroOp::Roll)          |
         map!(alt!(tag!("!say") | tag!("!s")),       |_| MacroOp::Say)           |
         map!(alt!(tag!("!target") | tag!("!t")),    |_| MacroOp::Target)        |
+        map!(alt!(tag!("!wroll") | tag!("!wr")),    |_| MacroOp::RollWhisper)   |
         map!(alt!(tag!("!whisper") | tag!("!w")),   |_| MacroOp::Whisper)
     )))
 }

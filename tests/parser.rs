@@ -1160,6 +1160,9 @@ fn test_template_parser() {
     let (_, result) = arguments_template_p(b"'template_name'").unwrap();
     assert_eq!(result, Arg::Template(TemplateArg::Name("template_name".to_string())));
 
+    let (_, result) = arguments_template_p(b"template_name_2").unwrap();
+    assert_eq!(result, Arg::Template(TemplateArg::Name("template_name_2".to_string())));
+
     let mut attributes = HashMap::new();
     attributes.insert("foo".to_string(), ArgValue::TextInterpolated(TextInterpolated {
         parts: vec![
@@ -1171,7 +1174,7 @@ fn test_template_parser() {
     }"#.as_bytes()).unwrap();
     assert_eq!(result, Arg::Template(TemplateArg::Attributes(ArgValue::Object(attributes))));
 
-    let (_, result) = parse_p(r#"#test !template 'template_name' {
+    let (_, result) = parse_p(r#"#test !template template_name {
         "foo": 'bar'
     }"#.as_bytes()).unwrap();
 

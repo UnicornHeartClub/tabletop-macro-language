@@ -178,6 +178,7 @@ pub fn arguments_target_p(input: &[u8]) -> IResult<&[u8], Arg> {
 /// Matches !template arguments
 pub fn arguments_template_p(input: &[u8]) -> IResult<&[u8], Arg> {
     alt_complete!(input,
+        map!(variable_word_p, | a | Arg::Template(TemplateArg::Name(a))) |
         map!(single_quoted_p, | a | Arg::Template(TemplateArg::Name(a))) |
         map!(double_quoted_p, | a | Arg::Template(TemplateArg::Name(a))) |
         map!(json_hash_p, | a | Arg::Template(TemplateArg::Attributes(ArgValue::Object(a))))
@@ -734,6 +735,14 @@ pub fn variable_reserved_p(input: &[u8]) -> IResult<&[u8], i16> {
 pub fn word_p(input: &[u8]) -> IResult<&[u8], String> {
     do_parse!(input,
         word: alphanumeric >>
+        (String::from_utf8(word.to_vec()).unwrap())
+    )
+}
+
+/// Match variable words to strings
+pub fn variable_word_p(input: &[u8]) -> IResult<&[u8], String> {
+    do_parse!(input,
+        word: variable_name_p >>
         (String::from_utf8(word.to_vec()).unwrap())
     )
 }

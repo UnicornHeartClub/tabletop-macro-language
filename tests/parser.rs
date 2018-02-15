@@ -724,6 +724,20 @@ fn test_token_parser() {
 
     let (_, result) = token_p(b"@fooZ->my_test_func").unwrap();
     assert_eq!(result, TokenArg { name: "fooZ".to_string(), attribute: None, macro_name: Some("my_test_func".to_string()) });
+
+    let (_, result) = token_p(b"@foo.{attacks.0.bar}").unwrap();
+    assert_eq!(result, TokenArg {
+        name: "foo".to_string(), 
+        attribute: Some("attacks.0.bar".to_string()),
+        macro_name: None,
+    });
+
+    let (_, result) = token_p(b"@{foo}.{0.1}").unwrap();
+    assert_eq!(result, TokenArg {
+        name: "foo".to_string(), 
+        attribute: Some("0.1".to_string()),
+        macro_name: None,
+    });
 }
 
 #[test]

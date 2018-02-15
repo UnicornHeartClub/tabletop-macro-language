@@ -691,8 +691,7 @@ pub fn step_result_p(input: &[u8]) -> IResult<&[u8], StepResult> {
 pub fn token_p(input: &[u8]) -> IResult<&[u8], TokenArg> {
     // @todo match that we cannot start with a digit
     do_parse!(input,
-        name_raw: ws!(preceded!(tag!("@"), variable_name_p)) >>
-        name: value!(String::from_utf8(name_raw.to_vec()).unwrap()) >>
+        name: ws!(preceded!(tag!("@"), token_name_p)) >>
         attribute: switch!(opt!(complete!(preceded!(tag!("."), variable_name_p))),
             Some(a) => value!(Some(String::from_utf8(a.to_vec()).unwrap())) |
             _ => value!(None)
@@ -705,10 +704,21 @@ pub fn token_p(input: &[u8]) -> IResult<&[u8], TokenArg> {
     )
 }
 
+/// Parse a valid string for names
+pub fn token_name_p(input: &[u8]) -> IResult<&[u8], String> {
+    do_parse!(input,
+        word: alt_complete!(
+            delimited!(tag!("{"), is_not!(" \t\r\n.,?\\=<>|:;@!#$%^&*()+=/-[]{}'\""), tag!("}")) |
+            is_not!(" \t\r\n.,?\\=<>|:;@!#$%^&*()+=/-[]{}'\"")
+        ) >>
+        (String::from_utf8(word.to_vec()).unwrap())
+    )
+}
+
 /// Matches a valid variable name
 pub fn variable_name_p(input: &[u8]) -> IResult<&[u8], &[u8]> {
     alt_complete!(input,
-        delimited!(tag!("{"), is_not!(" \t\r\n.,?\\=<>|:;@!#$%^&*()+=/-[]{}'\""), tag!("}")) |
+        delimited!(tag!("{"), is_not!(" \t\r\n,?\\=<>|:;@!#$%^&*()+=/-[]{}'\""), tag!("}")) |
         is_not!(" \t\r\n.,?\\=<>|:;@!#$%^&*()+=/-[]{}'\"")
     )
 }

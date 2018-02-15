@@ -20,7 +20,9 @@
     "url": "https://github.com/UnicornHeartClub/tabletop-macro-language/issues"
   },
   "homepage": "https://github.com/UnicornHeartClub/tabletop-macro-language#readme",
-  "dependencies": {},
+  "dependencies": {
+    "lodash": "^4.17.5"
+  },
   "devDependencies": {
     "@babel/core": "^7.0.0-beta.37",
     "@babel/preset-env": "^7.0.0-beta.37",

@@ -5,6 +5,7 @@ use std::collections::HashMap;
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum Arg {
     Assign(Assign),
+    Case(Case),
     Conditional(Conditional),
     Input(TextInterpolated),
     Prompt(Prompt),
@@ -41,6 +42,12 @@ pub struct Assign {
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub struct Case {
+    pub input: ArgValue,
+    pub options: Vec<SwitchOption>,
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum ComparisonArg {
     EqualTo,
     GreaterThan,
@@ -60,6 +67,8 @@ pub struct Conditional {
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum MacroOp {
+    /// Case (switch) statement (!case)
+    Case,
     /// Exit command
     Exit,
     /// Input command
@@ -101,11 +110,11 @@ pub enum Primitive {
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Prompt {
     pub message: TextInterpolated,
-    pub options: Vec<PromptOption>,
+    pub options: Vec<SwitchOption>,
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
-pub struct PromptOption {
+pub struct SwitchOption {
     pub key: Option<String>,
     pub value: ArgValue,
 }

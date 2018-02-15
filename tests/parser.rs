@@ -906,9 +906,9 @@ fn test_assign_variable_parser() {
 fn test_arguments_prompt_parser() {
     // with options
     let options = vec![
-        PromptOption { key: Some("Label".to_string()), value: ArgValue::Text("Label".to_string()) },
-        PromptOption { key: Some("Label 2".to_string()), value: ArgValue::Text("Label 2".to_string()) },
-        PromptOption { key: Some("Label 3".to_string()), value: ArgValue::Text("Label 3".to_string()) },
+        SwitchOption { key: Some("Label".to_string()), value: ArgValue::Text("Label".to_string()) },
+        SwitchOption { key: Some("Label 2".to_string()), value: ArgValue::Text("Label 2".to_string()) },
+        SwitchOption { key: Some("Label 3".to_string()), value: ArgValue::Text("Label 3".to_string()) },
     ];
 
     let prompt = Arg::Prompt(Prompt {
@@ -924,8 +924,8 @@ fn test_arguments_prompt_parser() {
 
     // with options and values
     let options = vec![
-        PromptOption { key: Some("foo".to_string()), value: ArgValue::Text("bar".to_string()) },
-        PromptOption {
+        SwitchOption { key: Some("foo".to_string()), value: ArgValue::Text("bar".to_string()) },
+        SwitchOption {
             key: None,
             value: ArgValue::Token(TokenArg {
                 name: "me".to_string(),
@@ -933,7 +933,7 @@ fn test_arguments_prompt_parser() {
                 macro_name: None,
             })
         },
-        PromptOption {
+        SwitchOption {
             key: Some("baz".to_string()),
             value: ArgValue::TextInterpolated(TextInterpolated {
                 parts: vec![ ArgValue::Text("boo".to_string()) ],
@@ -966,6 +966,49 @@ fn test_arguments_prompt_parser() {
     // });
     // let (_, result) = arguments_prompt_p(b"\"What's your beef?\"").unwrap();
     // assert_eq!(&result, &prompt);
+}
+
+#[test]
+fn test_arguments_case_parser() {
+    // with options
+    let options = vec![
+        SwitchOption { key: Some("Label".to_string()), value: ArgValue::Text("Label".to_string()) },
+        SwitchOption { key: Some("Label 2".to_string()), value: ArgValue::Text("Label 2".to_string()) },
+        SwitchOption { key: Some("Label 3".to_string()), value: ArgValue::Text("Label 3".to_string()) },
+    ];
+
+    let case = Arg::Case(Case {
+        input: ArgValue::Number(0),
+        options,
+    });
+    let (_, result) = arguments_case_p(b"0 [Label, Label 2, 'Label 3']").unwrap();
+    assert_eq!(result, case);
+
+    // with options and values
+    let options = vec![
+        SwitchOption { key: Some("foo".to_string()), value: ArgValue::Text("bar".to_string()) },
+        SwitchOption {
+            key: None,
+            value: ArgValue::Token(TokenArg {
+                name: "me".to_string(),
+                attribute: Some("attribute".to_string()),
+                macro_name: None,
+            })
+        },
+        SwitchOption {
+            key: Some("baz".to_string()),
+            value: ArgValue::TextInterpolated(TextInterpolated {
+                parts: vec![ ArgValue::Text("boo".to_string()) ],
+            }),
+        },
+    ];
+
+    let case = Arg::Case(Case {
+        input: ArgValue::Text("foo".to_string()),
+        options,
+    });
+    let (_, result) = arguments_case_p(b"'foo' [foo:bar, @me.attribute, 'baz':\"boo\"]").unwrap();
+    assert_eq!(result, case);
 }
 
 #[test]

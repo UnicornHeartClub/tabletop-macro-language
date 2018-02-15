@@ -65,6 +65,31 @@ pub fn arguments_p(input: &[u8]) -> IResult<&[u8], Arg> {
     )
 }
 
+/// Matches !case arguments
+pub fn arguments_case_p(input: &[u8]) -> IResult<&[u8], Arg> {
+    add_return_error!(input, ErrorKind::Custom(4), do_parse!(
+        input: ws!(alt_complete!(
+            map!(boolean_p, | a | ArgValue::Boolean(a)) |
+            map!(float_p, | a | ArgValue::Float(a)) |
+            map!(num_p, | a | ArgValue::Number(a)) |
+            map!(word_p, | a | ArgValue::Text(a)) |
+            map!(quoted_interpolated_p, | a | ArgValue::TextInterpolated(a)) |
+            map!(single_quoted_p, | a | ArgValue::Text(a)) |
+            map!(variable_reserved_p, | a | ArgValue::VariableReserved(a)) |
+            map!(variable_p, | a | ArgValue::Variable(a)) |
+            map!(token_p, | a | ArgValue::Token(a))
+        )) >>
+        options: switch!(options_p,
+            Some(opts) => value!(opts) |
+            _ => value!(vec![])
+        ) >>
+        (Arg::Case(Case {
+            input,
+            options,
+        }))
+    ))
+}
+
 /// Matches !input arguments
 pub fn arguments_input_p(input: &[u8]) -> IResult<&[u8], Arg> {
     add_return_error!(input, ErrorKind::Custom(5), do_parse!(
@@ -99,7 +124,7 @@ pub fn arguments_prompt_p(input: &[u8]) -> IResult<&[u8], Arg> {
 }
 
 /// Matches an optional list of options
-pub fn options_p(input: &[u8]) -> IResult<&[u8], Option<Vec<PromptOption>>> {
+pub fn options_p(input: &[u8]) -> IResult<&[u8], Option<Vec<SwitchOption>>> {
     opt!(input, do_parse!(
         tag!("[") >>
         options: many0!(parse_option_p) >>
@@ -215,6 +240,7 @@ pub fn command_p(input: &[u8]) -> IResult<&[u8], MacroOp> {
         map!(tag!("!exit"),                         |_| MacroOp::Exit)          |
         map!(tag!("!template"),                     |_| MacroOp::Template)      |
         map!(tag!("!test"),                         |_| MacroOp::TestMode)      |
+        map!(alt!(tag!("!case") | tag!("!c")),      |_| MacroOp::Case)        |
         map!(alt!(tag!("!hroll") | tag!("!hr")),    |_| MacroOp::RollHidden)    |
         map!(alt!(tag!("!input") | tag!("!i")),     |_| MacroOp::Input)         |
         map!(alt!(tag!("!prompt") | tag!("!p")),    |_| MacroOp::Prompt)        |
@@ -393,7 +419,7 @@ pub fn string_with_spaces_p(input: &[u8]) -> IResult<&[u8], String> {
 }
 
 /// Parses a valid option (e.g. Label 1, "Label 1", 'Label 1', Label:Value)
-pub fn parse_option_p(input: &[u8]) -> IResult<&[u8], PromptOption> {
+pub fn parse_option_p(input: &[u8]) -> IResult<&[u8], SwitchOption> {
     // do not parse the key right away because
     do_parse!(input,
         label: ws!(alt_complete!(
@@ -433,7 +459,7 @@ pub fn parse_option_p(input: &[u8]) -> IResult<&[u8], PromptOption> {
             _ => value!(None)
 
         ) >>
-        (PromptOption {
+        (SwitchOption {
             key,
             value,
         })
@@ -457,6 +483,7 @@ pub fn parse_step_p(input: &[u8]) -> IResult<&[u8], Step> {
     do_parse!(input,
         op_type: op_p >>
         args: many0!(switch!(value!(&op_type),
+            &MacroOp::Case          => call!(arguments_case_p) |
             &MacroOp::Input         => call!(arguments_input_p) |
             &MacroOp::Prompt        => call!(arguments_prompt_p) |
             &MacroOp::Roll          => call!(arguments_roll_p) |

@@ -757,6 +757,9 @@ fn test_variable_parser() {
 
 #[test]
 fn test_variable_reserved_parser() {
+    let (_, result) = variable_reserved_p(b"$0").unwrap();
+    assert_eq!(result, 0);
+
     let (_, result) = variable_reserved_p(b"$1").unwrap();
     assert_eq!(result, 1);
 

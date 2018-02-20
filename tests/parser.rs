@@ -1268,3 +1268,61 @@ fn test_template_parser() {
         Arg::Template(TemplateArg::Attributes(ArgValue::Object(object))),
     ]);
 }
+
+#[test]
+fn test_assignment_parser() {
+    let (_, result) = assignment_p(b"$foo = 42").unwrap();
+    assert_eq!(result, Assign {
+        left: ArgValue::Variable("foo".to_string()),
+        right: vec![
+            ArgValue::Number(42)
+        ]
+    });
+
+    let (_, result) = parse_p(b"#test $foo = 'test'").unwrap();
+    assert_eq!(result.steps[0].op, MacroOp::Lambda);
+    assert_eq!(result.steps[0].args[0], Arg::Assign(
+        Assign {
+            left: ArgValue::Variable("foo".to_string()),
+            right: vec![
+                ArgValue::Text("test".to_string())
+            ]
+        }
+    ));
+}
+
+#[test]
+fn test_concat_parser() {
+    let (_, result) = concat_p(b"$foo += 42").unwrap();
+    assert_eq!(result, Assign {
+        left: ArgValue::Variable("foo".to_string()),
+        right: vec![
+            ArgValue::Number(42)
+        ]
+    });
+
+    let (_, result) = parse_p(b"#test $foo += 500").unwrap();
+    assert_eq!(result.steps[0].op, MacroOp::Lambda);
+    assert_eq!(result.steps[0].args[0], Arg::Concat(
+        Assign {
+            left: ArgValue::Variable("foo".to_string()),
+            right: vec![
+                ArgValue::Number(500)
+            ]
+        }
+    ));
+
+    let (_, result) = parse_p(b"#test @token.hp += 5").unwrap();
+    assert_eq!(result.steps[0].args[0], Arg::Concat(
+        Assign {
+            left: ArgValue::Token(TokenArg {
+                name: "token".to_string(),
+                attribute: Some("hp".to_string()),
+                macro_name: None,
+            }),
+            right: vec![
+                ArgValue::Number(5)
+            ]
+        }
+    ));
+}

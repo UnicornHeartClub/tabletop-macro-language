@@ -26,27 +26,9 @@ pub fn advantage_p(input: &[u8]) -> IResult<&[u8], Arg> {
 /// Matches left = right scenarios
 pub fn assignment_p(input: &[u8]) -> IResult<&[u8], Assign> {
     do_parse!(input,
-        // we can only assign to tokens and variables
-        left: ws!(alt_complete!(
-            map!(variable_p, | a | ArgValue::Variable(a)) |
-            map!(token_p, | a | ArgValue::Token(a))
-        )) >>
+        left: assignment_left_p >>
         ws!(tag!("=")) >>
-        // but we can assign almost anything else to them (except inline arguments)
-        right: many0!(alt_complete!(
-            map!(boolean_p, | a | ArgValue::Boolean(a)) |
-            map!(float_p, | a | ArgValue::Float(a)) |
-            map!(num_p, | a | ArgValue::Number(a)) |
-            map!(word_p, | a | ArgValue::Text(a)) |
-            map!(quoted_interpolated_p, | a | ArgValue::TextInterpolated(a)) |
-            map!(single_quoted_p, | a | ArgValue::Text(a)) |
-            map!(variable_reserved_p, | a | ArgValue::VariableReserved(a)) |
-            map!(variable_p, | a | ArgValue::Variable(a)) |
-            map!(token_p, | a | ArgValue::Token(a)) |
-            map!(json_array_p, | a | ArgValue::Array(a)) |
-            map!(json_hash_p, | a | ArgValue::Object(a)) |
-            map!(primitive_p, | a | ArgValue::Primitive(a))
-        )) >>
+        right: assignment_right_p >>
         (Assign {
             left,
             right,
@@ -54,16 +36,46 @@ pub fn assignment_p(input: &[u8]) -> IResult<&[u8], Assign> {
     )
 }
 
+/// Match the left of an assignment/concat expression
+pub fn assignment_left_p(input: &[u8]) -> IResult<&[u8], ArgValue> {
+    // we can only assign to tokens and variables
+    ws!(input, alt_complete!(
+        map!(variable_p, | a | ArgValue::Variable(a)) |
+        map!(token_p, | a | ArgValue::Token(a))
+    ))
+}
+
+/// Match the right of an assignment/concat expression
+pub fn assignment_right_p(input: &[u8]) -> IResult<&[u8], Vec<ArgValue>> {
+    // we can assign almost anything else to them (except inline arguments, for now)
+    many0!(input, alt_complete!(
+        map!(boolean_p, | a | ArgValue::Boolean(a)) |
+        map!(float_p, | a | ArgValue::Float(a)) |
+        map!(num_p, | a | ArgValue::Number(a)) |
+        map!(word_p, | a | ArgValue::Text(a)) |
+        map!(quoted_interpolated_p, | a | ArgValue::TextInterpolated(a)) |
+        map!(single_quoted_p, | a | ArgValue::Text(a)) |
+        map!(variable_reserved_p, | a | ArgValue::VariableReserved(a)) |
+        map!(variable_p, | a | ArgValue::Variable(a)) |
+        map!(token_p, | a | ArgValue::Token(a)) |
+        map!(json_array_p, | a | ArgValue::Array(a)) |
+        map!(json_hash_p, | a | ArgValue::Object(a)) |
+        map!(primitive_p, | a | ArgValue::Primitive(a))
+    ))
+}
+
+
 /// Matches arguments of unknown commands
 pub fn arguments_p(input: &[u8]) -> IResult<&[u8], Arg> {
     alt_complete!(input,
-        map!(conditional_p, | a | Arg::Conditional(a)) |
-        map!(assignment_p, | a | Arg::Assign(a)) |
-        map!(variable_p, | a | Arg::Variable(a)) |
-        map!(token_p, | a | Arg::Token(a)) |
+        map!(conditional_p,         | a | Arg::Conditional(a)) |
+        map!(assignment_p,          | a | Arg::Assign(a)) |
+        map!(concat_p,              | a | Arg::Concat(a)) |
+        map!(variable_p,            | a | Arg::Variable(a)) |
+        map!(token_p,               | a | Arg::Token(a)) |
         map!(quoted_interpolated_p, | a | Arg::Unrecognized(ArgValue::TextInterpolated(a))) |
-        map!(single_quoted_p, | a | Arg::Unrecognized(ArgValue::Text(a))) |
-        map!(ws!(word_p), | a | Arg::Unrecognized(ArgValue::Text(a)))
+        map!(single_quoted_p,       | a | Arg::Unrecognized(ArgValue::Text(a))) |
+        map!(ws!(word_p),           | a | Arg::Unrecognized(ArgValue::Text(a)))
     )
 }
 
@@ -236,6 +248,18 @@ pub fn boolean_p(input: &[u8]) -> IResult<&[u8], bool> {
     ))
 }
 
+/// Matches left += right scenarios
+pub fn concat_p(input: &[u8]) -> IResult<&[u8], Assign> {
+    do_parse!(input,
+        left: assignment_left_p >>
+        ws!(tag!("+=")) >>
+        right: assignment_right_p >>
+        (Assign {
+            left,
+            right,
+        })
+    )
+}
 /// Matches any command
 pub fn command_p(input: &[u8]) -> IResult<&[u8], MacroOp> {
     add_return_error!(input, ErrorKind::Custom(2), ws!(alt!(

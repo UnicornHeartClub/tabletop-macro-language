@@ -6,6 +6,7 @@ use std::collections::HashMap;
 pub enum Arg {
     Assign(Assign),
     Case(Case),
+    Concat(Assign),
     Conditional(Conditional),
     Input(TextInterpolated),
     Prompt(Prompt),

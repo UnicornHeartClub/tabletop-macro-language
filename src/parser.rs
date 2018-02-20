@@ -43,6 +43,8 @@ pub fn assignment_p(input: &[u8]) -> IResult<&[u8], Assign> {
             map!(variable_reserved_p, | a | ArgValue::VariableReserved(a)) |
             map!(variable_p, | a | ArgValue::Variable(a)) |
             map!(token_p, | a | ArgValue::Token(a)) |
+            map!(json_array_p, | a | ArgValue::Array(a)) |
+            map!(json_hash_p, | a | ArgValue::Object(a)) |
             map!(primitive_p, | a | ArgValue::Primitive(a))
         )) >>
         (Assign {

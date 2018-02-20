@@ -838,6 +838,27 @@ fn test_assign_token_parser() {
     });
 
     assert_eq!(result, assign);
+
+    // assign json structures
+    let mut attrs = HashMap::new();
+    attrs.insert("name".to_string(), ArgValue::Text("Test attack".to_string()));
+    attrs.insert("description".to_string(), ArgValue::Text("todo".to_string()));
+
+    let (_, result) = arguments_p(b"@me.attacks = [{ name: 'Test attack', description: 'todo' }]").unwrap();
+    let assign = Arg::Assign(Assign {
+        left: ArgValue::Token(TokenArg {
+            name: "me".to_string(),
+            attribute: Some("attacks".to_string()),
+            macro_name: None,
+        }),
+        right: vec![
+            ArgValue::Array(vec![
+                ArgValue::Object(attrs)
+            ])
+        ],
+    });
+
+    assert_eq!(result, assign);
 }
 
 #[test]

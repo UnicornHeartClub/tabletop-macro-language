@@ -1326,3 +1326,39 @@ fn test_concat_parser() {
         }
     ));
 }
+
+#[test]
+fn test_deduct_parser() {
+    let (_, result) = deduct_p(b"$foo -= 5").unwrap();
+    assert_eq!(result, Assign {
+        left: ArgValue::Variable("foo".to_string()),
+        right: vec![
+            ArgValue::Number(5)
+        ]
+    });
+
+    let (_, result) = parse_p(b"#test $foo -= 55").unwrap();
+    assert_eq!(result.steps[0].op, MacroOp::Lambda);
+    assert_eq!(result.steps[0].args[0], Arg::Deduct(
+        Assign {
+            left: ArgValue::Variable("foo".to_string()),
+            right: vec![
+                ArgValue::Number(55)
+            ]
+        }
+    ));
+
+    let (_, result) = parse_p(b"#test @token.hp -= 15").unwrap();
+    assert_eq!(result.steps[0].args[0], Arg::Deduct(
+        Assign {
+            left: ArgValue::Token(TokenArg {
+                name: "token".to_string(),
+                attribute: Some("hp".to_string()),
+                macro_name: None,
+            }),
+            right: vec![
+                ArgValue::Number(15)
+            ]
+        }
+    ));
+}

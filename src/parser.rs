@@ -71,6 +71,7 @@ pub fn arguments_p(input: &[u8]) -> IResult<&[u8], Arg> {
         map!(conditional_p,         | a | Arg::Conditional(a)) |
         map!(assignment_p,          | a | Arg::Assign(a)) |
         map!(concat_p,              | a | Arg::Concat(a)) |
+        map!(deduct_p,              | a | Arg::Deduct(a)) |
         map!(variable_p,            | a | Arg::Variable(a)) |
         map!(token_p,               | a | Arg::Token(a)) |
         map!(quoted_interpolated_p, | a | Arg::Unrecognized(ArgValue::TextInterpolated(a))) |
@@ -326,6 +327,19 @@ pub fn conditional_p(input: &[u8]) -> IResult<&[u8], Conditional> {
 /// Matches disadvantage roll argument
 pub fn disadvantage_p(input: &[u8]) -> IResult<&[u8], Arg> {
     map!(input, alt_complete!(tag!("disadvantage") | tag!("dis")), |_| Arg::Roll(RollArg::Disadvantage))
+}
+
+/// Matches left -= right scenarios
+pub fn deduct_p(input: &[u8]) -> IResult<&[u8], Assign> {
+    do_parse!(input,
+        left: assignment_left_p >>
+        ws!(tag!("-=")) >>
+        right: assignment_right_p >>
+        (Assign {
+            left,
+            right,
+        })
+    )
 }
 
 /// Matches arguments in double quotes ("") - no interpolation

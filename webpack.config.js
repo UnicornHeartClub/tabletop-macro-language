@@ -3,7 +3,7 @@ const webpack = require('webpack');
 const UglifyJsPlugin = require('uglifyjs-webpack-plugin')
 
  module.exports = {
-   entry: ['babel-polyfill', `${__dirname}/index.js` ],
+   entry: [ `${__dirname}/index.js` ],
    output: {
      filename: 'bundle.js',
      libraryTarget: 'commonjs2',
@@ -19,6 +19,7 @@ const UglifyJsPlugin = require('uglifyjs-webpack-plugin')
            loader: 'babel-loader',
            options: {
              presets: ['@babel/preset-env'],
+             plugins: ['@babel/plugin-transform-runtime'],
            },
          },
        },

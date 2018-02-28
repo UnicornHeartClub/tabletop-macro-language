@@ -147,7 +147,7 @@ pub enum RollArg {
     ModifierPos(ArgValue),
     N(ArgValue), // e.g. 1 (part of 1d20)
     Primitive(Primitive),
-    RO(ArgValue),
+    RO(Comparitive),
     RR(Comparitive),
     Sides(Vec<ArgValue>),
 }

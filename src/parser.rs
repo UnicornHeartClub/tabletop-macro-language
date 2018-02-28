@@ -670,8 +670,16 @@ pub fn roll_flag_min_p(input: &[u8]) -> IResult<&[u8], Arg> {
 pub fn roll_flag_ro_p(input: &[u8]) -> IResult<&[u8], Arg> {
     do_parse!(input,
         tag!("ro") >>
-        var: roll_flag_var_p >>
-        (Arg::Roll(RollArg::RO(var)))
+        comparitive_op: opt!(comparison_p) >>
+        value: roll_flag_var_p >>
+        op: switch!(value!(comparitive_op),
+            Some(o) => value!(o) |
+            _ => value!(ComparisonArg::LessThan)
+        ) >>
+        (Arg::Roll(RollArg::RO(Comparitive {
+            op,
+            value,
+        })))
     )
 }
 

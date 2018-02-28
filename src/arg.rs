@@ -59,6 +59,12 @@ pub enum ComparisonArg {
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub struct Comparitive {
+    pub op: ComparisonArg,
+    pub value: ArgValue,
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Conditional {
     pub left: ArgValue,
     pub comparison: ComparisonArg,
@@ -142,7 +148,7 @@ pub enum RollArg {
     N(ArgValue), // e.g. 1 (part of 1d20)
     Primitive(Primitive),
     RO(ArgValue),
-    RR(ArgValue),
+    RR(Comparitive),
     Sides(Vec<ArgValue>),
 }
 

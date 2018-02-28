@@ -565,9 +565,30 @@ fn test_arguments_roll_parser() {
     // RO
     let (_, result) = roll_flag_ro_p(b"ro$1").unwrap();
     assert_eq!(result, Arg::Roll(RollArg::RO(ArgValue::VariableReserved(1))));
-    // RR
-    let (_, result) = roll_flag_rr_p(b"rr$1").unwrap();
-    assert_eq!(result, Arg::Roll(RollArg::RR(ArgValue::VariableReserved(1))));
+}
+
+#[test]
+fn test_roll_flag_rr_p() {
+    // Variables
+    let (_, result) = roll_flag_rr_p(b"rr${1}").unwrap();
+    assert_eq!(result, Arg::Roll(RollArg::RR(Comparitive {
+        op: ComparisonArg::LessThan,
+        value: ArgValue::VariableReserved(1)
+    })));
+
+    // handles greater than expressions
+    let (_, result) = roll_flag_rr_p(b"rr>1").unwrap();
+    assert_eq!(result, Arg::Roll(RollArg::RR(Comparitive {
+        op: ComparisonArg::GreaterThan,
+        value: ArgValue::Number(1)
+    })));
+
+    // // handles less than expressions
+    let (_, result) = roll_flag_rr_p(b"rr<${foo}").unwrap();
+    assert_eq!(result, Arg::Roll(RollArg::RR(Comparitive {
+        op: ComparisonArg::LessThan,
+        value: ArgValue::Variable("foo".to_string()),
+    })));
 }
 
 #[test]

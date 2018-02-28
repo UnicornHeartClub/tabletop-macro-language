@@ -279,6 +279,16 @@ pub fn command_p(input: &[u8]) -> IResult<&[u8], MacroOp> {
     )))
 }
 
+pub fn comparison_p(input: &[u8]) -> IResult<&[u8], ComparisonArg> {
+    ws!(input, alt_complete!(
+        map!(tag!("=="), |_| ComparisonArg::EqualTo) |
+        map!(tag!(">="), |_| ComparisonArg::GreaterThanOrEqual) |
+        map!(tag!("<="), |_| ComparisonArg::LessThanOrEqual) |
+        map!(tag!(">"), |_| ComparisonArg::GreaterThan) |
+        map!(tag!("<"), |_| ComparisonArg::LessThan)
+    ))
+}
+
 /// Matches conditional statements (e.g. "1 > 2 ? success : failure")
 pub fn conditional_p(input: &[u8]) -> IResult<&[u8], Conditional> {
     add_return_error!(input, ErrorKind::Custom(3), do_parse!(
@@ -289,13 +299,7 @@ pub fn conditional_p(input: &[u8]) -> IResult<&[u8], Conditional> {
             map!(float_p, | a | ArgValue::Float(a)) |
             map!(num_p, | a | ArgValue::Number(a))
         )) >>
-        comparison: ws!(alt_complete!(
-            map!(tag!("=="), |_| ComparisonArg::EqualTo) |
-            map!(tag!(">="), |_| ComparisonArg::GreaterThanOrEqual) |
-            map!(tag!("<="), |_| ComparisonArg::LessThanOrEqual) |
-            map!(tag!(">"), |_| ComparisonArg::GreaterThan) |
-            map!(tag!("<"), |_| ComparisonArg::LessThan)
-        )) >>
+        comparison: comparison_p >>
         // but we can assign almost anything else to them (except inline arguments)
         right: ws!(alt_complete!(
             map!(float_p, | a | ArgValue::Float(a)) |
@@ -675,17 +679,25 @@ pub fn roll_flag_ro_p(input: &[u8]) -> IResult<&[u8], Arg> {
 pub fn roll_flag_rr_p(input: &[u8]) -> IResult<&[u8], Arg> {
     do_parse!(input,
         tag!("rr") >>
-        var: roll_flag_var_p >>
-        (Arg::Roll(RollArg::RR(var)))
+        comparitive_op: opt!(comparison_p) >>
+        value: roll_flag_var_p >>
+        op: switch!(value!(comparitive_op),
+            Some(o) => value!(o) |
+            _ => value!(ComparisonArg::LessThan)
+        ) >>
+        (Arg::Roll(RollArg::RR(Comparitive {
+            op,
+            value,
+        })))
     )
 }
 
 /// Matches valid roll flag inputs
 pub fn roll_flag_var_p(input: &[u8]) -> IResult<&[u8], ArgValue> {
     ws!(input, alt_complete!(
-        map!(variable_reserved_p, |n| ArgValue::VariableReserved(n)) |
-        map!(variable_p, |n| ArgValue::Variable(n)) |
-        map!(roll_digit_p, |n| ArgValue::Number(n))
+        map!(variable_reserved_p,   |n| ArgValue::VariableReserved(n)) |
+        map!(variable_p,            |n| ArgValue::Variable(n)) |
+        map!(roll_digit_p,          |n| ArgValue::Number(n))
     )) 
 }
 
@@ -802,7 +814,10 @@ pub fn variable_p(input: &[u8]) -> IResult<&[u8], String> {
 /// Matches reserved variables (digits only)
 pub fn variable_reserved_p(input: &[u8]) -> IResult<&[u8], i16> {
     do_parse!(input,
-        var: ws!(preceded!(tag!("$"), digit)) >>
+        var: ws!(preceded!(tag!("$"), alt_complete!(
+            delimited!(tag!("{"), digit, tag!("}")) |
+            digit
+        ))) >>
         num: value!(String::from_utf8(var.to_vec()).unwrap()) >>
         (num.parse::<i16>().unwrap())
     )

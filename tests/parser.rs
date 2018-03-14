@@ -496,6 +496,9 @@ fn test_arguments_roll_parser() {
     let (_, result) = arguments_roll_p(b"['I am a comment in single quotes']").unwrap();
     assert_eq!(result, Arg::Roll(RollArg::Comment(ArgValue::Text("I am a comment in single quotes".to_string()))));
 
+    let (_, result) = arguments_roll_p(b"['I am a comment (with + parentheses)']").unwrap();
+    assert_eq!(result, Arg::Roll(RollArg::Comment(ArgValue::Text("I am a comment (with + parentheses)".to_string()))));
+
     let (_, result) = arguments_roll_p(b"[\"Interpolated @{me}.attribute\"]").unwrap();
     assert_eq!(result, Arg::Roll(RollArg::Comment(ArgValue::TextInterpolated(TextInterpolated {
         parts: vec![

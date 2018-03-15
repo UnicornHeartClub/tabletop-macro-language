@@ -6,8 +6,7 @@
 
 A language and parser to add advanced functionality to tabletop role-playing games.
 
-- :notebook: [API](https://wiki.poweredvtt.com/macros) - A full reference on the TableTop Macro Language (TTML)
-- :books: [Documentation](DOCUMENTATION.md) - How the program works behind-the-scenes
+- :notebook: [API](https://docs.poweredvtt.com/kb/macros) - A full reference on the TableTop Macro Language (TTML)
 - :package: [Installation](#installation) - Use TTML for your own projects
 - :star: [Contributing](#contributing) - Help us make the language better
 
@@ -15,7 +14,7 @@ A language and parser to add advanced functionality to tabletop role-playing gam
 
 TableTop Macro Language is already integrated into [Power Virtual TableTop](https://www.poweredvtt.com).
 
-For information on how to write macros, see the [API](API.md).
+For information on how to write macros, see the [API](https://docs.poweredvtt.com/kb/macros#).
 
 If you are looking to integrate TTML into your existing platform or game, TTML can be used as an
 npm package. See [Installation](#installation).

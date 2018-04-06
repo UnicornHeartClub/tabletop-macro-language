@@ -54,6 +54,21 @@ fn test_simple_parser() {
 }
 
 #[test]
+fn commands_are_case_insensitive() {
+    let (_, result) = command_p(b"!roll").unwrap();
+    assert_eq!(result, MacroOp::Roll);
+
+    let (_, result) = command_p(b"!RoLL").unwrap();
+    assert_eq!(result, MacroOp::Roll);
+
+    let (_, result) = command_p(b"!PROMPT").unwrap();
+    assert_eq!(result, MacroOp::Prompt);
+
+    let (_, result) = command_p(b"!iNpUt").unwrap();
+    assert_eq!(result, MacroOp::Input);
+}
+
+#[test]
 fn test_complex_parser() {
     let program = Program {
         name: MacroOp::Name(String::from("complex-macro-name")),

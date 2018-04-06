@@ -264,18 +264,18 @@ pub fn concat_p(input: &[u8]) -> IResult<&[u8], Assign> {
 /// Matches any command
 pub fn command_p(input: &[u8]) -> IResult<&[u8], MacroOp> {
     add_return_error!(input, ErrorKind::Custom(2), ws!(alt!(
-        map!(tag!("!exit"),                         |_| MacroOp::Exit)          |
-        map!(tag!("!template"),                     |_| MacroOp::Template)      |
-        map!(tag!("!test"),                         |_| MacroOp::TestMode)      |
-        map!(alt!(tag!("!case") | tag!("!c")),      |_| MacroOp::Case)        |
-        map!(alt!(tag!("!hroll") | tag!("!hr")),    |_| MacroOp::RollHidden)    |
-        map!(alt!(tag!("!input") | tag!("!i")),     |_| MacroOp::Input)         |
-        map!(alt!(tag!("!prompt") | tag!("!p")),    |_| MacroOp::Prompt)        |
-        map!(alt!(tag!("!roll") | tag!("!r")),      |_| MacroOp::Roll)          |
-        map!(alt!(tag!("!say") | tag!("!s")),       |_| MacroOp::Say)           |
-        map!(alt!(tag!("!target") | tag!("!t")),    |_| MacroOp::Target)        |
-        map!(alt!(tag!("!wroll") | tag!("!wr")),    |_| MacroOp::RollWhisper)   |
-        map!(alt!(tag!("!whisper") | tag!("!w")),   |_| MacroOp::Whisper)
+        map!(tag_no_case!("!exit"),                         |_| MacroOp::Exit)          |
+        map!(tag_no_case!("!template"),                     |_| MacroOp::Template)      |
+        map!(tag_no_case!("!test"),                         |_| MacroOp::TestMode)      |
+        map!(alt!(tag_no_case!("!case") | tag_no_case!("!c")),      |_| MacroOp::Case)        |
+        map!(alt!(tag_no_case!("!hroll") | tag_no_case!("!hr")),    |_| MacroOp::RollHidden)    |
+        map!(alt!(tag_no_case!("!input") | tag_no_case!("!i")),     |_| MacroOp::Input)         |
+        map!(alt!(tag_no_case!("!prompt") | tag_no_case!("!p")),    |_| MacroOp::Prompt)        |
+        map!(alt!(tag_no_case!("!roll") | tag_no_case!("!r")),      |_| MacroOp::Roll)          |
+        map!(alt!(tag_no_case!("!say") | tag_no_case!("!s")),       |_| MacroOp::Say)           |
+        map!(alt!(tag_no_case!("!target") | tag_no_case!("!t")),    |_| MacroOp::Target)        |
+        map!(alt!(tag_no_case!("!wroll") | tag_no_case!("!wr")),    |_| MacroOp::RollWhisper)   |
+        map!(alt!(tag_no_case!("!whisper") | tag_no_case!("!w")),   |_| MacroOp::Whisper)
     )))
 }
 

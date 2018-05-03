@@ -2,7 +2,7 @@ use step::Step;
 use std::collections::HashMap;
 
 // Top-level arguments
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Arg {
     Assign(Assign),
     Case(Case),
@@ -30,6 +30,7 @@ pub enum ArgValue {
     Number(i32),
     Object(HashMap<String, ArgValue>),
     Primitive(Primitive),
+    Step(Step),
     Text(String),
     TextInterpolated(TextInterpolated),
     Token(TokenArg),
@@ -37,19 +38,19 @@ pub enum ArgValue {
     VariableReserved(i16),
 }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Assign {
     pub left: ArgValue,
     pub right: Vec<ArgValue>,
 }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Case {
     pub input: ArgValue,
     pub options: Vec<SwitchOption>,
 }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ComparisonArg {
     EqualTo,
     GreaterThan,
@@ -58,13 +59,13 @@ pub enum ComparisonArg {
     LessThanOrEqual,
 }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Comparitive {
     pub op: ComparisonArg,
     pub value: ArgValue,
 }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Conditional {
     pub left: ArgValue,
     pub comparison: ComparisonArg,
@@ -73,7 +74,7 @@ pub struct Conditional {
     pub failure: Option<Step>,
 }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum MacroOp {
     /// Case (switch) statement (!case)
     Case,
@@ -115,20 +116,20 @@ pub enum Primitive {
     Subtract,
 }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Prompt {
     pub message: TextInterpolated,
     pub options: Vec<SwitchOption>,
 }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SwitchOption {
     pub key: Option<String>,
     pub value: ArgValue,
 }
 
 // Arguments for the roll command, used by the parser
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum RollArg {
     Advantage,
     Comment(ArgValue),
@@ -152,14 +153,14 @@ pub enum RollArg {
     Sides(Vec<ArgValue>),
 }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum SayArg {
     Message(TextInterpolated),
     To(TokenArg),
     From(TokenArg),
 }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum TargetArg {
     Message(TextInterpolated),
 }

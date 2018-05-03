@@ -28,7 +28,10 @@ pub fn assignment_p(input: &[u8]) -> IResult<&[u8], Assign> {
     do_parse!(input,
         left: assignment_left_p >>
         ws!(tag!("=")) >>
-        right: assignment_right_p >>
+        right: alt_complete!(
+            map!(parse_assignment_step_p, | a | vec![ ArgValue::Step(a) ]) |
+            assignment_right_p
+        ) >>
         (Assign {
             left,
             right,
@@ -63,7 +66,6 @@ pub fn assignment_right_p(input: &[u8]) -> IResult<&[u8], Vec<ArgValue>> {
         map!(primitive_p, | a | ArgValue::Primitive(a))
     ))
 }
-
 
 /// Matches arguments of unknown commands
 pub fn arguments_p(input: &[u8]) -> IResult<&[u8], Arg> {
@@ -263,7 +265,7 @@ pub fn concat_p(input: &[u8]) -> IResult<&[u8], Assign> {
 }
 /// Matches any command
 pub fn command_p(input: &[u8]) -> IResult<&[u8], MacroOp> {
-    add_return_error!(input, ErrorKind::Custom(2), ws!(alt!(
+    ws!(input, alt!(
         map!(tag_no_case!("!exit"),                         |_| MacroOp::Exit)          |
         map!(tag_no_case!("!template"),                     |_| MacroOp::Template)      |
         map!(tag_no_case!("!test"),                         |_| MacroOp::TestMode)      |
@@ -276,7 +278,7 @@ pub fn command_p(input: &[u8]) -> IResult<&[u8], MacroOp> {
         map!(alt!(tag_no_case!("!target") | tag_no_case!("!t")),    |_| MacroOp::Target)        |
         map!(alt!(tag_no_case!("!wroll") | tag_no_case!("!wr")),    |_| MacroOp::RollWhisper)   |
         map!(alt!(tag_no_case!("!whisper") | tag_no_case!("!w")),   |_| MacroOp::Whisper)
-    )))
+    ))
 }
 
 pub fn comparison_p(input: &[u8]) -> IResult<&[u8], ComparisonArg> {
@@ -518,6 +520,27 @@ pub fn parse_p(input: &[u8]) -> IResult<&[u8], Program> {
         (Program {
             name: prog_name,
             steps: steps,
+        })
+    )
+}
+
+/// Parse a step for possible assignment, it must be a command that starts with a "!"
+pub fn parse_assignment_step_p(input: &[u8]) -> IResult<&[u8], Step> {
+    do_parse!(input,
+        op_type: command_p >>
+        args: many0!(switch!(value!(&op_type),
+            &MacroOp::Case          => call!(arguments_case_p) |
+            &MacroOp::Input         => call!(arguments_input_p) |
+            &MacroOp::Prompt        => call!(arguments_prompt_p) |
+            &MacroOp::Roll          => call!(arguments_roll_p) |
+            &MacroOp::RollHidden    => call!(arguments_roll_p) |
+            &MacroOp::RollWhisper   => call!(arguments_roll_p) |
+            &MacroOp::Target        => call!(arguments_target_p)
+        )) >>
+        (Step {
+            args,
+            op: op_type,
+            result: StepResult::Save,
         })
     )
 }

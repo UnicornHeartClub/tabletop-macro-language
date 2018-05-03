@@ -1423,3 +1423,55 @@ fn test_deduct_parser() {
         }
     ));
 }
+
+#[test]
+fn test_assign_command() {
+    let program = Program {
+        name: MacroOp::Name(String::from("assign-command")),
+        steps: vec![Step {
+            args: vec![
+                Arg::Assign(Assign {
+                    left: ArgValue::Variable("foo".to_string()),
+                    right: vec![
+                        ArgValue::Step(Step {
+                            args: vec![
+                                Arg::Roll(RollArg::N(ArgValue::Number(1))),
+                                Arg::Roll(RollArg::D(ArgValue::Number(20)))
+                            ],
+                            op: MacroOp::Roll,
+                            result: StepResult::Save,
+                        })
+                    ]
+                })
+            ],
+            op: MacroOp::Lambda,
+            result: StepResult::Ignore,
+        }],
+    };
+    let (_, result) = parse_p(b"#assign-command $foo = !roll 1d20").unwrap();
+    assert_eq!(result, program);
+
+    let program = Program {
+        name: MacroOp::Name(String::from("simple-macro-name-2")),
+        steps: vec![
+            Step {
+                args: vec![],
+                op: MacroOp::Exit,
+                result: StepResult::Ignore,
+            },
+            Step {
+                args: vec![
+                    Arg::Say(SayArg::Message(TextInterpolated {
+                        parts: vec! [
+                            ArgValue::Text("Hello, world!".to_string()),
+                        ],
+                    })),
+                ],
+                op: MacroOp::Say,
+                result: StepResult::Ignore,
+            }
+        ],
+    };
+    let (_, result) = parse_p(b"#simple-macro-name-2 !exit !say \"Hello, world!\"").unwrap();
+    assert_eq!(result, program);
+}

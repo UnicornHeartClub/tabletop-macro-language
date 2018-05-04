@@ -10,6 +10,11 @@ pub mod output;
 pub mod parser;
 pub mod step;
 
+#[derive(Serialize, Deserialize)]
+struct OutputError {
+    error: String,
+}
+
 use std::mem;
 use std::ffi::{CString, CStr};
 use std::os::raw::{c_char, c_void};
@@ -49,10 +54,13 @@ pub extern "C" fn parse(raw_input: *mut c_char) -> *mut c_char {
     // Parse the macro
     if prog.is_err() {
         // Push the error
-        let err = prog.unwrap_err();
-        // let json = serde_json::to_string(&err).unwrap();
+        let error = prog.unwrap_err();
+        let output_error = OutputError {
+            error: format!("{:?}", error),
+        };
+        let json = serde_json::to_string(&output_error).unwrap();
 
-        CString::new("Unexpected error (for now)").unwrap().into_raw()
+        CString::new(json).unwrap().into_raw()
     } else {
         let (_, program) = prog.unwrap();
 

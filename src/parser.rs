@@ -540,7 +540,7 @@ pub fn parse_assignment_step_p(input: &[u8]) -> IResult<&[u8], Step> {
         (Step {
             args,
             op: op_type,
-            result: StepResult::Save,
+            result: StepResult::Ignore,
         })
     )
 }

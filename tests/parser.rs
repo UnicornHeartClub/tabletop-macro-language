@@ -1439,7 +1439,7 @@ fn test_assign_command() {
                                 Arg::Roll(RollArg::D(ArgValue::Number(20)))
                             ],
                             op: MacroOp::Roll,
-                            result: StepResult::Save,
+                            result: StepResult::Ignore,
                         })
                     ]
                 })
@@ -1450,28 +1450,82 @@ fn test_assign_command() {
     };
     let (_, result) = parse_p(b"#assign-command $foo = !roll 1d20").unwrap();
     assert_eq!(result, program);
+}
+
+#[test]
+fn test_assign_in_comparison_with_command() {
+    let options = vec![
+        SwitchOption { key: Some("0".to_string()), value: ArgValue::Text("Ok".to_string()) },
+        SwitchOption { key: Some("1".to_string()), value: ArgValue::Text("No".to_string()) },
+    ];
 
     let program = Program {
-        name: MacroOp::Name(String::from("simple-macro-name-2")),
-        steps: vec![
-            Step {
-                args: vec![],
-                op: MacroOp::Exit,
-                result: StepResult::Ignore,
-            },
-            Step {
-                args: vec![
-                    Arg::Say(SayArg::Message(TextInterpolated {
-                        parts: vec! [
-                            ArgValue::Text("Hello, world!".to_string()),
+        name: MacroOp::Name(String::from("complex-assign-command")),
+        steps: vec![Step {
+            args: vec![
+                Arg::Prompt(Prompt {
+                    message: TextInterpolated {
+                        parts: vec![
+                            ArgValue::Text("Test this function".to_string()),
                         ],
-                    })),
-                ],
-                op: MacroOp::Say,
-                result: StepResult::Ignore,
-            }
-        ],
+                    },
+                    options,
+                })
+            ],
+            op: MacroOp::Prompt,
+            result: StepResult::Save,
+        }, Step {
+            args: vec![
+                Arg::Conditional(Conditional {
+                    left: ArgValue::VariableReserved(0),
+                    comparison: ComparisonArg::EqualTo,
+                    right: ArgValue::Number(0),
+                    success: Some(Step {
+                        args: vec![
+                            Arg::Assign(Assign {
+                                left: ArgValue::Variable("foo".to_string()),
+                                right: vec![
+                                    ArgValue::Step(Step {
+                                        args: vec![
+                                            Arg::Roll(RollArg::N(ArgValue::Number(1))),
+                                            Arg::Roll(RollArg::D(ArgValue::Number(20)))
+                                        ],
+                                        op: MacroOp::Roll,
+                                        result: StepResult::Ignore,
+                                    })
+                                ]
+                            })
+                        ],
+                        op: MacroOp::Lambda,
+                        result: StepResult::Ignore,
+                    }),
+                    failure: Some(Step {
+                        args: vec![
+                            Arg::Assign(Assign {
+                                left: ArgValue::Variable("foo".to_string()),
+                                right: vec![
+                                    ArgValue::VariableReserved(0)
+                                ]
+                            })
+                        ],
+                        op: MacroOp::Lambda,
+                        result: StepResult::Ignore,
+                    }),
+                }),
+            ],
+            op: MacroOp::Lambda,
+            result: StepResult::Ignore,
+        }, Step {
+            args: vec![
+                Arg::Roll(RollArg::N(ArgValue::Number(1))),
+                Arg::Roll(RollArg::D(ArgValue::Number(8)))
+            ],
+            op: MacroOp::Roll,
+            result: StepResult::Ignore,
+        }],
     };
-    let (_, result) = parse_p(b"#simple-macro-name-2 !exit !say \"Hello, world!\"").unwrap();
+    let (_, result) = parse_p(
+        b"#complex-assign-command !prompt 'Test this function' [0:'Ok', 1:'No'] >> ${0} == 0 ? $foo = !roll 1d20 : $foo = ${0} | !roll 1d8"
+    ).unwrap();
     assert_eq!(result, program);
 }

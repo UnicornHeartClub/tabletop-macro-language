@@ -480,7 +480,7 @@ pub fn parse_option_p(input: &[u8]) -> IResult<&[u8], SwitchOption> {
             map!(string_with_spaces_p, | a | ArgValue::Text(a)) |
             map!(word_p, | a | ArgValue::Text(a))
         )) >>
-        value: switch!(opt!(tag!(":")),
+        value: ws!(switch!(opt!(tag!(":")),
             // If we have a delim, parse the value
             Some(_) => alt_complete!(
                 map!(boolean_p, | a | ArgValue::Boolean(a)) |
@@ -495,7 +495,7 @@ pub fn parse_option_p(input: &[u8]) -> IResult<&[u8], SwitchOption> {
                 map!(word_p, | a | ArgValue::Text(a))
             ) |
             None => value!(label.clone())
-        ) >>
+        )) >>
         opt!(tag!(",")) >>
         key: switch!(value!(label),
             ArgValue::Boolean(v) => value!(Some(v.to_string())) |

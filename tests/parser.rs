@@ -1036,22 +1036,32 @@ fn test_arguments_prompt_parser() {
     });
     let (_, result) = arguments_prompt_p(b"\"Choose your thing\" [foo:bar, @me.attribute, 'baz':\"boo\"]").unwrap();
     assert_eq!(result, prompt);
-
-    // // no options
-    // let prompt = Arg::Prompt(Prompt {
-        // message: "Choose your style".to_string(),
-        // options: HashMap::new(),
-    // });
-    // let (_, result) = arguments_prompt_p(b"'Choose your style' []").unwrap();
-    // assert_eq!(result, prompt);
-
-    // let prompt = Arg::Prompt(Prompt {
-        // message: "What's your beef?".to_string(),
-        // options: HashMap::new(),
-    // });
-    // let (_, result) = arguments_prompt_p(b"\"What's your beef?\"").unwrap();
-    // assert_eq!(&result, &prompt);
 }
+
+#[test]
+fn test_parse_options() {
+    let options = vec![
+        SwitchOption { key: Some("1".to_string()), value: ArgValue::Text("10 ft. Cone".to_string()) },
+        SwitchOption {
+            key: Some("2".to_string()),
+            value: ArgValue::TextInterpolated(TextInterpolated {
+                parts: vec![ ArgValue::Text("30 ft. Cone".to_string()) ],
+            }),
+        },
+    ];
+
+    let prompt = Arg::Prompt(Prompt {
+        message: TextInterpolated {
+            parts: vec![
+                ArgValue::Text("Choose a type".to_string()),
+            ],
+        },
+        options,
+    });
+    let (_, result) = arguments_prompt_p(b"'Choose a type' [1:'10 ft. Cone' 2:\"30 ft. Cone\" ]").unwrap();
+    assert_eq!(result, prompt);
+}
+
 
 #[test]
 fn test_arguments_case_parser() {

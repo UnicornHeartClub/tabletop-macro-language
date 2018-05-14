@@ -1,6 +1,6 @@
 {
   "name": "tabletop-macro-language",
-  "version": "0.13.12",
+  "version": "0.13.13",
   "description": "A language and parser to add advanced functionality to tabletop role-playing games.",
   "main": "dist/bundle.js",
   "scripts": {

@@ -30,7 +30,7 @@ pub fn assignment_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Assi
         left: assignment_left_p >>
         ws!(tag!("=")) >>
         right: alt_complete!(
-            parse_assignment_step_p => { | a | vec![ ArgValue::Step(a) ] } |
+            parse_inline_step_p => { | a | vec![ ArgValue::Step(a) ] } |
             assignment_right_p
         ) >>
         (Assign {
@@ -53,6 +53,7 @@ pub fn assignment_left_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice,
 pub fn assignment_right_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Vec<ArgValue>> {
     // we can assign almost anything else to them (except inline arguments, for now)
     many0!(input, alt_complete!(
+        parse_inline_function_p => { | a | ArgValue::Step(a)                } |
         boolean_p               => { | a | ArgValue::Boolean(a)             } |
         num_p                   => { | a | ArgValue::Number(a)              } |
         float_p                 => { | a | ArgValue::Float(a)               } |
@@ -462,36 +463,28 @@ pub fn string_with_spaces_p(input: CompleteByteSlice) -> IResult<CompleteByteSli
     )
 }
 
+pub fn parse_option_key_value_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, ArgValue> {
+    alt_complete!(input,
+        boolean_p               => { | a | ArgValue::Boolean(a)             } |
+        num_p                   => { | a | ArgValue::Number(a)              } |
+        float_p                 => { | a | ArgValue::Float(a)               } |
+        quoted_interpolated_p   => { | a | ArgValue::TextInterpolated(a)    } |
+        single_quoted_p         => { | a | ArgValue::Text(a)                } |
+        variable_reserved_p     => { | a | ArgValue::VariableReserved(a)    } |
+        variable_p              => { | a | ArgValue::Variable(a)            } |
+        token_p                 => { | a | ArgValue::Token(a)               } |
+        string_with_spaces_p    => { | a | ArgValue::Text(a)                } |
+        word_p                  => { | a | ArgValue::Text(a)                }
+    )
+}
 /// Parses a valid option (e.g. Label 1, "Label 1", 'Label 1', Label:Value)
 pub fn parse_option_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, SwitchOption> {
     // do not parse the key right away because
     do_parse!(input,
-        label: ws!(alt_complete!(
-            boolean_p               => { | a | ArgValue::Boolean(a)             } |
-            num_p                   => { | a | ArgValue::Number(a)              } |
-            float_p                 => { | a | ArgValue::Float(a)               } |
-            quoted_interpolated_p   => { | a | ArgValue::TextInterpolated(a)    } |
-            single_quoted_p         => { | a | ArgValue::Text(a)                } |
-            variable_reserved_p     => { | a | ArgValue::VariableReserved(a)    } |
-            variable_p              => { | a | ArgValue::Variable(a)            } |
-            token_p                 => { | a | ArgValue::Token(a)               } |
-            string_with_spaces_p    => { | a | ArgValue::Text(a)                } |
-            word_p                  => { | a | ArgValue::Text(a)                }
-        )) >>
+        label: ws!(parse_option_key_value_p) >>
         value: ws!(switch!(opt!(tag!(":")),
             // If we have a delim, parse the value
-            Some(_) => alt_complete!(
-                boolean_p               => { | a | ArgValue::Boolean(a)             } |
-                num_p                   => { | a | ArgValue::Number(a)              } |
-                float_p                 => { | a | ArgValue::Float(a)               } |
-                quoted_interpolated_p   => { | a | ArgValue::TextInterpolated(a)    } |
-                single_quoted_p         => { | a | ArgValue::Text(a)                } |
-                variable_reserved_p     => { | a | ArgValue::VariableReserved(a)    } |
-                variable_p              => { | a | ArgValue::Variable(a)            } |
-                token_p                 => { | a | ArgValue::Token(a)               } |
-                string_with_spaces_p    => { | a | ArgValue::Text(a)                } |
-                word_p                  => { | a | ArgValue::Text(a)                }
-            ) |
+            Some(_) => ws!(parse_option_key_value_p) |
             None => value!(label.clone())
         )) >>
         opt!(tag!(",")) >>
@@ -521,8 +514,34 @@ pub fn parse_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Program> 
     )
 }
 
+/// Parse a function
+/// Step order matters!
+///
+/// e.g. "word{...}" where curly-braces delimit comma-separated values and
+/// the word prior to the braces represents the name of the function
+pub fn parse_inline_function_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Step> {
+    let mut args = vec![];
+
+    do_parse!(input,
+        map!(variable_word_p, | name | args.push(Arg::Function(ArgValue::Text(name)))) >>
+        delimited!(
+            tag!("{"),
+            separated_list_complete!(
+                tag!("|"),
+                map!(parse_option_key_value_p, | arg | args.push(Arg::Function(arg)))
+            ),
+            tag!("}")
+        ) >>
+        (Step {
+            args,
+            op: MacroOp::Lambda,
+            result: StepResult::Ignore,
+        })
+    )
+}
+
 /// Parse a step for possible assignment, it must be a command that starts with a "!"
-pub fn parse_assignment_step_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Step> {
+pub fn parse_inline_step_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Step> {
     do_parse!(input,
         op_type: command_p >>
         args: many0!(switch!(value!(&op_type),

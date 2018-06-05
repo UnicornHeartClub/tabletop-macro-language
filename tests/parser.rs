@@ -1534,3 +1534,58 @@ fn test_assign_in_comparison_with_command() {
     )).unwrap();
     assert_eq!(result, program);
 }
+
+#[test]
+fn test_function_parser() {
+    let (_, result) = parse_p(CompleteByteSlice(b"#test @me.items += get{test_compendium|Sword of Enchantment}")).unwrap();
+    assert_eq!(result.steps[0].op, MacroOp::Lambda);
+    assert_eq!(result.steps[0].args[0], Arg::Concat(
+        Assign {
+            left: ArgValue::Token(TokenArg {
+                name: "me".to_string(),
+                attribute: Some("items".to_string()),
+                macro_name: None,
+            }),
+            right: vec![
+                ArgValue::Step(Step {
+                    args: vec![
+                        Arg::Function(ArgValue::Text("get".to_string())),
+                        Arg::Function(ArgValue::Text("test_compendium".to_string())),
+                        Arg::Function(ArgValue::Text("Sword of Enchantment".to_string())),
+                    ],
+                    op: MacroOp::Lambda,
+                    result: StepResult::Ignore,
+                })
+            ]
+        }
+    ));
+
+    let (_, result) = parse_p(CompleteByteSlice(b"#test @me.attacks += custom_function{foo|1.0|2|\"boo\"}")).unwrap();
+    assert_eq!(result.steps[0].op, MacroOp::Lambda);
+    assert_eq!(result.steps[0].args[0], Arg::Concat(
+        Assign {
+            left: ArgValue::Token(TokenArg {
+                name: "me".to_string(),
+                attribute: Some("attacks".to_string()),
+                macro_name: None,
+            }),
+            right: vec![
+                ArgValue::Step(Step {
+                    args: vec![
+                        Arg::Function(ArgValue::Text("custom_function".to_string())),
+                        Arg::Function(ArgValue::Text("foo".to_string())),
+                        Arg::Function(ArgValue::Float(1.0)),
+                        Arg::Function(ArgValue::Number(2)),
+                        Arg::Function(ArgValue::TextInterpolated(TextInterpolated {
+                            parts: vec![
+                                ArgValue::Text("boo".to_string()),
+                            ]
+                        }))
+                    ],
+                    op: MacroOp::Lambda,
+                    result: StepResult::Ignore,
+                })
+            ]
+        }
+    ));
+}

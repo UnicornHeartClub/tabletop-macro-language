@@ -9,6 +9,7 @@ pub enum Arg {
     Concat(Assign),
     Conditional(Conditional),
     Deduct(Assign),
+    Function(ArgValue),
     Input(TextInterpolated),
     Prompt(Prompt),
     Roll(RollArg),

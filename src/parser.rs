@@ -523,7 +523,7 @@ pub fn parse_inline_function_p(input: CompleteByteSlice) -> IResult<CompleteByte
     let mut args = vec![];
 
     do_parse!(input,
-        map!(variable_word_p, | name | args.push(Arg::Function(ArgValue::Text(name)))) >>
+        function_name: variable_word_p >>
         delimited!(
             tag!("{"),
             separated_list_complete!(
@@ -534,7 +534,7 @@ pub fn parse_inline_function_p(input: CompleteByteSlice) -> IResult<CompleteByte
         ) >>
         (Step {
             args,
-            op: MacroOp::Lambda,
+            op: MacroOp::Function(function_name),
             result: StepResult::Ignore,
         })
     )

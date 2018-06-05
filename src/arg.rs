@@ -81,6 +81,8 @@ pub enum MacroOp {
     Case,
     /// Exit command
     Exit,
+    /// User defined function
+    Function(String),
     /// Input command
     Input,
     /// Lamda (assignment or conditional argument)

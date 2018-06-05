@@ -1549,11 +1549,10 @@ fn test_function_parser() {
             right: vec![
                 ArgValue::Step(Step {
                     args: vec![
-                        Arg::Function(ArgValue::Text("get".to_string())),
                         Arg::Function(ArgValue::Text("test_compendium".to_string())),
                         Arg::Function(ArgValue::Text("Sword of Enchantment".to_string())),
                     ],
-                    op: MacroOp::Lambda,
+                    op: MacroOp::Function("get".to_string()),
                     result: StepResult::Ignore,
                 })
             ]
@@ -1572,7 +1571,6 @@ fn test_function_parser() {
             right: vec![
                 ArgValue::Step(Step {
                     args: vec![
-                        Arg::Function(ArgValue::Text("custom_function".to_string())),
                         Arg::Function(ArgValue::Text("foo".to_string())),
                         Arg::Function(ArgValue::Float(1.0)),
                         Arg::Function(ArgValue::Number(2)),
@@ -1582,7 +1580,7 @@ fn test_function_parser() {
                             ]
                         }))
                     ],
-                    op: MacroOp::Lambda,
+                    op: MacroOp::Function("custom_function".to_string()),
                     result: StepResult::Ignore,
                 })
             ]

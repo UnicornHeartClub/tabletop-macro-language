@@ -6,8 +6,9 @@ use nom::{
     IResult,
     alphanumeric,
     digit,
-    float,
+    recognize_float,
 };
+use nom::types::CompleteByteSlice;
 use step::*;
 use std::collections::HashMap;
 use std::str;
@@ -19,17 +20,17 @@ pub struct Program {
 }
 
 /// Matches advantage roll argument
-pub fn advantage_p(input: &[u8]) -> IResult<&[u8], Arg> {
+pub fn advantage_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Arg> {
     map!(input, alt_complete!(tag!("advantage") | tag!("adv")), |_| Arg::Roll(RollArg::Advantage))
 }
 
 /// Matches left = right scenarios
-pub fn assignment_p(input: &[u8]) -> IResult<&[u8], Assign> {
+pub fn assignment_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Assign> {
     do_parse!(input,
         left: assignment_left_p >>
         ws!(tag!("=")) >>
         right: alt_complete!(
-            map!(parse_assignment_step_p, | a | vec![ ArgValue::Step(a) ]) |
+            parse_assignment_step_p => { | a | vec![ ArgValue::Step(a) ] } |
             assignment_right_p
         ) >>
         (Assign {
@@ -40,61 +41,61 @@ pub fn assignment_p(input: &[u8]) -> IResult<&[u8], Assign> {
 }
 
 /// Match the left of an assignment/concat expression
-pub fn assignment_left_p(input: &[u8]) -> IResult<&[u8], ArgValue> {
+pub fn assignment_left_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, ArgValue> {
     // we can only assign to tokens and variables
     ws!(input, alt_complete!(
-        map!(variable_p, | a | ArgValue::Variable(a)) |
-        map!(token_p, | a | ArgValue::Token(a))
+        variable_p  => { | a | ArgValue::Variable(a)    } |
+        token_p     => { | a | ArgValue::Token(a)       }
     ))
 }
 
 /// Match the right of an assignment/concat expression
-pub fn assignment_right_p(input: &[u8]) -> IResult<&[u8], Vec<ArgValue>> {
+pub fn assignment_right_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Vec<ArgValue>> {
     // we can assign almost anything else to them (except inline arguments, for now)
     many0!(input, alt_complete!(
-        map!(boolean_p, | a | ArgValue::Boolean(a)) |
-        map!(float_p, | a | ArgValue::Float(a)) |
-        map!(num_p, | a | ArgValue::Number(a)) |
-        map!(word_p, | a | ArgValue::Text(a)) |
-        map!(quoted_interpolated_p, | a | ArgValue::TextInterpolated(a)) |
-        map!(single_quoted_p, | a | ArgValue::Text(a)) |
-        map!(variable_reserved_p, | a | ArgValue::VariableReserved(a)) |
-        map!(variable_p, | a | ArgValue::Variable(a)) |
-        map!(token_p, | a | ArgValue::Token(a)) |
-        map!(json_array_p, | a | ArgValue::Array(a)) |
-        map!(json_hash_p, | a | ArgValue::Object(a)) |
-        map!(primitive_p, | a | ArgValue::Primitive(a))
+        boolean_p               => { | a | ArgValue::Boolean(a)             } |
+        num_p                   => { | a | ArgValue::Number(a)              } |
+        float_p                 => { | a | ArgValue::Float(a)               } |
+        word_p                  => { | a | ArgValue::Text(a)                } |
+        quoted_interpolated_p   => { | a | ArgValue::TextInterpolated(a)    } |
+        single_quoted_p         => { | a | ArgValue::Text(a)                } |
+        variable_reserved_p     => { | a | ArgValue::VariableReserved(a)    } |
+        variable_p              => { | a | ArgValue::Variable(a)            } |
+        token_p                 => { | a | ArgValue::Token(a)               } |
+        json_array_p            => { | a | ArgValue::Array(a)               } |
+        json_hash_p             => { | a | ArgValue::Object(a)              } |
+        primitive_p             => { | a | ArgValue::Primitive(a)           }
     ))
 }
 
 /// Matches arguments of unknown commands
-pub fn arguments_p(input: &[u8]) -> IResult<&[u8], Arg> {
+pub fn arguments_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Arg> {
     alt_complete!(input,
-        map!(conditional_p,         | a | Arg::Conditional(a)) |
-        map!(assignment_p,          | a | Arg::Assign(a)) |
-        map!(concat_p,              | a | Arg::Concat(a)) |
-        map!(deduct_p,              | a | Arg::Deduct(a)) |
-        map!(variable_p,            | a | Arg::Variable(a)) |
-        map!(token_p,               | a | Arg::Token(a)) |
-        map!(quoted_interpolated_p, | a | Arg::Unrecognized(ArgValue::TextInterpolated(a))) |
-        map!(single_quoted_p,       | a | Arg::Unrecognized(ArgValue::Text(a))) |
-        map!(ws!(word_p),           | a | Arg::Unrecognized(ArgValue::Text(a)))
+        conditional_p           =>  { | a | Arg::Conditional(a)                                 } |
+        assignment_p            =>  { | a | Arg::Assign(a)                                      } |
+        concat_p                =>  { | a | Arg::Concat(a)                                      } |
+        deduct_p                =>  { | a | Arg::Deduct(a)                                      } |
+        variable_p              =>  { | a | Arg::Variable(a)                                    } |
+        token_p                 =>  { | a | Arg::Token(a)                                       }
+        // quoted_interpolated_p   =>  { | a | Arg::Unrecognized(ArgValue::TextInterpolated(a))    } |
+        // single_quoted_p         =>  { | a | Arg::Unrecognized(ArgValue::Text(a))                } |
+        // ws!(word_p)             =>  { | a | Arg::Unrecognized(ArgValue::Text(a))                }
     )
 }
 
 /// Matches !case arguments
-pub fn arguments_case_p(input: &[u8]) -> IResult<&[u8], Arg> {
+pub fn arguments_case_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Arg> {
     add_return_error!(input, ErrorKind::Custom(4), do_parse!(
         input: ws!(alt_complete!(
-            map!(boolean_p, | a | ArgValue::Boolean(a)) |
-            map!(float_p, | a | ArgValue::Float(a)) |
-            map!(num_p, | a | ArgValue::Number(a)) |
-            map!(word_p, | a | ArgValue::Text(a)) |
-            map!(quoted_interpolated_p, | a | ArgValue::TextInterpolated(a)) |
-            map!(single_quoted_p, | a | ArgValue::Text(a)) |
-            map!(variable_reserved_p, | a | ArgValue::VariableReserved(a)) |
-            map!(variable_p, | a | ArgValue::Variable(a)) |
-            map!(token_p, | a | ArgValue::Token(a))
+            boolean_p               =>  { | a | ArgValue::Boolean(a)            } |
+            num_p                   =>  { | a | ArgValue::Number(a)             } |
+            float_p                 =>  { | a | ArgValue::Float(a)              } |
+            word_p                  =>  { | a | ArgValue::Text(a)               } |
+            quoted_interpolated_p   =>  { | a | ArgValue::TextInterpolated(a)   } |
+            single_quoted_p         =>  { | a | ArgValue::Text(a)               } |
+            variable_reserved_p     =>  { | a | ArgValue::VariableReserved(a)   } |
+            variable_p              =>  { | a | ArgValue::Variable(a)           } |
+            token_p                 =>  { | a | ArgValue::Token(a)              }
         )) >>
         options: switch!(options_p,
             Some(opts) => value!(opts) |
@@ -108,26 +109,22 @@ pub fn arguments_case_p(input: &[u8]) -> IResult<&[u8], Arg> {
 }
 
 /// Matches !input arguments
-pub fn arguments_input_p(input: &[u8]) -> IResult<&[u8], Arg> {
+pub fn arguments_input_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Arg> {
     add_return_error!(input, ErrorKind::Custom(5), do_parse!(
         message: alt_complete!(
             quoted_interpolated_p |
-            map!(single_quoted_p, |quote| TextInterpolated {
-                parts: vec![ ArgValue::Text(quote) ],
-            })
+            single_quoted_p => { | quote | TextInterpolated { parts: vec![ ArgValue::Text(quote) ] } }
         ) >>
         (Arg::Input(message))
     ))
 }
 
 /// Matches !prompt arguments
-pub fn arguments_prompt_p(input: &[u8]) -> IResult<&[u8], Arg> {
+pub fn arguments_prompt_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Arg> {
     add_return_error!(input, ErrorKind::Custom(4), do_parse!(
         message: ws!(alt_complete!(
             quoted_interpolated_p |
-            map!(single_quoted_p, |quote| TextInterpolated {
-                parts: vec![ ArgValue::Text(quote) ],
-            })
+            single_quoted_p => { |quote| TextInterpolated { parts: vec![ ArgValue::Text(quote) ] } }
         )) >>
         options: switch!(options_p,
             Some(opts) => value!(opts) |
@@ -141,7 +138,7 @@ pub fn arguments_prompt_p(input: &[u8]) -> IResult<&[u8], Arg> {
 }
 
 /// Matches an optional list of options
-pub fn options_p(input: &[u8]) -> IResult<&[u8], Option<Vec<SwitchOption>>> {
+pub fn options_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Option<Vec<SwitchOption>>> {
     opt!(input, do_parse!(
         tag!("[") >>
         options: many0!(parse_option_p) >>
@@ -151,108 +148,108 @@ pub fn options_p(input: &[u8]) -> IResult<&[u8], Option<Vec<SwitchOption>>> {
 }
 
 /// Matches !roll arguments
-pub fn arguments_roll_p(input: &[u8]) -> IResult<&[u8], Arg> {
+pub fn arguments_roll_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Arg> {
     alt_complete!(input,
-        advantage_p |
-        disadvantage_p |
-        roll_num_p |
-        roll_die_p |
-        roll_flag_e_p |
-        roll_flag_gt_p |
-        roll_flag_gte_p |
-        roll_flag_h_p |
-        roll_flag_l_p |
-        roll_flag_lt_p |
-        roll_flag_lte_p |
-        roll_flag_max_p |
-        roll_flag_min_p |
-        roll_flag_ro_p |
-        roll_flag_rr_p |
-        roll_modifier_pos_p |
-        roll_modifier_neg_p |
-        map!(quoted_interpolated_p, | a | Arg::Roll(RollArg::Comment(ArgValue::TextInterpolated(a)))) |
-        map!(single_quoted_p,       | a | Arg::Roll(RollArg::Comment(ArgValue::Text(a)))) |
+        advantage_p             |
+        disadvantage_p          |
+        roll_num_p              |
+        roll_die_p              |
+        roll_flag_e_p           |
+        roll_flag_gt_p          |
+        roll_flag_gte_p         |
+        roll_flag_h_p           |
+        roll_flag_l_p           |
+        roll_flag_lt_p          |
+        roll_flag_lte_p         |
+        roll_flag_max_p         |
+        roll_flag_min_p         |
+        roll_flag_ro_p          |
+        roll_flag_rr_p          |
+        roll_modifier_pos_p     |
+        roll_modifier_neg_p     |
+        quoted_interpolated_p   => { | a | Arg::Roll(RollArg::Comment(ArgValue::TextInterpolated(a)))   } |
+        single_quoted_p         => { | a | Arg::Roll(RollArg::Comment(ArgValue::Text(a)))               } |
         ws!(delimited!(
             tag!("["),
             alt_complete!(
-                map!(string_with_spaces_p, | a | Arg::Roll(RollArg::Comment(ArgValue::Text(a)))) |
-                map!(quoted_interpolated_p, | a | Arg::Roll(RollArg::Comment(ArgValue::TextInterpolated(a)))) |
-                map!(single_quoted_p,       | a | Arg::Roll(RollArg::Comment(ArgValue::Text(a))))
+                string_with_spaces_p    => { | a | Arg::Roll(RollArg::Comment(ArgValue::Text(a)))               } |
+                quoted_interpolated_p   => { | a | Arg::Roll(RollArg::Comment(ArgValue::TextInterpolated(a)))   } |
+                single_quoted_p         => { | a | Arg::Roll(RollArg::Comment(ArgValue::Text(a)))               }
             ),
             tag!("]")
         )) |
-        map!(token_p,               | a | Arg::Token(a)) |
-        map!(variable_p,            | a | Arg::Variable(a))
+        token_p                 => { | a | Arg::Token(a)    } |
+        variable_p              => { | a | Arg::Variable(a) }
         // map!(primitive_p,           | a | Arg::Roll(RollArg::Primitive(a)))
     )
 }
 
 /// Matches a custom side
-pub fn roll_side_p(input: &[u8]) -> IResult<&[u8], Vec<ArgValue>> {
+pub fn roll_side_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Vec<ArgValue>> {
     delimited!(input,
         tag!("["),
-        ws!(separated_list!(tag!(","), alt_complete!(roll_flag_var_p | map!(num_p, |n| ArgValue::Number(n))))),
+        ws!(separated_list!(tag!(","), alt_complete!(roll_flag_var_p | num_p => { |n| ArgValue::Number(n) }))),
         tag!("]")
     )
 }
 
 /// Matches !say arguments
-pub fn arguments_say_p(input: &[u8]) -> IResult<&[u8], Arg> {
+pub fn arguments_say_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Arg> {
     alt_complete!(input,
-        map!(quoted_interpolated_p, | a | Arg::Say(SayArg::Message(a))) |
-        map!(single_quoted_p, | a | Arg::Say(SayArg::Message(TextInterpolated {
+        quoted_interpolated_p   => { | a | Arg::Say(SayArg::Message(a))     } |
+        single_quoted_p         => { | a | Arg::Say(SayArg::Message(TextInterpolated {
             parts: vec![ ArgValue::Text(a) ],
-        }))) |
-        map!(token_p, | a | Arg::Say(SayArg::From(a)))
+        }))                                                                 } |
+        token_p                 => { | a | Arg::Say(SayArg::From(a))        }
     )
 }
 
 /// Matches !target arguments
-pub fn arguments_target_p(input: &[u8]) -> IResult<&[u8], Arg> {
+pub fn arguments_target_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Arg> {
     alt_complete!(input,
-        map!(quoted_interpolated_p, | a | Arg::Target(TargetArg::Message(a))) |
-        map!(single_quoted_p, | a | Arg::Target(TargetArg::Message(TextInterpolated {
+        quoted_interpolated_p   => { | a | Arg::Say(SayArg::Message(a))     } |
+        single_quoted_p         => { | a | Arg::Say(SayArg::Message(TextInterpolated {
             parts: vec![ ArgValue::Text(a) ],
-        })))
+        }))                                                                 }
     )
 }
 
 /// Matches !template arguments
-pub fn arguments_template_p(input: &[u8]) -> IResult<&[u8], Arg> {
+pub fn arguments_template_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Arg> {
     alt_complete!(input,
-        map!(variable_word_p, | a | Arg::Template(TemplateArg::Name(a))) |
-        map!(single_quoted_p, | a | Arg::Template(TemplateArg::Name(a))) |
-        map!(double_quoted_p, | a | Arg::Template(TemplateArg::Name(a))) |
-        map!(json_hash_p, | a | Arg::Template(TemplateArg::Attributes(ArgValue::Object(a))))
+        variable_word_p => { | a | Arg::Template(TemplateArg::Name(a))                          } |
+        single_quoted_p => { | a | Arg::Template(TemplateArg::Name(a))                          } |
+        double_quoted_p => { | a | Arg::Template(TemplateArg::Name(a))                          } |
+        json_hash_p     => { | a | Arg::Template(TemplateArg::Attributes(ArgValue::Object(a)))  }
     )
 }
 
 /// Matches !test arguments
-pub fn arguments_test_mode_p(input: &[u8]) -> IResult<&[u8], Arg> {
+pub fn arguments_test_mode_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Arg> {
     map!(input, boolean_p, | b | Arg::TestMode(b))
 }
 
 /// Matches !whisper arguments
-pub fn arguments_whisper_p(input: &[u8]) -> IResult<&[u8], Arg> {
+pub fn arguments_whisper_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Arg> {
     alt_complete!(input,
-        map!(quoted_interpolated_p, | a | Arg::Say(SayArg::Message(a))) |
-        map!(single_quoted_p, | a | Arg::Say(SayArg::Message(TextInterpolated {
+        quoted_interpolated_p   => { | a | Arg::Say(SayArg::Message(a))     } |
+        single_quoted_p         => { | a | Arg::Say(SayArg::Message(TextInterpolated {
             parts: vec![ ArgValue::Text(a) ],
-        }))) |
-        map!(token_p, | a | Arg::Say(SayArg::To(a)))
+        }))                                                                 } |
+        token_p                 => { | a | Arg::Say(SayArg::To(a))          }
     )
 }
 
 /// Matches a boolean operator
-pub fn boolean_p(input: &[u8]) -> IResult<&[u8], bool> {
+pub fn boolean_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, bool> {
     ws!(input, alt!(
-        map!(tag!("true"), |_| true) |
-        map!(tag!("false"), |_| false)
+        tag!("true")    => { |_| true   } |
+        tag!("false")   => { |_| false  }
     ))
 }
 
 /// Matches left += right scenarios
-pub fn concat_p(input: &[u8]) -> IResult<&[u8], Assign> {
+pub fn concat_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Assign> {
     do_parse!(input,
         left: assignment_left_p >>
         ws!(tag!("+=")) >>
@@ -264,60 +261,60 @@ pub fn concat_p(input: &[u8]) -> IResult<&[u8], Assign> {
     )
 }
 /// Matches any command
-pub fn command_p(input: &[u8]) -> IResult<&[u8], MacroOp> {
+pub fn command_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, MacroOp> {
     ws!(input, alt!(
-        map!(tag_no_case!("!exit"),                         |_| MacroOp::Exit)          |
-        map!(tag_no_case!("!template"),                     |_| MacroOp::Template)      |
-        map!(tag_no_case!("!test"),                         |_| MacroOp::TestMode)      |
-        map!(alt!(tag_no_case!("!case") | tag_no_case!("!c")),      |_| MacroOp::Case)        |
-        map!(alt!(tag_no_case!("!hroll") | tag_no_case!("!hr")),    |_| MacroOp::RollHidden)    |
-        map!(alt!(tag_no_case!("!input") | tag_no_case!("!i")),     |_| MacroOp::Input)         |
-        map!(alt!(tag_no_case!("!prompt") | tag_no_case!("!p")),    |_| MacroOp::Prompt)        |
-        map!(alt!(tag_no_case!("!roll") | tag_no_case!("!r")),      |_| MacroOp::Roll)          |
-        map!(alt!(tag_no_case!("!say") | tag_no_case!("!s")),       |_| MacroOp::Say)           |
-        map!(alt!(tag_no_case!("!target") | tag_no_case!("!t")),    |_| MacroOp::Target)        |
-        map!(alt!(tag_no_case!("!wroll") | tag_no_case!("!wr")),    |_| MacroOp::RollWhisper)   |
-        map!(alt!(tag_no_case!("!whisper") | tag_no_case!("!w")),   |_| MacroOp::Whisper)
+        tag_no_case!("!exit")                               => { |_| MacroOp::Exit          } |
+        tag_no_case!("!template")                           => { |_| MacroOp::Template      } |
+        tag_no_case!("!test")                               => { |_| MacroOp::TestMode      } |
+        alt!(tag_no_case!("!case") | tag_no_case!("!c"))    => { |_| MacroOp::Case          } |
+        alt!(tag_no_case!("!hroll") | tag_no_case!("!hr"))  => { |_| MacroOp::RollHidden    } |
+        alt!(tag_no_case!("!input") | tag_no_case!("!i"))   => { |_| MacroOp::Input         } |
+        alt!(tag_no_case!("!prompt") | tag_no_case!("!p"))  => { |_| MacroOp::Prompt        } |
+        alt!(tag_no_case!("!roll") | tag_no_case!("!r"))    => { |_| MacroOp::Roll          } |
+        alt!(tag_no_case!("!say") | tag_no_case!("!s"))     => { |_| MacroOp::Say           } |
+        alt!(tag_no_case!("!target") | tag_no_case!("!t"))  => { |_| MacroOp::Target        } |
+        alt!(tag_no_case!("!wroll") | tag_no_case!("!wr"))  => { |_| MacroOp::RollWhisper   } |
+        alt!(tag_no_case!("!whisper") | tag_no_case!("!w")) => { |_| MacroOp::Whisper       }
     ))
 }
 
-pub fn comparison_p(input: &[u8]) -> IResult<&[u8], ComparisonArg> {
+pub fn comparison_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, ComparisonArg> {
     ws!(input, alt_complete!(
-        map!(tag!("=="), |_| ComparisonArg::EqualTo) |
-        map!(tag!(">="), |_| ComparisonArg::GreaterThanOrEqual) |
-        map!(tag!("<="), |_| ComparisonArg::LessThanOrEqual) |
-        map!(tag!(">"), |_| ComparisonArg::GreaterThan) |
-        map!(tag!("<"), |_| ComparisonArg::LessThan)
+        tag!("==")  => { |_| ComparisonArg::EqualTo             } |
+        tag!(">=")  => { |_| ComparisonArg::GreaterThanOrEqual  } |
+        tag!("<=")  => { |_| ComparisonArg::LessThanOrEqual     } |
+        tag!(">")   => { |_| ComparisonArg::GreaterThan         } |
+        tag!("<")   => { |_| ComparisonArg::LessThan            }
     ))
 }
 
 /// Matches conditional statements (e.g. "1 > 2 ? success : failure")
-pub fn conditional_p(input: &[u8]) -> IResult<&[u8], Conditional> {
+pub fn conditional_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Conditional> {
     add_return_error!(input, ErrorKind::Custom(3), do_parse!(
         left: ws!(alt_complete!(
-            map!(variable_reserved_p, | a | ArgValue::VariableReserved(a)) |
-            map!(variable_p, | a | ArgValue::Variable(a)) |
-            map!(token_p, | a | ArgValue::Token(a)) |
-            map!(float_p, | a | ArgValue::Float(a)) |
-            map!(num_p, | a | ArgValue::Number(a))
+            variable_reserved_p => { | a | ArgValue::VariableReserved(a)    } |
+            variable_p          => { | a | ArgValue::Variable(a)            } |
+            token_p             => { | a | ArgValue::Token(a)               } |
+            num_p               => { | a | ArgValue::Number(a)              } |
+            float_p             => { | a | ArgValue::Float(a)               }
         )) >>
         comparison: comparison_p >>
         // but we can assign almost anything else to them (except inline arguments)
         right: ws!(alt_complete!(
-            map!(float_p, | a | ArgValue::Float(a)) |
-            map!(num_p, | a | ArgValue::Number(a)) |
-            map!(token_p, | a | ArgValue::Token(a)) |
-            map!(variable_reserved_p, | a | ArgValue::VariableReserved(a)) |
-            map!(variable_p, | a | ArgValue::Variable(a))
+            num_p               => { | a | ArgValue::Number(a)              } |
+            float_p             => { | a | ArgValue::Float(a)               } |
+            token_p             => { | a | ArgValue::Token(a)               } |
+            variable_reserved_p => { | a | ArgValue::VariableReserved(a)    } |
+            variable_p          => { | a | ArgValue::Variable(a)            }
         )) >>
         ws!(tag!("?")) >>
         success: ws!(alt_complete!(
-            map!(tag!("|"), |_| None) |
+            tag!("|") => { |_| None } |
             opt!(parse_step_p)
         )) >>
         ws!(tag!(":")) >>
         failure: ws!(alt_complete!(
-            map!(tag!("|"), |_| None) |
+            tag!("|") => { |_| None } |
             opt!(parse_step_p)
         )) >>
         (Conditional {
@@ -331,12 +328,12 @@ pub fn conditional_p(input: &[u8]) -> IResult<&[u8], Conditional> {
 }
 
 /// Matches disadvantage roll argument
-pub fn disadvantage_p(input: &[u8]) -> IResult<&[u8], Arg> {
+pub fn disadvantage_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Arg> {
     map!(input, alt_complete!(tag!("disadvantage") | tag!("dis")), |_| Arg::Roll(RollArg::Disadvantage))
 }
 
 /// Matches left -= right scenarios
-pub fn deduct_p(input: &[u8]) -> IResult<&[u8], Assign> {
+pub fn deduct_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Assign> {
     do_parse!(input,
         left: assignment_left_p >>
         ws!(tag!("-=")) >>
@@ -349,7 +346,7 @@ pub fn deduct_p(input: &[u8]) -> IResult<&[u8], Assign> {
 }
 
 /// Matches arguments in double quotes ("") - no interpolation
-pub fn double_quoted_p(input: &[u8]) -> IResult<&[u8], String> {
+pub fn double_quoted_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, String> {
     do_parse!(input,
         word: delimited!(tag!("\""),take_until!("\""), tag!("\"")) >>
         (String::from_utf8(word.to_vec()).unwrap())
@@ -357,19 +354,19 @@ pub fn double_quoted_p(input: &[u8]) -> IResult<&[u8], String> {
 }
 
 /// Match floats to argument strings
-pub fn float_p(input: &[u8]) -> IResult<&[u8], f32> {
-    ws!(input, float)
+pub fn float_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, f32> {
+    flat_map!(input, recognize_float, parse_to!(f32))
 }
 
 /// Matches "json" objects
-pub fn json_p(input: &[u8]) -> IResult<&[u8], ArgValue> {
+pub fn json_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, ArgValue> {
     ws!(input,
         alt!(
             json_hash_p            => { | a | ArgValue::Object(a)           } |
             json_array_p           => { | a | ArgValue::Array(a)            } |
             boolean_p              => { | a | ArgValue::Boolean(a)          } |
-            float_p                => { | a | ArgValue::Float(a)            } |
             num_p                  => { | a | ArgValue::Number(a)           } |
+            float_p                => { | a | ArgValue::Float(a)            } |
             quoted_interpolated_p  => { | a | ArgValue::TextInterpolated(a) } |
             single_quoted_p        => { | a | ArgValue::Text(a)             } |
             variable_reserved_p    => { | a | ArgValue::VariableReserved(a) } |
@@ -382,7 +379,7 @@ pub fn json_p(input: &[u8]) -> IResult<&[u8], ArgValue> {
 }
 
 
-pub fn json_array_p(input: &[u8]) -> IResult<&[u8], Vec<ArgValue>> {
+pub fn json_array_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Vec<ArgValue>> {
     ws!(input,
         delimited!(
             tag!("["),
@@ -392,7 +389,7 @@ pub fn json_array_p(input: &[u8]) -> IResult<&[u8], Vec<ArgValue>> {
     )
 }
 
-pub fn json_hash_p(input: &[u8]) -> IResult<&[u8], HashMap<String, ArgValue>> {
+pub fn json_hash_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, HashMap<String, ArgValue>> {
     ws!(input,
         map!(
             delimited!(
@@ -411,7 +408,7 @@ pub fn json_hash_p(input: &[u8]) -> IResult<&[u8], HashMap<String, ArgValue>> {
     )
 }
 
-pub fn json_key_value_p(input: &[u8]) -> IResult<&[u8], (String, ArgValue)> {
+pub fn json_key_value_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, (String, ArgValue)> {
     ws!(input,
         separated_pair!(
             alt_complete!(word_p | single_quoted_p | double_quoted_p),
@@ -422,21 +419,22 @@ pub fn json_key_value_p(input: &[u8]) -> IResult<&[u8], (String, ArgValue)> {
 }
 
 /// Matches a macro name
-pub fn name_p(input: &[u8]) -> IResult<&[u8], MacroOp> {
+pub fn name_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, MacroOp> {
     add_return_error!(input, ErrorKind::Custom(1), ws!(
         do_parse!(
             tag!("#") >>
-            name: map_res!(is_not!(" \t\r\n"), |r: &[u8]| String::from_utf8(r.to_vec())) >>
+            name: map_res!(is_not!(" \t\r\n"), |r: CompleteByteSlice| String::from_utf8(r.to_vec())) >>
             (MacroOp::Name(name))
         )
     ))
 }
 
 /// Match numbers to argument strings
-pub fn num_p(input: &[u8]) -> IResult<&[u8], i32> {
+pub fn num_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, i32> {
     do_parse!(input,
         sign: opt!(tag!("-")) >>
         num: digit >>
+        not!(tag!(".")) >>
         s: value!(String::from_utf8(num.to_vec()).unwrap()) >>
         val: value!(s.parse::<i32>().unwrap()) >>
         switch: switch!(value!(&sign),
@@ -448,7 +446,7 @@ pub fn num_p(input: &[u8]) -> IResult<&[u8], i32> {
 }
 
 /// Matches any type of operation
-pub fn op_p(input: &[u8]) -> IResult<&[u8], MacroOp> {
+pub fn op_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, MacroOp> {
     alt_complete!(input,
         name_p |
         command_p |
@@ -457,7 +455,7 @@ pub fn op_p(input: &[u8]) -> IResult<&[u8], MacroOp> {
 }
 
 /// Parse an option string (does not require quotes)
-pub fn string_with_spaces_p(input: &[u8]) -> IResult<&[u8], String> {
+pub fn string_with_spaces_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, String> {
     do_parse!(input,
         word: is_not!("\t\r\n,?\\=<>|:;!#%^&*()+=/-[]{}'\"") >>
         (String::from_utf8(word.to_vec()).unwrap())
@@ -465,45 +463,44 @@ pub fn string_with_spaces_p(input: &[u8]) -> IResult<&[u8], String> {
 }
 
 /// Parses a valid option (e.g. Label 1, "Label 1", 'Label 1', Label:Value)
-pub fn parse_option_p(input: &[u8]) -> IResult<&[u8], SwitchOption> {
+pub fn parse_option_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, SwitchOption> {
     // do not parse the key right away because
     do_parse!(input,
         label: ws!(alt_complete!(
-            map!(boolean_p, | a | ArgValue::Boolean(a)) |
-            map!(float_p, | a | ArgValue::Float(a)) |
-            map!(num_p, | a | ArgValue::Number(a)) |
-            map!(quoted_interpolated_p, | a | ArgValue::TextInterpolated(a)) |
-            map!(single_quoted_p, | a | ArgValue::Text(a)) |
-            map!(variable_reserved_p, | a | ArgValue::VariableReserved(a)) |
-            map!(variable_p, | a | ArgValue::Variable(a)) |
-            map!(token_p, | a | ArgValue::Token(a)) |
-            map!(string_with_spaces_p, | a | ArgValue::Text(a)) |
-            map!(word_p, | a | ArgValue::Text(a))
+            boolean_p               => { | a | ArgValue::Boolean(a)             } |
+            num_p                   => { | a | ArgValue::Number(a)              } |
+            float_p                 => { | a | ArgValue::Float(a)               } |
+            quoted_interpolated_p   => { | a | ArgValue::TextInterpolated(a)    } |
+            single_quoted_p         => { | a | ArgValue::Text(a)                } |
+            variable_reserved_p     => { | a | ArgValue::VariableReserved(a)    } |
+            variable_p              => { | a | ArgValue::Variable(a)            } |
+            token_p                 => { | a | ArgValue::Token(a)               } |
+            string_with_spaces_p    => { | a | ArgValue::Text(a)                } |
+            word_p                  => { | a | ArgValue::Text(a)                }
         )) >>
         value: ws!(switch!(opt!(tag!(":")),
             // If we have a delim, parse the value
             Some(_) => alt_complete!(
-                map!(boolean_p, | a | ArgValue::Boolean(a)) |
-                map!(float_p, | a | ArgValue::Float(a)) |
-                map!(num_p, | a | ArgValue::Number(a)) |
-                map!(quoted_interpolated_p, | a | ArgValue::TextInterpolated(a)) |
-                map!(single_quoted_p, | a | ArgValue::Text(a)) |
-                map!(variable_reserved_p, | a | ArgValue::VariableReserved(a)) |
-                map!(variable_p, | a | ArgValue::Variable(a)) |
-                map!(token_p, | a | ArgValue::Token(a)) |
-                map!(string_with_spaces_p, | a | ArgValue::Text(a)) |
-                map!(word_p, | a | ArgValue::Text(a))
+                boolean_p               => { | a | ArgValue::Boolean(a)             } |
+                num_p                   => { | a | ArgValue::Number(a)              } |
+                float_p                 => { | a | ArgValue::Float(a)               } |
+                quoted_interpolated_p   => { | a | ArgValue::TextInterpolated(a)    } |
+                single_quoted_p         => { | a | ArgValue::Text(a)                } |
+                variable_reserved_p     => { | a | ArgValue::VariableReserved(a)    } |
+                variable_p              => { | a | ArgValue::Variable(a)            } |
+                token_p                 => { | a | ArgValue::Token(a)               } |
+                string_with_spaces_p    => { | a | ArgValue::Text(a)                } |
+                word_p                  => { | a | ArgValue::Text(a)                }
             ) |
             None => value!(label.clone())
         )) >>
         opt!(tag!(",")) >>
         key: switch!(value!(label),
-            ArgValue::Boolean(v) => value!(Some(v.to_string())) |
-            ArgValue::Float(v) => value!(Some(v.to_string())) |
-            ArgValue::Number(v) => value!(Some(v.to_string())) |
-            ArgValue::Text(v) => value!(Some(v)) |
-            _ => value!(None)
-
+            ArgValue::Boolean(v)    => value!(Some(v.to_string())) |
+            ArgValue::Float(v)      => value!(Some(v.to_string())) |
+            ArgValue::Number(v)     => value!(Some(v.to_string())) |
+            ArgValue::Text(v)       => value!(Some(v)) |
+            _                       => value!(None)
         ) >>
         (SwitchOption {
             key,
@@ -513,7 +510,7 @@ pub fn parse_option_p(input: &[u8]) -> IResult<&[u8], SwitchOption> {
 }
 
 /// Parse the complete macro
-pub fn parse_p(input: &[u8]) -> IResult<&[u8], Program> {
+pub fn parse_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Program> {
     do_parse!(input,
         prog_name: name_p >>
         steps: many0!(parse_step_p) >>
@@ -525,7 +522,7 @@ pub fn parse_p(input: &[u8]) -> IResult<&[u8], Program> {
 }
 
 /// Parse a step for possible assignment, it must be a command that starts with a "!"
-pub fn parse_assignment_step_p(input: &[u8]) -> IResult<&[u8], Step> {
+pub fn parse_assignment_step_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Step> {
     do_parse!(input,
         op_type: command_p >>
         args: many0!(switch!(value!(&op_type),
@@ -546,7 +543,7 @@ pub fn parse_assignment_step_p(input: &[u8]) -> IResult<&[u8], Step> {
 }
 
 /// Parse a step of the program
-pub fn parse_step_p(input: &[u8]) -> IResult<&[u8], Step> {
+pub fn parse_step_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Step> {
     do_parse!(input,
         op_type: op_p >>
         args: many0!(switch!(value!(&op_type),
@@ -573,24 +570,24 @@ pub fn parse_step_p(input: &[u8]) -> IResult<&[u8], Step> {
 }
 
 /// Matches primitive operations (starts with a number)
-pub fn primitive_p(input: &[u8]) -> IResult<&[u8], Primitive> {
+pub fn primitive_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Primitive> {
     ws!(input, alt_complete!(
-        map!(tag!("+"), |_| Primitive::Add) |
-        map!(tag!("-"), |_| Primitive::Subtract) |
-        map!(tag!("/"), |_| Primitive::Divide) |
-        map!(tag!("*"), |_| Primitive::Multiply)
+        tag!("+") => { |_| Primitive::Add       } |
+        tag!("-") => { |_| Primitive::Subtract  } |
+        tag!("/") => { |_| Primitive::Divide    } |
+        tag!("*") => { |_| Primitive::Multiply  }
     ))
 }
 
 /// Matches arguments in any type of quotes with variable interpolation
-pub fn quoted_interpolated_p(input: &[u8]) -> IResult<&[u8], TextInterpolated> {
+pub fn quoted_interpolated_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, TextInterpolated> {
     do_parse!(input,
         tag!("\"") >>
         parts: many0!(alt_complete!(
-            map!(variable_reserved_p, | a | ArgValue::VariableReserved(a)) |
-            map!(variable_p, | a | ArgValue::Variable(a)) |
-            map!(token_p, | a | ArgValue::Token(a)) |
-            map!(is_not!("@$\""), | a | ArgValue::Text(String::from_utf8(a.to_vec()).unwrap()))
+            variable_reserved_p => { | a | ArgValue::VariableReserved(a)                            } |
+            variable_p          => { | a | ArgValue::Variable(a)                                    } |
+            token_p             => { | a | ArgValue::Token(a)                                       } |
+            not_a_token_or_variable_p     => { | a | ArgValue::Text(a)   }
         )) >>
         tag!("\"") >>
         (TextInterpolated {
@@ -599,8 +596,12 @@ pub fn quoted_interpolated_p(input: &[u8]) -> IResult<&[u8], TextInterpolated> {
     )
 }
 
+pub fn not_a_token_or_variable_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, String> {
+    map!(input, is_not!("@$\""), | text | String::from_utf8(text.to_vec()).unwrap())
+}
+
 /// Matches digits for "D" and parses to i32
-pub fn roll_digit_p(input: &[u8]) -> IResult<&[u8], i32> {
+pub fn roll_digit_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, i32> {
     do_parse!(input,
         var: digit >>
         num: value!(String::from_utf8(var.to_vec()).unwrap()) >>
@@ -609,7 +610,7 @@ pub fn roll_digit_p(input: &[u8]) -> IResult<&[u8], i32> {
 }
 
 /// Matches roll flag "e"
-pub fn roll_flag_e_p(input: &[u8]) -> IResult<&[u8], Arg> {
+pub fn roll_flag_e_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Arg> {
     do_parse!(input,
         tag!("e") >>
         var: roll_flag_var_p >>
@@ -618,7 +619,7 @@ pub fn roll_flag_e_p(input: &[u8]) -> IResult<&[u8], Arg> {
 }
 
 /// Matches roll flag "gt"
-pub fn roll_flag_gt_p(input: &[u8]) -> IResult<&[u8], Arg> {
+pub fn roll_flag_gt_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Arg> {
     do_parse!(input,
         tag!("gt") >>
         var: roll_flag_var_p >>
@@ -627,7 +628,7 @@ pub fn roll_flag_gt_p(input: &[u8]) -> IResult<&[u8], Arg> {
 }
 
 /// Matches roll flag "gte"
-pub fn roll_flag_gte_p(input: &[u8]) -> IResult<&[u8], Arg> {
+pub fn roll_flag_gte_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Arg> {
     do_parse!(input,
         tag!("gte") >>
         var: roll_flag_var_p >>
@@ -636,7 +637,7 @@ pub fn roll_flag_gte_p(input: &[u8]) -> IResult<&[u8], Arg> {
 }
 
 /// Matches roll flag "lt"
-pub fn roll_flag_lt_p(input: &[u8]) -> IResult<&[u8], Arg> {
+pub fn roll_flag_lt_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Arg> {
     do_parse!(input,
         tag!("lt") >>
         var: roll_flag_var_p >>
@@ -645,7 +646,7 @@ pub fn roll_flag_lt_p(input: &[u8]) -> IResult<&[u8], Arg> {
 }
 
 /// Matches roll flag "lte"
-pub fn roll_flag_lte_p(input: &[u8]) -> IResult<&[u8], Arg> {
+pub fn roll_flag_lte_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Arg> {
     do_parse!(input,
         tag!("lte") >>
         var: roll_flag_var_p >>
@@ -654,7 +655,7 @@ pub fn roll_flag_lte_p(input: &[u8]) -> IResult<&[u8], Arg> {
 }
 
 /// Matches roll flag "h"
-pub fn roll_flag_h_p(input: &[u8]) -> IResult<&[u8], Arg> {
+pub fn roll_flag_h_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Arg> {
     do_parse!(input,
         tag!("kh") >>
         var: roll_flag_var_p >>
@@ -663,7 +664,7 @@ pub fn roll_flag_h_p(input: &[u8]) -> IResult<&[u8], Arg> {
 }
 
 /// Matches roll flag "l"
-pub fn roll_flag_l_p(input: &[u8]) -> IResult<&[u8], Arg> {
+pub fn roll_flag_l_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Arg> {
     do_parse!(input,
         tag!("kl") >>
         var: roll_flag_var_p >>
@@ -672,7 +673,7 @@ pub fn roll_flag_l_p(input: &[u8]) -> IResult<&[u8], Arg> {
 }
 
 /// Matches roll flag "max"
-pub fn roll_flag_max_p(input: &[u8]) -> IResult<&[u8], Arg> {
+pub fn roll_flag_max_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Arg> {
     do_parse!(input,
         tag!("max") >>
         var: roll_flag_var_p >>
@@ -681,7 +682,7 @@ pub fn roll_flag_max_p(input: &[u8]) -> IResult<&[u8], Arg> {
 }
 
 /// Matches roll flag "min"
-pub fn roll_flag_min_p(input: &[u8]) -> IResult<&[u8], Arg> {
+pub fn roll_flag_min_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Arg> {
     do_parse!(input,
         tag!("min") >>
         var: roll_flag_var_p >>
@@ -690,7 +691,7 @@ pub fn roll_flag_min_p(input: &[u8]) -> IResult<&[u8], Arg> {
 }
 
 /// Matches roll flag "ro"
-pub fn roll_flag_ro_p(input: &[u8]) -> IResult<&[u8], Arg> {
+pub fn roll_flag_ro_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Arg> {
     do_parse!(input,
         tag!("ro") >>
         comparitive_op: opt!(comparison_p) >>
@@ -707,7 +708,7 @@ pub fn roll_flag_ro_p(input: &[u8]) -> IResult<&[u8], Arg> {
 }
 
 /// Matches roll flag "rr"
-pub fn roll_flag_rr_p(input: &[u8]) -> IResult<&[u8], Arg> {
+pub fn roll_flag_rr_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Arg> {
     do_parse!(input,
         tag!("rr") >>
         comparitive_op: opt!(comparison_p) >>
@@ -724,17 +725,17 @@ pub fn roll_flag_rr_p(input: &[u8]) -> IResult<&[u8], Arg> {
 }
 
 /// Matches valid roll flag inputs
-pub fn roll_flag_var_p(input: &[u8]) -> IResult<&[u8], ArgValue> {
+pub fn roll_flag_var_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, ArgValue> {
     ws!(input, alt_complete!(
-        map!(variable_reserved_p,   |n| ArgValue::VariableReserved(n)) |
-        map!(variable_p,            |n| ArgValue::Variable(n)) |
-        map!(roll_digit_p,          |n| ArgValue::Number(n))
+        variable_reserved_p => { |n| ArgValue::VariableReserved(n)  } |
+        variable_p          => { |n| ArgValue::Variable(n)          } |
+        roll_digit_p        => { |n| ArgValue::Number(n)            }
     )) 
 }
 
 
 /// Matches + modifiers
-pub fn roll_modifier_neg_p(input: &[u8]) -> IResult<&[u8], Arg> {
+pub fn roll_modifier_neg_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Arg> {
     do_parse!(input,
         var: ws!(preceded!(tag!("-"), roll_modifier_var_p)) >>
         (Arg::Roll(RollArg::ModifierNeg(var)))
@@ -742,7 +743,7 @@ pub fn roll_modifier_neg_p(input: &[u8]) -> IResult<&[u8], Arg> {
 }
 
 /// Matches - modifiers
-pub fn roll_modifier_pos_p(input: &[u8]) -> IResult<&[u8], Arg> {
+pub fn roll_modifier_pos_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Arg> {
     do_parse!(input,
         var: ws!(preceded!(tag!("+"), roll_modifier_var_p)) >>
         (Arg::Roll(RollArg::ModifierPos(var)))
@@ -750,17 +751,17 @@ pub fn roll_modifier_pos_p(input: &[u8]) -> IResult<&[u8], Arg> {
 }
 
 /// Matches valid modifier inputs
-pub fn roll_modifier_var_p(input: &[u8]) -> IResult<&[u8], ArgValue> {
+pub fn roll_modifier_var_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, ArgValue> {
     alt!(input,
-        map!(variable_reserved_p, |n| ArgValue::VariableReserved(n)) |
-        map!(variable_p, |n| ArgValue::Variable(n)) |
-        map!(roll_digit_p, |n| ArgValue::Number(n)) |
-        map!(token_p, |n| ArgValue::Token(n))
+        variable_reserved_p => { |n| ArgValue::VariableReserved(n)  } |
+        variable_p          => { |n| ArgValue::Variable(n)          } |
+        roll_digit_p        => { |n| ArgValue::Number(n)            } |
+        token_p             => { |n| ArgValue::Token(n)             }
     )
 }
 
 /// Matches "N" in NdD
-pub fn roll_num_p(input: &[u8]) -> IResult<&[u8], Arg> {
+pub fn roll_num_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Arg> {
     // @todo @error if string/invalid throw error
     do_parse!(input,
         var: roll_flag_var_p >>
@@ -769,19 +770,19 @@ pub fn roll_num_p(input: &[u8]) -> IResult<&[u8], Arg> {
 }
 
 /// Matches "D" in NdD
-pub fn roll_die_p(input: &[u8]) -> IResult<&[u8], Arg> {
+pub fn roll_die_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, Arg> {
     // @todo @error if string/invalid throw error
     do_parse!(input,
         var: ws!(preceded!(tag!("d"), alt_complete!(
-            map!(roll_flag_var_p, | a | Arg::Roll(RollArg::D(a))) |
-            map!(roll_side_p,  | a | Arg::Roll(RollArg::Sides(a)))
+            roll_flag_var_p => { | a | Arg::Roll(RollArg::D(a))     } |
+            roll_side_p     => { | a | Arg::Roll(RollArg::Sides(a)) }
         ))) >>
         (var)
     )
 }
 
 /// Matches arguments in quotes ('')
-pub fn single_quoted_p(input: &[u8]) -> IResult<&[u8], String> {
+pub fn single_quoted_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, String> {
     do_parse!(input,
         word: delimited!(tag!("'"),take_until!("'"), tag!("'")) >>
         (String::from_utf8(word.to_vec()).unwrap())
@@ -789,16 +790,16 @@ pub fn single_quoted_p(input: &[u8]) -> IResult<&[u8], String> {
 }
 
 /// Matches a passed or ignored result
-pub fn step_result_p(input: &[u8]) -> IResult<&[u8], StepResult> {
+pub fn step_result_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, StepResult> {
     alt_complete!(input,
-        map!(ws!(tag!(">>")), |_| StepResult::Save) |
-        map!(ws!(tag!("|")), |_| StepResult::Ignore) |
+        ws!(tag!(">>")) => { |_| StepResult::Save   } |
+        ws!(tag!("|"))  => { |_| StepResult::Ignore } |
         value!(StepResult::Ignore)
     )
 }
 
 /// Matches tokens
-pub fn token_p(input: &[u8]) -> IResult<&[u8], TokenArg> {
+pub fn token_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, TokenArg> {
     // @todo match that we cannot start with a digit
     do_parse!(input,
         name: ws!(preceded!(tag!("@"), token_name_p)) >>
@@ -815,7 +816,7 @@ pub fn token_p(input: &[u8]) -> IResult<&[u8], TokenArg> {
 }
 
 /// Parse a valid string for names
-pub fn token_name_p(input: &[u8]) -> IResult<&[u8], String> {
+pub fn token_name_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, String> {
     do_parse!(input,
         word: alt_complete!(
             delimited!(tag!("{"), is_not!(" \t\r\n.,?\\=<>|:;@!#$%^&*()+=/-[]{}'\""), tag!("}")) |
@@ -826,7 +827,7 @@ pub fn token_name_p(input: &[u8]) -> IResult<&[u8], String> {
 }
 
 /// Matches a valid variable name
-pub fn variable_name_p(input: &[u8]) -> IResult<&[u8], &[u8]> {
+pub fn variable_name_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, CompleteByteSlice> {
     alt_complete!(input,
         delimited!(tag!("{"), is_not!(" \t\r\n,?\\=<>|:;@!#$%^&*()+=/-[]{}'\""), tag!("}")) |
         is_not!(" \t\r\n.,?\\=<>|:;@!#$%^&*()+=/-[]{}'\"")
@@ -834,7 +835,7 @@ pub fn variable_name_p(input: &[u8]) -> IResult<&[u8], &[u8]> {
 }
 
 /// Matches variables
-pub fn variable_p(input: &[u8]) -> IResult<&[u8], String> {
+pub fn variable_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, String> {
     // @todo match that we cannot start with a digit
     do_parse!(input,
         var: preceded!(tag!("$"), variable_name_p) >>
@@ -843,7 +844,7 @@ pub fn variable_p(input: &[u8]) -> IResult<&[u8], String> {
 }
 
 /// Matches reserved variables (digits only)
-pub fn variable_reserved_p(input: &[u8]) -> IResult<&[u8], i16> {
+pub fn variable_reserved_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, i16> {
     do_parse!(input,
         var: ws!(preceded!(tag!("$"), alt_complete!(
             delimited!(tag!("{"), digit, tag!("}")) |
@@ -855,7 +856,7 @@ pub fn variable_reserved_p(input: &[u8]) -> IResult<&[u8], i16> {
 }
 
 /// Match alphanumeric words to strings
-pub fn word_p(input: &[u8]) -> IResult<&[u8], String> {
+pub fn word_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, String> {
     do_parse!(input,
         word: alphanumeric >>
         (String::from_utf8(word.to_vec()).unwrap())
@@ -863,7 +864,7 @@ pub fn word_p(input: &[u8]) -> IResult<&[u8], String> {
 }
 
 /// Match variable words to strings
-pub fn variable_word_p(input: &[u8]) -> IResult<&[u8], String> {
+pub fn variable_word_p(input: CompleteByteSlice) -> IResult<CompleteByteSlice, String> {
     do_parse!(input,
         word: variable_name_p >>
         (String::from_utf8(word.to_vec()).unwrap())

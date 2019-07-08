@@ -7,7 +7,7 @@ authors = ["Thomas Lackemann <tommylackemann@gmail.com>"]
 # crate-type = ["cdylib"]
 
 [dependencies]
-nom = "4.0.0"
+nom = "5.0.0"
 serde = "1.0.66"
 serde_derive = "1.0.66"
 serde_json = "1.0.19"
